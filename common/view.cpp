@@ -74,6 +74,20 @@ bool Widget::visible() const {
     return _visible;
 }
 
+void Widget::defer(std::function<void()> const& func, float delay) {
+    auto delay_action = Action::Ptr(new Delay(delay));
+    auto callback = Action::Ptr(new CallBackVoid(func));
+    auto action = Action::Ptr(new Sequence({delay_action, callback}));
+    this->runAction(action);
+}
+
+void Widget::defer(Widget* sender, std::function<void(Widget*)> const& func, float delay) {
+    auto delay_action = Action::Ptr(new Delay(delay));
+    auto callback = Action::Ptr(new CallBackSender(sender, func));
+    auto action = Action::Ptr(new Sequence({delay_action, callback}));
+    this->runAction(action);
+}
+
 void Widget::enableUpdate(bool update) {
     _update = update;
 }
@@ -122,6 +136,10 @@ Widget::WidgetArray& Widget::children() {
     return _children;
 }
 
+Widget::WidgetArray const& Widget::children() const {
+    return _children;
+}
+
 void Widget::update(float delta) {
     bool update = _visible and _update;
     bool action_update = not _pause_action_when_hidden;
@@ -162,6 +180,46 @@ void Widget::onDraw(SDL_Renderer* renderer) {
 
 void Widget::onDirty() {
 
+}
+
+Widget* Widget::find(std::string const& name) {
+    if (name.empty()) {
+        return nullptr;
+    }
+    if (this->name() == name) {
+        return this;
+    }
+    for (auto& child : _children) {
+        if (child->name() == name) {
+            return child.get();
+        }
+    }
+    return nullptr;
+}
+
+Widget* _findWidget(Widget* widget, std::string const& name) {
+    if (widget->name() == name) {
+        return widget;
+    }
+    for (auto& child : widget->children()) {
+        auto r = _findWidget(child.get(), name);
+        if (r != nullptr) {
+            return r;
+        }
+    }
+    return nullptr;
+}
+
+Widget* Widget::gfind(std::string const& name) {
+    return name.empty() ? nullptr : _findWidget(this, name);
+}
+
+void Widget::setName(std::string const& name) {
+    _name = name;
+}
+
+std::string const& Widget::name() const {
+    return _name;
 }
 
 void Widget::modifyPosition() {
@@ -396,4 +454,108 @@ void MaskWidget::onDraw(SDL_Renderer* renderer) {
     };
     dc.setColor(_color);
     SDL_RenderFillRectF(renderer, &dst);
+}
+
+//=====================================================================================
+
+CurtainWidget::CurtainWidget(SDL_Color const& c) {
+    for (int i = 0; i < 2; ++i) {
+        auto mask = Widget::Ptr(new MaskWidget(c));
+        addChild(mask);
+        _mask[i] = mask;
+        _mask[i]->setVisible(false);
+        _mask[i]->setSize(_mask[i]->size() * Vector2f{1.2f, 1.2f});
+    }
+    enableUpdate(true);
+}
+
+void CurtainWidget::Start(CallFunc const& close, CallFunc const& open, float duration) {
+    _func[0] = close;
+    _func[1] = open;
+    _duration = duration;
+    this->Close();
+}
+
+void CurtainWidget::Close() {
+    Vector2f anchor[2] = {
+            {0.5f, 1.0f},
+            {0.5f, 0.0f}
+    };
+    Vector2f position[2] = {
+            {size().x * 0.5f, 0.0f},
+            {size().x * 0.5f, size().y * 1.0f}
+    };
+    for (int i = 0; i < 2; ++i) {
+        _mask[i]->setVisible(true);
+        _mask[i]->setPosition(position[i]);
+        _mask[i]->setAnchor(anchor[i]);
+    }
+    {
+        auto move = Action::Ptr(new MoveTo(
+                _mask[0].get(),
+                {size().x*0.5f, size().y*0.5f},
+                _duration * 0.5f));
+        auto close_call = Action::Ptr(new CallBackSender(this, _func[0]));
+        auto open_call = Action::Ptr(new CallBackVoid(std::bind(&CurtainWidget::Open, this)));
+        auto action = Action::Ptr(new Sequence({move, close_call, open_call}));
+        _mask[0]->runAction(action);
+    }
+    {
+        auto move = Action::Ptr(new MoveTo(
+                _mask[1].get(),
+                {size().x*0.5f, size().y*0.5f},
+                _duration * 0.5f));
+        _mask[1]->runAction(move);
+    }
+}
+
+void CurtainWidget::Open() {
+    Vector2f position[2] = {
+            {size().x * 0.5f, 0.0f},
+            {size().x * 0.5f, size().y * 1.0f}
+    };
+    for (int i = 0; i < 2; ++i) {
+        auto move = Action::Ptr(new MoveTo(
+                _mask[i].get(),
+                position[i],
+                _duration * 0.5f));
+        _mask[i]->runAction(move);
+    }
+    this->defer(this, _func[1], _duration*0.5f);
+}
+
+//=====================================================================================
+
+ScreenWidget::ScreenWidget():_curtain(nullptr), _root(nullptr) {
+    Widget::Ptr window(new WindowWidget);
+    Widget::Ptr curtain(new CurtainWidget);
+    addChild(window);
+    addChild(curtain);
+    _root = window->to<WindowWidget>();
+    _curtain = curtain->to<CurtainWidget>();
+}
+
+void ScreenWidget::push(Widget::Ptr& widget) {
+    _root->addChild(widget);
+}
+
+void ScreenWidget::replace(Widget::Ptr& widget) {
+    this->pop();
+    this->push(widget);
+}
+
+void ScreenWidget::pop() {
+    _root->removeChild(_children.back());
+}
+
+int ScreenWidget::scene_size() const {
+    return _root->children().size();
+}
+
+Widget::Ptr& ScreenWidget::scene_at(int index) const {
+    return _root->children()[index];
+}
+
+void ScreenWidget::onEvent(SDL_Event& event) {
+
 }

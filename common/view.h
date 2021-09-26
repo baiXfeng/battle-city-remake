@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <string>
 #include <SDL.h>
 #include "types.h"
 
@@ -29,8 +30,10 @@ public:
     Widget* parent() const;
     bool visible() const;
     template<class T> T* to() {
-        return static_cast<T*>(this);
+        return dynamic_cast<T*>(this);
     }
+    void defer(std::function<void()> const& func, float delay);
+    void defer(Widget* sender, std::function<void(Widget*)> const& func, float delay);
 public:
     void enableUpdate(bool update);
     void setVisible(bool visible);
@@ -41,12 +44,18 @@ public:
     virtual void removeAllChildren();
     virtual void removeFromParent();
     WidgetArray& children();
+    WidgetArray const& children() const;
 public:
     virtual void update(float delta);
     virtual void draw(SDL_Renderer* renderer);
     virtual void onUpdate(float delta);
     virtual void onDraw(SDL_Renderer* renderer);
     virtual void onDirty();
+public:
+    Widget* find(std::string const& name);
+    Widget* gfind(std::string const& name);
+    void setName(std::string const& name);
+    std::string const& name() const;
 public:
     void setPosition(Vector2f const& position);
     void setPosition(float dx, float dy);
@@ -87,6 +96,7 @@ protected:
     Vector2f _size;
     Vector2f _scale;
     Vector2f _anchor;
+    std::string _name;
     WidgetArray _children;
     ActionExecuterPtr _action;
 };
@@ -163,6 +173,38 @@ private:
     void onDraw(SDL_Renderer* renderer) override;
 private:
     SDL_Color _color;
+};
+
+class CurtainWidget : public Widget {
+public:
+    typedef std::function<void(Widget*)> CallFunc;
+public:
+    CurtainWidget(SDL_Color const& c = {0, 0, 0, 255});
+    void Start(CallFunc const& close, CallFunc const& open, float duration);
+private:
+    void Close();
+    void Open();
+private:
+    float _duration;
+    Widget::Ptr _mask[2];
+    CallFunc _func[2];
+};
+
+class ScreenWidget : protected WindowWidget {
+public:
+    ScreenWidget();
+public:
+    void push(Widget::Ptr& widget);
+    void replace(Widget::Ptr& widget);
+    void pop();
+public:
+    int scene_size() const;
+    WidgetPtr& scene_at(int index) const;
+public:
+    void onEvent(SDL_Event& event);
+private:
+    CurtainWidget* _curtain;
+    WindowWidget* _root;
 };
 
 #endif //SDL2_UI_VIEW_H

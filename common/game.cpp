@@ -4,6 +4,7 @@
 
 #include "game.h"
 #include "fps.h"
+#include "view.h"
 
 #include <memory>
 #include <iostream>
@@ -12,15 +13,10 @@
 SDL_Window* sdl_window = nullptr;
 SDL_Renderer* sdl_renderer = nullptr;
 Vector2i sdl_screen_size{GAME_SCREEN_WIDTH, GAME_SCREEN_HEIGHT};
-Fps _fps;
 bool _quit = false;
 
 //游戏控制器1处理机
 SDL_Joystick* _gGameController = nullptr;
-
-Fps& GameVariable::fps() {
-    return _fps;
-}
 
 Game& Game::instance() {
     static Game i;
@@ -44,7 +40,9 @@ void Game::input() {
     while( SDL_PollEvent( &e ) != 0 ) {
         if( e.type == SDL_QUIT ) {
             _quit = true;
+            continue;
         }
+        screen().onEvent(e);
     }
 }
 
@@ -64,19 +62,19 @@ int Game::run() {
         return ret;
     }
 
-    _delegate->init();
-    auto& fps = _fps;
-    float delta = fps.delta();
+    this->initVariable();
+    this->_delegate->init();
+    float delta = fps().delta();
 
     while (!_quit) {
-        fps.start();
+        fps().start();
         this->input();
         _delegate->update(delta);
         SDL_SetRenderDrawColor(sdl_renderer, 0x0, 0x0, 0x0, 0xff );
         SDL_RenderClear(sdl_renderer);
         _delegate->render(sdl_renderer);
         SDL_RenderPresent(sdl_renderer);
-        fps.next();
+        fps().next();
     }
 
     _delegate->fini();

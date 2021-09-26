@@ -8,16 +8,10 @@
 #include <string>
 #include <SDL.h>
 #include "types.h"
+#include "variable.h"
 
 #define GAME_SCREEN_WIDTH 960
 #define GAME_SCREEN_HEIGHT 544
-
-class Fps;
-
-class GameVariable {
-public:
-    Fps& fps();
-};
 
 class Game : public GameVariable {
 public:

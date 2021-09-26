@@ -15,6 +15,7 @@
 class MyGame : public Game::App {
 private:
     WindowWidget root;
+    CurtainWidget* curtain;
 
 public:
     void init() override {
@@ -33,6 +34,24 @@ public:
         auto maskView = Widget::Ptr(new MaskWidget({255, 0, 0, 40}));
         root.addChild(maskView);
 
+        auto curtainView = Widget::Ptr(new CurtainWidget);
+        root.addChild(curtainView);
+
+        {
+            curtain = curtainView->to<CurtainWidget>();
+            auto call = Action::Ptr(new CallBackVoid([&]{
+                curtain->Start([](Widget* sender) {
+                    printf("闭幕中.\n");
+                }, [](Widget* sender) {
+                    printf("开幕.\n");
+                }, 0.5f);
+            }));
+            auto delay = Action::Ptr(new Delay(1.0f));
+            auto seq = Action::Ptr(new Sequence({call, delay}));
+            auto action = Action::Ptr(new Repeat(seq));
+            root.runAction(action);
+        }
+
         {
             auto zoom_big = Action::Ptr(new ScaleBy(bgView.get(), {1.0f, 1.0f}, 0.5f));
             auto zone_small = Action::Ptr(new ScaleBy(bgView.get(), {-1.0f, -1.0f}, 0.5f));
@@ -49,6 +68,7 @@ public:
             auto repeat = Action::Ptr(new Repeat(seq));
             iconView->runAction(repeat);
             iconView->setPosition(480, 272);
+            iconView->setAnchor({0.5f, 0.5f});
         }
         {
             auto blink = Action::Ptr(new Blink(iconView.get(), 1.0f));
