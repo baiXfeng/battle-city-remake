@@ -73,11 +73,13 @@ public:
     void stopAction(ActionPtr const& action);
     void stopAction(std::string const& name);
     void stopAllActions();
+    void pauseAllActionWhenHidden(bool yes = true);
 protected:
     void modifyPosition();
 protected:
     bool _visible;
     bool _update;
+    bool _pause_action_when_hidden;
     bool _dirty;
     Widget* _parent;
     Vector2f _position;

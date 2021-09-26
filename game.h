@@ -40,7 +40,6 @@ public:
             auto repeat = Action::Ptr(new Repeat(action_seq));
             bgView->runAction(repeat);
             bgView->setScale({0.5f, 0.5f});
-            bgView->enableUpdate(true);
         }
 
         {
@@ -49,8 +48,12 @@ public:
             auto seq = Action::Ptr(new Sequence({move1, move2}));
             auto repeat = Action::Ptr(new Repeat(seq));
             iconView->runAction(repeat);
-            iconView->enableUpdate(true);
             iconView->setPosition(480, 272);
+        }
+        {
+            auto blink = Action::Ptr(new Blink(iconView.get(), 1.0f));
+            auto repeat = Action::Ptr(new Repeat(blink));
+            iconView->runAction(repeat);
         }
     }
     void update(float delta) override {

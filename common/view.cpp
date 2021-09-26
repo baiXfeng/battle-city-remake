@@ -42,6 +42,7 @@ Widget::Widget():
         _parent(nullptr),
         _visible(true),
         _update(false),
+        _pause_action_when_hidden(false),
         _dirty(true),
         _action(std::make_shared<ActionExecuter>()),
         _position({0.0f, 0.0f}),
@@ -123,7 +124,8 @@ Widget::WidgetArray& Widget::children() {
 
 void Widget::update(float delta) {
     bool update = _visible and _update;
-    if (update) {
+    bool action_update = not _pause_action_when_hidden;
+    if (_visible or action_update) {
         _action->update(delta);
     }
     if (_dirty) {
@@ -275,6 +277,10 @@ void Widget::stopAction(std::string const& name) {
 
 void Widget::stopAllActions() {
     _action->clear();
+}
+
+void Widget::pauseAllActionWhenHidden(bool yes) {
+    _pause_action_when_hidden = yes;
 }
 
 //=====================================================================================

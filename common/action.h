@@ -71,12 +71,12 @@ private:
 
 class Delay : public Action {
 public:
-    Delay(float second);
+    Delay(float duration);
     State Step(float dt) override;
     void Reset() override;
 private:
     float _ticks;
-    float _seconds;
+    float _duration;
 };
 
 class Repeat : public Action {
@@ -158,6 +158,19 @@ private:
 private:
     Vector2f _position;
     Vector2f _distance;
+};
+
+class Blink : public Action {
+public:
+    Blink(Widget* target, float duration);
+    State Step(float delta) override;
+    void Reset() override;
+private:
+    bool _visible;
+    int _timer;
+    Widget* _target;
+    float _duration;
+    float _ticks;
 };
 
 #endif //SDL2_UI_ACTION_H

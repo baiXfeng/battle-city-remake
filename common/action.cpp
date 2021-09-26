@@ -85,13 +85,13 @@ State CallBackSender::Step(float dt) {
 
 //=====================================================================================
 
-Delay::Delay(float second):_ticks(0.0f), _seconds(second) {
+Delay::Delay(float duration):_ticks(0.0f), _duration(duration) {
 
 }
 
 State Delay::Step(float dt) {
     _ticks += dt;
-    return _ticks >= _seconds ? FINISH : RUNNING;
+    return _ticks >= _duration ? FINISH : RUNNING;
 }
 
 void Delay::Reset() {
@@ -150,7 +150,7 @@ void Sequence::Reset() {
 
 //=====================================================================================
 
-WidgetAction::WidgetAction(Widget* target, float duration):_target(target), _duration(duration) {
+WidgetAction::WidgetAction(Widget* target, float duration):_target(target), _duration(duration), _ticks(0.0f) {
 
 }
 
@@ -240,4 +240,29 @@ void MoveBy::onStep(float progress, float delta) {
 void MoveBy::Reset() {
     WidgetAction::Reset();
     _distance = _position;
+}
+
+//=====================================================================================
+
+Blink::Blink(Widget* target, float duration):_target(target), _duration(duration), _visible(target->visible()), _ticks(0.0f), _timer(0) {
+
+}
+
+State Blink::Step(float delta) {
+    _ticks += delta;
+    if (_ticks >= _duration) {
+        return FINISH;
+    }
+    _timer += delta * 1000;
+    if (_timer >= 16 * 8) {
+        _target->setVisible(!_target->visible());
+        _timer = 0;
+    }
+    return RUNNING;
+}
+
+void Blink::Reset() {
+    _target->setVisible(_visible);
+    _ticks = 0.0f;
+    _timer = 0;
 }
