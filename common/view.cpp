@@ -7,6 +7,7 @@
 #include "game.h"
 #include "assert.h"
 #include "loadres.h"
+#include "action.h"
 
 static int _widgetCount = 0;
 
@@ -26,7 +27,7 @@ void TestWidget() {
     first->update(0.0f);
     auto second_position = second->global_position().to<int>();
     Vector2i target_position{120, 120};
-    assert(second_position == target_position and "widget globao position error.");
+    assert(second_position == target_position and "widget global position error.");
 
     root->removeChild(first);
     root = nullptr;
@@ -42,6 +43,7 @@ Widget::Widget():
         _visible(true),
         _update(false),
         _dirty(true),
+        _action(std::make_shared<ActionExecuter>()),
         _position({0.0f, 0.0f}),
         _global_position({0.0f, 0.0f}),
         _size({0.0f, 0.0f}),
@@ -120,11 +122,15 @@ Widget::WidgetArray& Widget::children() {
 }
 
 void Widget::update(float delta) {
+    bool update = _visible and _update;
+    if (update) {
+        _action->update(delta);
+    }
     if (_dirty) {
         this->modifyPosition();
         _dirty = false;
     }
-    if (not _visible or not _update) {
+    if (not update) {
         return;
     }
     this->onUpdate(delta);
@@ -253,6 +259,22 @@ void Widget::setScale(float x, float y) {
 
 Vector2f const& Widget::scale() const {
     return _scale;
+}
+
+void Widget::runAction(ActionPtr const& action) {
+    _action->add(action);
+}
+
+void Widget::stopAction(ActionPtr const& action) {
+    _action->remove(action);
+}
+
+void Widget::stopAction(std::string const& name) {
+    _action->remove(name);
+}
+
+void Widget::stopAllActions() {
+    _action->clear();
 }
 
 //=====================================================================================

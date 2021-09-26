@@ -18,7 +18,7 @@ public:
         y = vec.y;
         return *this;
     }
-    Vector<T> operator+(Vector<T> const& vec) {
+    Vector<T> operator+(Vector<T> const& vec) const {
         return {x+vec.x, y+vec.y};
     }
     Vector<T>& operator+=(Vector<T> const& vec) {
@@ -26,7 +26,7 @@ public:
         y += vec.y;
         return *this;
     }
-    Vector<T> operator-(Vector<T> const& vec) {
+    Vector<T> operator-(Vector<T> const& vec) const {
         return {x-vec.x, y-vec.y};
     }
     Vector<T>& operator-=(Vector<T> const& vec) {
@@ -37,10 +37,10 @@ public:
     bool operator==(Vector<T> const& vec) const {
         return x == vec.x and y == vec.y;
     }
-    Vector<T> operator*(Vector<T> const& vec) {
+    Vector<T> operator*(Vector<T> const& vec) const {
         return {x*vec.x, y*vec.y};
     }
-    Vector<T> operator/(Vector<T> const& vec) {
+    Vector<T> operator/(Vector<T> const& vec) const {
         return {x/vec.x, y/vec.y};
     }
     Vector<T> self_abs() const {

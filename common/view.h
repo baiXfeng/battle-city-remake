@@ -13,10 +13,14 @@
 
 void TestWidget();
 
+class Action;
+class ActionExecuter;
 class Widget {
 public:
     typedef std::shared_ptr<Widget> WidgetPtr;
     typedef std::vector<WidgetPtr> WidgetArray;
+    typedef std::shared_ptr<ActionExecuter> ActionExecuterPtr;
+    typedef std::shared_ptr<Action> ActionPtr;
     typedef WidgetPtr Ptr;
 public:
     Widget();
@@ -64,6 +68,11 @@ public:
     void setScale(float sx, float sy);
     Vector2f const& scale() const;
     virtual void onModifyScale(Vector2f const& scale);
+public:
+    void runAction(ActionPtr const& action);
+    void stopAction(ActionPtr const& action);
+    void stopAction(std::string const& name);
+    void stopAllActions();
 protected:
     void modifyPosition();
 protected:
@@ -77,6 +86,7 @@ protected:
     Vector2f _scale;
     Vector2f _anchor;
     WidgetArray _children;
+    ActionExecuterPtr _action;
 };
 
 class WindowWidget : public Widget {
