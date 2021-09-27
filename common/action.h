@@ -200,4 +200,9 @@ private:
     }
 };
 
+class PopSceneAction : public Action {
+private:
+    State Step(float delta) override;
+};
+
 #endif //SDL2_UI_ACTION_H

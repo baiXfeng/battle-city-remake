@@ -297,3 +297,10 @@ State IPushSceneAction::Step(float delta) {
     }
     return FINISH;
 }
+
+//=====================================================================================
+
+State PopSceneAction::Step(float delta) {
+    _game.screen().pop();
+    return FINISH;
+}

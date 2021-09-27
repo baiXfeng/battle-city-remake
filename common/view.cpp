@@ -534,7 +534,7 @@ void CurtainWidget::Close() {
                 _mask[0].get(),
                 {size().x*0.5f, size().y*0.5f},
                 _duration * 0.5f));
-        auto close_call = _action[0];
+        auto close_call = _action[0] == nullptr ? Action::Ptr(new PopSceneAction) : _action[0];
         auto open_call = Action::Ptr(new CallBackVoid(std::bind(&CurtainWidget::Open, this)));
         auto action = Action::Ptr(new Sequence({move, close_call, open_call}));
         _mask[0]->runAction(action);
@@ -595,14 +595,21 @@ void ScreenWidget::replace(Widget::Ptr& widget) {
 }
 
 void ScreenWidget::pop() {
-    _root->removeChild(_root->children().back());
-    if (_root->children().size()) {
-        _root->children().back()->setVisible(true);
+    auto& c = _root->children();
+    if (c.size()) {
+        _root->removeChild(c.back());
+    }
+    if (c.size()) {
+        c.back()->setVisible(true);
     }
 }
 
 void ScreenWidget::cut_to(Action::Ptr const& deploy, float duration, Action::Ptr const& complete) {
     _curtain->Start(deploy, duration, complete);
+}
+
+void ScreenWidget::cut_back(float duration, Action::Ptr const& complete) {
+    this->cut_to(nullptr, duration, complete);
 }
 
 void ScreenWidget::update(float delta) {

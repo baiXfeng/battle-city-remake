@@ -220,6 +220,7 @@ public:
         this->template push<T>(args...);
     }
     void cut_to(ActionPtr const& deploy, float duration = 0.33f, ActionPtr const& complete = nullptr);
+    void cut_back(float duration = 0.33f, ActionPtr const& complete = nullptr);
 public:
     void update(float delta);
     void render(SDL_Renderer* renderer);
