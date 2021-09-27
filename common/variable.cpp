@@ -5,6 +5,7 @@
 #include "variable.h"
 #include "fps.h"
 #include "view.h"
+#include "gamepad.h"
 
 GameVariable::GameVariable() {
 
@@ -13,6 +14,7 @@ GameVariable::GameVariable() {
 void GameVariable::initVariable() {
     _fps = std::make_shared<Fps>();
     _screen = std::make_shared<ScreenWidget>();
+    _gamepad = std::make_shared<GamePad>();
 }
 
 Fps& GameVariable::fps() {
@@ -21,4 +23,8 @@ Fps& GameVariable::fps() {
 
 ScreenWidget& GameVariable::screen() {
     return *_screen.get();
+}
+
+GamePad& GameVariable::gamepad() {
+    return *_gamepad.get();
 }

@@ -11,12 +11,13 @@
 #include <string>
 #include <SDL.h>
 #include "types.h"
+#include "gamepad.h"
 
 void TestWidget();
 
 class Action;
 class ActionExecuter;
-class Widget {
+class Widget : public GamePadListener {
 public:
     typedef std::shared_ptr<Widget> WidgetPtr;
     typedef std::vector<WidgetPtr> WidgetArray;
@@ -27,13 +28,15 @@ public:
     Widget();
     virtual ~Widget();
 public:
+    Widget* root();
+    Widget::Ptr ptr() const;
     Widget* parent() const;
     bool visible() const;
     template<class T> T* to() {
         return dynamic_cast<T*>(this);
     }
-    void defer(std::function<void()> const& func, float delay);
-    void defer(Widget* sender, std::function<void(Widget*)> const& func, float delay);
+    void defer(std::function<void()> const& func, float delay = 0.0f);
+    void defer(Widget* sender, std::function<void(Widget*)> const& func, float delay = 0.0f);
 public:
     void enableUpdate(bool update);
     void setVisible(bool visible);
@@ -85,6 +88,8 @@ public:
     void pauseAllActionWhenHidden(bool yes = true);
 protected:
     void modifyPosition();
+    virtual void onEnter() {}
+    virtual void onExit() {}
 protected:
     bool _visible;
     bool _update;
@@ -104,6 +109,12 @@ protected:
 class WindowWidget : public Widget {
 public:
     WindowWidget();
+};
+
+class GamePadWidget : public WindowWidget {
+protected:
+    void onEnter() override;
+    void onExit() override;
 };
 
 class RenderCopy;
@@ -191,12 +202,16 @@ private:
 };
 
 class ScreenWidget : protected WindowWidget {
+    friend class Game;
 public:
     ScreenWidget();
 public:
     void push(Widget::Ptr& widget);
     void replace(Widget::Ptr& widget);
     void pop();
+public:
+    void update(float delta);
+    void render(SDL_Renderer* renderer);
 public:
     int scene_size() const;
     WidgetPtr& scene_at(int index) const;

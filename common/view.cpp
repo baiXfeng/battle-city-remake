@@ -51,7 +51,7 @@ Widget::Widget():
         _anchor({0.0f, 0.0f}),
         _scale({1.0f, 1.0f}) {
     _children.reserve(10);
-    _widgetCount++;
+    ++_widgetCount;
 #if defined(__vita__)
     this->setSize(GAME_SCREEN_WIDTH, GAME_SCREEN_HEIGHT);
 #else
@@ -63,11 +63,31 @@ Widget::Widget():
 
 Widget::~Widget() {
     removeAllChildren();
-    _widgetCount--;
+    --_widgetCount;
+    //printf("widget size = %d\n", _widgetCount);
 }
 
 Widget* Widget::parent() const {
     return _parent;
+}
+
+Widget* Widget::root() {
+    Widget* _root = this;
+    while (_root->_parent != nullptr) {
+        _root = _root->_parent;
+    }
+    return _root;
+}
+
+Widget::Ptr Widget::ptr() const {
+    if (_parent != nullptr) {
+        for (auto& child : _parent->_children) {
+            if (child.get() == this) {
+                return child;
+            }
+        }
+    }
+    return nullptr;
 }
 
 bool Widget::visible() const {
@@ -103,6 +123,7 @@ void Widget::addChild(WidgetPtr& widget) {
     }
     _children.push_back(widget);
     widget->_parent = this;
+    widget->onEnter();
 }
 
 void Widget::removeChild(WidgetPtr& widget) {
@@ -112,6 +133,7 @@ void Widget::removeChild(WidgetPtr& widget) {
 void Widget::removeChild(Widget* widget) {
     for (auto iter = _children.begin(); iter != _children.end(); iter++) {
         if (iter->get() == widget) {
+            widget->onExit();
             widget->_parent = nullptr;
             _children.erase(iter);
             return;
@@ -120,7 +142,9 @@ void Widget::removeChild(Widget* widget) {
 }
 
 void Widget::removeAllChildren() {
-    for (auto& child : _children) {
+    for (int i = _children.size()-1; i >= 0; --i) {
+        auto& child = _children[i];
+        child->onExit();
         child->_parent = nullptr;
     }
     _children.clear();
@@ -349,6 +373,16 @@ WindowWidget::WindowWidget() {
 
 //=====================================================================================
 
+void GamePadWidget::onEnter() {
+    _game.gamepad().add(this->ptr());
+}
+
+void GamePadWidget::onExit() {
+    _game.gamepad().remove(this->ptr());
+}
+
+//=====================================================================================
+
 ImageWidget::ImageWidget(TexturePtr const& texture):_target(std::make_shared<RenderCopy>()) {
     this->setTexture(texture);
 }
@@ -545,7 +579,15 @@ void ScreenWidget::replace(Widget::Ptr& widget) {
 }
 
 void ScreenWidget::pop() {
-    _root->removeChild(_children.back());
+    _root->removeChild(_root->children().back());
+}
+
+void ScreenWidget::update(float delta) {
+    WindowWidget::update(delta);
+}
+
+void ScreenWidget::render(SDL_Renderer* renderer) {
+    this->draw(renderer);
 }
 
 int ScreenWidget::scene_size() const {

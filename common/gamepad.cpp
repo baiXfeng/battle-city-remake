@@ -1,0 +1,177 @@
+//
+// Created by baifeng on 2021/9/27.
+//
+
+#include "gamepad.h"
+#include "view.h"
+
+typedef GamePadListener::KeyCode KeyCode;
+typedef GamePadListener::JOYIDX JOYIDX;
+
+void initKeyMapVita(GamePad::KeyMap& km) {
+    km.resize(12, KeyCode::UNKNOWN);
+    KeyCode list[] = {
+            KeyCode::X,
+            KeyCode::A,
+            KeyCode::B,
+            KeyCode::Y,
+            KeyCode::L1,
+            KeyCode::R1,
+            KeyCode::DOWN,
+            KeyCode::LEFT,
+            KeyCode::UP,
+            KeyCode::RIGHT,
+            KeyCode::SELECT,
+            KeyCode::START
+    };
+    for (int i = 0; i < km.size(); ++i) {
+        km[i] = list[i];
+    }
+}
+
+GamePad::GamePad():_keyboard_event(false) {
+#if defined(__vita__)
+    initKeyMapVita(_keyValue);
+#endif
+}
+
+bool GamePad::isPressed(int key) const {
+    auto iter = _keyState.find(key);
+    if (iter == _keyState.end()) {
+        return false;
+    }
+    return iter->second;
+}
+
+void GamePad::add(WidgetPtr const& widget) {
+    this->remove(widget);
+    _views.push_back(widget);
+}
+
+void GamePad::remove(WidgetPtr const& widget) {
+    this->remove(widget.get());
+}
+
+void GamePad::remove(Widget const* widget) {
+    if (_widget.get() == widget) {
+        _widget = nullptr;
+    }
+    for (auto iter = _views.begin(); iter != _views.end(); iter++) {
+        if (iter->get() == widget) {
+            _views.erase(iter);
+            return;
+        }
+    }
+}
+
+#define GAMEPADKEY(key) (_keyboard_event ? key : (key < _keyValue.size() ? _keyValue[key] : KeyCode::UNKNOWN))
+
+void GamePad::onEvent(SDL_Event const& event) {
+    switch (event.type) {
+        case SDL_JOYBUTTONUP:
+        {
+            int key = GAMEPADKEY(event.jbutton.button);
+            if (not _keyState[key]) {
+                return;
+            }
+            _keyState[key] = false;
+            if (_widget != nullptr) {
+                _widget->onButtonUp(key);
+                _widget = nullptr;
+            }
+        }
+            break;
+        case SDL_JOYBUTTONDOWN:
+        {
+            int key = GAMEPADKEY(event.jbutton.button);
+            if (_keyState[key]) {
+                return;
+            }
+            _keyState[key] = true;
+            if (_views.size()) {
+                _widget = _views.back();
+                _widget->onButtonDown(key);
+            }
+            //printf("button = %d\n", key);
+        }
+            break;
+        case SDL_JOYAXISMOTION:
+            // 摇杆事件
+            this->_onJoyEvent(event);
+            break;
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:
+            // 键盘事件
+            this->_remapKeyboardEvent(event);
+            break;
+        default:
+            break;
+    }
+}
+
+//模拟手柄死区
+const int JOYSTICK_DEAD_ZONE = 8000;
+
+void GamePad::_onJoyEvent(SDL_Event const& e) {
+    //Motion on controller 0
+    if( e.jaxis.which == 0 ) {
+        auto value = (e.jaxis.value / 32768.0f) * 128;
+        JOYIDX idx;
+        switch (e.jaxis.axis) {
+            case 0:
+                idx = JOYIDX::JOY1;
+                _joyValue[0].x = value;
+                break;
+            case 1:
+                idx = JOYIDX::JOY1;
+                _joyValue[0].y = value;
+                break;
+            case 2:
+                idx = JOYIDX::JOY2;
+                _joyValue[1].x = value;
+                break;
+            case 3:
+                idx = JOYIDX::JOY2;
+                _joyValue[1].y = value;
+                break;
+            default:
+                return;
+        }
+        if (abs(e.jaxis.value) > JOYSTICK_DEAD_ZONE) {
+            //printf("joy=%d, x=%d, y=%d\n", idx, _joyValue[idx].x, _joyValue[idx].y);
+        }
+        if (_views.size()) {
+            _views.back()->onJoyAxisMotion(idx, _joyValue[idx].x, _joyValue[idx].y);
+        }
+    }
+}
+
+void GamePad::_remapKeyboardEvent(SDL_Event const& e) {
+    static std::map<int, int> keymap = {
+            {SDL_SCANCODE_W, KeyCode::UP},
+            {SDL_SCANCODE_S, KeyCode::DOWN},
+            {SDL_SCANCODE_A, KeyCode::LEFT},
+            {SDL_SCANCODE_D, KeyCode::RIGHT},
+            {SDL_SCANCODE_L, KeyCode::A},
+            {SDL_SCANCODE_K, KeyCode::B},
+            {SDL_SCANCODE_I, KeyCode::X},
+            {SDL_SCANCODE_J, KeyCode::Y},
+            {SDL_SCANCODE_C, KeyCode::SELECT},
+            {SDL_SCANCODE_N, KeyCode::START},
+            {SDL_SCANCODE_U, KeyCode::L1},
+            {SDL_SCANCODE_O, KeyCode::R1},
+    };
+    SDL_Event event;
+    if (e.key.state == 1) {
+        // 按下
+        event.jbutton.button = keymap[e.key.keysym.scancode];
+        event.type = SDL_JOYBUTTONDOWN;
+    } else if (e.key.state == 0) {
+        // 弹起
+        event.jbutton.button = keymap[e.key.keysym.scancode];
+        event.type = SDL_JOYBUTTONUP;
+    }
+    _keyboard_event = true;
+    this->onEvent(event);
+    _keyboard_event = false;
+}

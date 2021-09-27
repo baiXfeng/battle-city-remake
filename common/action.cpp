@@ -10,11 +10,19 @@ void TestAction() {
 }
 
 static int _actionCount = 0;
+static int _actionAllocCount = 0;
 std::string const _actionTitle = "action-";
 
 //=====================================================================================
 
-Action::Action():_name(_actionTitle+std::to_string(++_actionCount)) {}
+Action::Action():_name(_actionTitle+std::to_string(++_actionCount)) {
+    ++_actionAllocCount;
+}
+
+Action::~Action() {
+    --_actionAllocCount;
+    //printf("action size = %d\n", _actionAllocCount);
+}
 
 void Action::setName(std::string const& name) {
     _name = name;

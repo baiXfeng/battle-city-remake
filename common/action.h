@@ -23,7 +23,7 @@ public:
     typedef std::shared_ptr<Action> Ptr;
 public:
     Action();
-    virtual ~Action() {}
+    virtual ~Action();
 public:
     virtual State Step(float dt) = 0;
     virtual void Reset() {}

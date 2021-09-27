@@ -42,7 +42,7 @@ void Game::input() {
             _quit = true;
             continue;
         }
-        screen().onEvent(e);
+        gamepad().onEvent(e);
     }
 }
 
