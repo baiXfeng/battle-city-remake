@@ -133,6 +133,7 @@ void Widget::removeChild(WidgetPtr& widget) {
 void Widget::removeChild(Widget* widget) {
     for (auto iter = _children.begin(); iter != _children.end(); iter++) {
         if (iter->get() == widget) {
+            root()->runAction(Action::Ptr(new KeepAlive<Widget>(*iter))); // 下一帧之前保留引用
             widget->onExit();
             widget->_parent = nullptr;
             _children.erase(iter);

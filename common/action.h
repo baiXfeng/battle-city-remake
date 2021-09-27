@@ -217,4 +217,17 @@ private:
     State Step(float delta) override;
 };
 
+template <class T>
+class KeepAlive : public Action {
+public:
+    typedef std::shared_ptr<T> TargetPtr;
+    KeepAlive(TargetPtr const& target):_target(target) {}
+protected:
+    State Step(float delta) override {
+        return FINISH;
+    }
+private:
+    TargetPtr _target;
+};
+
 #endif //SDL2_UI_ACTION_H
