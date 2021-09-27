@@ -154,10 +154,10 @@ void GamePad::_onJoyEvent(SDL_Event const& e) {
             default:
                 return;
         }
-        if (abs(e.jaxis.value) > JOYSTICK_DEAD_ZONE) {
-            //printf("joy=%d, x=%d, y=%d\n", idx, _joyValue[idx].x, _joyValue[idx].y);
-        }
         if (_views.size()) {
+            if (false and abs(e.jaxis.value) > JOYSTICK_DEAD_ZONE) {
+                printf("joy=%d, x=%d, y=%d\n", idx, _joyValue[idx].x, _joyValue[idx].y);
+            }
             _views.back()->onJoyAxisMotion(idx, _joyValue[idx].x, _joyValue[idx].y);
         }
     }

@@ -19,14 +19,15 @@ endif()
 set(PROJECT_NAME "sdl2-ui")
 project(${PROJECT_NAME})
 
-set(TBD_BASIC_SOURCE "")
+set(BASIC_SOURCE "")
 file( GLOB
-        TBD_BASIC_SOURCE
+		BASIC_SOURCE
         *.cpp
+		src/*.cpp
 		common/*.cpp
 )
 
-add_executable(${PROJECT_NAME} ${TBD_BASIC_SOURCE})
+add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 
 if (BUILD_PSV)
 	target_link_libraries(${PROJECT_NAME}

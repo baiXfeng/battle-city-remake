@@ -165,6 +165,21 @@ void Sequence::Reset() {
 
 //=====================================================================================
 
+ProgressAction::ProgressAction(Callback const& cb, float duration):_callback(cb), _duration(duration), _ticks(0.0f) {
+
+}
+
+State ProgressAction::Step(float dt) {
+    if ((_ticks += dt) >= _duration) {
+        _callback(1.0f);
+        return FINISH;
+    }
+    _callback(_ticks / _duration);
+    return RUNNING;
+}
+
+//=====================================================================================
+
 WidgetAction::WidgetAction(Widget* target, float duration):_target(target), _duration(duration), _ticks(0.0f) {
 
 }

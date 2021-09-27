@@ -107,6 +107,18 @@ private:
     Actions _actions;
 };
 
+class ProgressAction : public Action {
+public:
+    typedef std::function<void(float progress)> Callback;
+    ProgressAction(Callback const& cb, float duration);
+protected:
+    State Step(float dt) override;
+private:
+    float _ticks;
+    float _duration;
+    Callback _callback;
+};
+
 class WidgetAction : public Action {
 public:
     WidgetAction(Widget* target, float duration);

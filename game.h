@@ -44,7 +44,7 @@ public:
                 auto a2 = Action::Ptr(new CallBackVoid([]() {
                     //printf("开幕.\n");
                 }));
-                _game.screen().cut_to(a1_seq, 1.0f);
+                _game.screen().cut_to(a1_seq, 0.33f);
             }));
             auto delay = Action::Ptr(new Delay(2.0f));
             auto seq = Action::Ptr(new Sequence({delay, call}));
