@@ -13,14 +13,13 @@
 #include <list>
 
 class HelloWorld : public GamePadWidget {
-private:
-    CurtainWidget* curtain;
-
 public:
     ~HelloWorld() {
         printf("release.\n");
     }
-    HelloWorld():curtain(nullptr) {
+    HelloWorld() {
+
+        printf("new hello world.\n");
 
         auto renderer = _game.renderer();
         auto bg = res::load_texture(renderer, "assets/bg.jpg");
@@ -37,20 +36,18 @@ public:
         auto maskView = Widget::Ptr(new MaskWidget({255, 0, 0, 40}));
         root->addChild(maskView);
 
-        auto curtainView = Widget::Ptr(new CurtainWidget);
-        root->addChild(curtainView);
-
         {
-            curtain = curtainView->to<CurtainWidget>();
             auto call = Action::Ptr(new CallBackVoid([&]{
-                curtain->Start([](Widget* sender) {
-                    //printf("闭幕中.\n");
-                }, [](Widget* sender) {
+                auto a1 = Action::Ptr(new PushSceneAction<HelloWorld>(true));
+                auto a1_delay = Action::Ptr(new Delay(1.0f));
+                auto a1_seq = Action::Ptr(new Sequence({a1, a1_delay}));
+                auto a2 = Action::Ptr(new CallBackVoid([]() {
                     //printf("开幕.\n");
-                }, 0.5f);
+                }));
+                _game.screen().cut_to(a1_seq, 1.0f);
             }));
-            auto delay = Action::Ptr(new Delay(1.0f));
-            auto seq = Action::Ptr(new Sequence({call, delay}));
+            auto delay = Action::Ptr(new Delay(2.0f));
+            auto seq = Action::Ptr(new Sequence({delay, call}));
             auto action = Action::Ptr(new Repeat(seq));
             root->runAction(action);
         }
@@ -73,17 +70,19 @@ public:
             iconView->setPosition(480, 272);
             iconView->setAnchor({0.5f, 0.5f});
         }
+
         {
             auto blink = Action::Ptr(new Blink(iconView.get(), 1.0f));
             auto repeat = Action::Ptr(new Repeat(blink));
             iconView->runAction(repeat);
         }
+
+        gamepad_sleep(1.0f);
     }
 private:
     void onButtonDown(int key) override {
         if (key == KeyCode::X) {
-            Widget::Ptr root(new HelloWorld);
-            _game.screen().replace(root);
+            _game.screen().replace<HelloWorld>();
             //_game.screen().pop();
         }
     }
@@ -92,8 +91,7 @@ private:
 class MyGame : public Game::App {
 public:
     void init() override {
-        Widget::Ptr root(new HelloWorld);
-        _game.screen().push(root);
+        _game.screen().push<HelloWorld>();
     }
     void update(float delta) override {
         _game.screen().update(delta);

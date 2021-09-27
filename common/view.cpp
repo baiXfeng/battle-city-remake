@@ -381,6 +381,10 @@ void GamePadWidget::onExit() {
     _game.gamepad().remove(this->ptr());
 }
 
+void GamePadWidget::gamepad_sleep(float seconds) {
+    _game.gamepad().sleep(seconds);
+}
+
 //=====================================================================================
 
 ImageWidget::ImageWidget(TexturePtr const& texture):_target(std::make_shared<RenderCopy>()) {
@@ -503,9 +507,10 @@ CurtainWidget::CurtainWidget(SDL_Color const& c) {
     enableUpdate(true);
 }
 
-void CurtainWidget::Start(CallFunc const& close, CallFunc const& open, float duration) {
-    _func[0] = close;
-    _func[1] = open;
+void CurtainWidget::Start(Action::Ptr const& deploy, float duration, Action::Ptr const& complete) {
+    assert(deploy != nullptr and "CurtainWidget::Start deploy can not nullptr.");
+    _action[0] = deploy;
+    _action[1] = complete;
     _duration = duration;
     this->Close();
 }
@@ -529,7 +534,7 @@ void CurtainWidget::Close() {
                 _mask[0].get(),
                 {size().x*0.5f, size().y*0.5f},
                 _duration * 0.5f));
-        auto close_call = Action::Ptr(new CallBackSender(this, _func[0]));
+        auto close_call = _action[0];
         auto open_call = Action::Ptr(new CallBackVoid(std::bind(&CurtainWidget::Open, this)));
         auto action = Action::Ptr(new Sequence({move, close_call, open_call}));
         _mask[0]->runAction(action);
@@ -553,9 +558,14 @@ void CurtainWidget::Open() {
                 _mask[i].get(),
                 position[i],
                 _duration * 0.5f));
+        if (i == 0) {
+            auto open_call = _action[1] == nullptr ? Action::Ptr(new EmptyAction) : _action[1];
+            auto action = Action::Ptr(new Sequence({move, open_call}));
+            _mask[i]->runAction(action);
+            continue;
+        }
         _mask[i]->runAction(move);
     }
-    this->defer(this, _func[1], _duration*0.5f);
 }
 
 //=====================================================================================
@@ -571,6 +581,12 @@ ScreenWidget::ScreenWidget():_curtain(nullptr), _root(nullptr) {
 
 void ScreenWidget::push(Widget::Ptr& widget) {
     _root->addChild(widget);
+    for (auto& child : _root->children()) {
+        if (child.get() == widget.get()) {
+            return;
+        }
+        child->setVisible(false);
+    }
 }
 
 void ScreenWidget::replace(Widget::Ptr& widget) {
@@ -580,6 +596,13 @@ void ScreenWidget::replace(Widget::Ptr& widget) {
 
 void ScreenWidget::pop() {
     _root->removeChild(_root->children().back());
+    if (_root->children().size()) {
+        _root->children().back()->setVisible(true);
+    }
+}
+
+void ScreenWidget::cut_to(Action::Ptr const& deploy, float duration, Action::Ptr const& complete) {
+    _curtain->Start(deploy, duration, complete);
 }
 
 void ScreenWidget::update(float delta) {
@@ -587,7 +610,7 @@ void ScreenWidget::update(float delta) {
 }
 
 void ScreenWidget::render(SDL_Renderer* renderer) {
-    this->draw(renderer);
+    WindowWidget::draw(renderer);
 }
 
 int ScreenWidget::scene_size() const {
@@ -596,6 +619,31 @@ int ScreenWidget::scene_size() const {
 
 Widget::Ptr& ScreenWidget::scene_at(int index) const {
     return _root->children()[index];
+}
+
+Widget::Ptr& ScreenWidget::scene_back() const {
+    return scene_at(scene_size()-1);
+}
+
+Widget::Ptr ScreenWidget::find(std::string const& name) const {
+    for (auto& child : _root->children()) {
+        if (child->name() == name) {
+            return child;
+        }
+    }
+    return nullptr;
+}
+
+void ScreenWidget::runAction(Action::Ptr const& action) {
+    WindowWidget::runAction(action);
+}
+
+void ScreenWidget::stopAction(Action::Ptr const& action) {
+    WindowWidget::stopAction(action);
+}
+
+void ScreenWidget::stopAction(std::string const& name) {
+    WindowWidget::stopAction(name);
 }
 
 void ScreenWidget::onEvent(SDL_Event& event) {

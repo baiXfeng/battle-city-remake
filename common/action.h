@@ -34,6 +34,11 @@ private:
     std::string _name;
 };
 
+class EmptyAction : public Action {
+private:
+    State Step(float dt) override;
+};
+
 class Widget;
 class ActionExecuter {
 public:
@@ -171,6 +176,28 @@ private:
     Widget* _target;
     float _duration;
     float _ticks;
+};
+
+class IPushSceneAction : public Action {
+public:
+    typedef std::shared_ptr<Widget> WidgetPtr;
+public:
+    IPushSceneAction(bool replace = false);
+protected:
+    virtual WidgetPtr create() = 0;
+    State Step(float delta) override;
+protected:
+    bool _replace;
+};
+
+template<class T>
+class PushSceneAction : public IPushSceneAction {
+public:
+    PushSceneAction(bool replace):IPushSceneAction(replace) {}
+private:
+    WidgetPtr create() override {
+        return WidgetPtr(new T);
+    }
 };
 
 #endif //SDL2_UI_ACTION_H

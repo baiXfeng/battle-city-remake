@@ -54,6 +54,7 @@ public:
 public:
     GamePad();
 public:
+    void sleep(float seconds);
     bool isPressed(int key) const;
     void add(WidgetPtr const& widget);
     void remove(WidgetPtr const& widget);
@@ -63,6 +64,7 @@ private:
     void _onJoyEvent(SDL_Event const& event);
     void _remapKeyboardEvent(SDL_Event const& event);
 private:
+    bool _sleep;
     bool _keyboard_event;
     WidgetPtr _widget;
     KeyMap _keyValue;

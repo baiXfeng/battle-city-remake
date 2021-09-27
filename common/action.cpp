@@ -4,10 +4,13 @@
 
 #include "action.h"
 #include "view.h"
+#include "game.h"
 
 void TestAction() {
 
 }
+
+typedef Action::State State;
 
 static int _actionCount = 0;
 static int _actionAllocCount = 0;
@@ -30,6 +33,12 @@ void Action::setName(std::string const& name) {
 
 std::string const& Action::name() const {
     return _name;
+}
+
+//=====================================================================================
+
+State EmptyAction::Step(float dt) {
+    return FINISH;
 }
 
 //=====================================================================================
@@ -68,8 +77,6 @@ void ActionExecuter::remove(Action::Ptr const& action) {
 void ActionExecuter::clear() {
     _actions.clear();
 }
-
-typedef Action::State State;
 
 //=====================================================================================
 
@@ -273,4 +280,20 @@ void Blink::Reset() {
     _target->setVisible(_visible);
     _ticks = 0.0f;
     _timer = 0;
+}
+
+//=====================================================================================
+
+IPushSceneAction::IPushSceneAction(bool replace):_replace(replace) {
+
+}
+
+State IPushSceneAction::Step(float delta) {
+    auto scene = this->create();
+    if (_replace) {
+        _game.screen().replace(scene);
+    } else {
+        _game.screen().push(scene);
+    }
+    return FINISH;
 }

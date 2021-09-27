@@ -4,6 +4,8 @@
 
 #include "gamepad.h"
 #include "view.h"
+#include "game.h"
+#include "action.h"
 
 typedef GamePadListener::KeyCode KeyCode;
 typedef GamePadListener::JOYIDX JOYIDX;
@@ -29,10 +31,23 @@ void initKeyMapVita(GamePad::KeyMap& km) {
     }
 }
 
-GamePad::GamePad():_keyboard_event(false) {
+GamePad::GamePad():_keyboard_event(false), _sleep(false) {
 #if defined(__vita__)
     initKeyMapVita(_keyValue);
 #endif
+}
+
+void GamePad::sleep(float seconds) {
+    _sleep = true;
+    auto delay = Action::Ptr(new Delay(seconds));
+    auto call = Action::Ptr(new CallBackVoid([&]{
+        this->_sleep = false;
+    }));
+    auto action = Action::Ptr(new Sequence({delay, call}));
+    action->setName("GamePad::sleep");
+    auto& widget = _game.screen();
+    widget.stopAction(action->name());
+    widget.runAction(action);
 }
 
 bool GamePad::isPressed(int key) const {
@@ -75,7 +90,7 @@ void GamePad::onEvent(SDL_Event const& event) {
                 return;
             }
             _keyState[key] = false;
-            if (_widget != nullptr) {
+            if (_widget != nullptr and not _sleep) {
                 _widget->onButtonUp(key);
                 _widget = nullptr;
             }
@@ -88,7 +103,7 @@ void GamePad::onEvent(SDL_Event const& event) {
                 return;
             }
             _keyState[key] = true;
-            if (_views.size()) {
+            if (_views.size() and not _sleep) {
                 _widget = _views.back();
                 _widget->onButtonDown(key);
             }
@@ -97,7 +112,9 @@ void GamePad::onEvent(SDL_Event const& event) {
             break;
         case SDL_JOYAXISMOTION:
             // 摇杆事件
-            this->_onJoyEvent(event);
+            if (not _sleep) {
+                this->_onJoyEvent(event);
+            }
             break;
         case SDL_KEYDOWN:
         case SDL_KEYUP:

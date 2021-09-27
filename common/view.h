@@ -115,6 +115,7 @@ class GamePadWidget : public WindowWidget {
 protected:
     void onEnter() override;
     void onExit() override;
+    void gamepad_sleep(float seconds);
 };
 
 class RenderCopy;
@@ -188,17 +189,18 @@ private:
 
 class CurtainWidget : public Widget {
 public:
+    typedef std::shared_ptr<Action> ActionPtr;
     typedef std::function<void(Widget*)> CallFunc;
 public:
     CurtainWidget(SDL_Color const& c = {0, 0, 0, 255});
-    void Start(CallFunc const& close, CallFunc const& open, float duration);
+    void Start(ActionPtr const& deploy, float duration, ActionPtr const& complete);
 private:
     void Close();
     void Open();
 private:
     float _duration;
     Widget::Ptr _mask[2];
-    CallFunc _func[2];
+    ActionPtr _action[2];
 };
 
 class ScreenWidget : protected WindowWidget {
@@ -209,12 +211,27 @@ public:
     void push(Widget::Ptr& widget);
     void replace(Widget::Ptr& widget);
     void pop();
+    template <typename T, typename... Args> void push(Args const&... args) {
+        Widget::Ptr widget(new T(args...));
+        this->push(widget);
+    }
+    template <typename T, typename... Args> void replace(Args const&... args) {
+        this->pop();
+        this->template push<T>(args...);
+    }
+    void cut_to(ActionPtr const& deploy, float duration = 0.33f, ActionPtr const& complete = nullptr);
 public:
     void update(float delta);
     void render(SDL_Renderer* renderer);
 public:
     int scene_size() const;
     WidgetPtr& scene_at(int index) const;
+    WidgetPtr& scene_back() const;
+    WidgetPtr find(std::string const& name) const;
+public:
+    void runAction(ActionPtr const& action);
+    void stopAction(ActionPtr const& action);
+    void stopAction(std::string const& name);
 public:
     void onEvent(SDL_Event& event);
 private:
