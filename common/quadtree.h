@@ -20,8 +20,8 @@ public:
     typedef std::vector<Ptr> QuadTreeList;
     typedef std::function<RectI(SquareOne const&)> RectCatcher;
     enum {
-        MAX_OBJECTS = 1,
         MAX_LEVELS = 3,
+        MAX_OBJECTS = 15,
     };
 public:
     QuadTree(int level, RectI const& bounds):_level(level), _bounds(bounds) {
@@ -35,6 +35,22 @@ public:
     static Ptr New(int level, RectI const& bounds) {
         return Ptr(new QuadTree<T>(level, bounds));
     }
+    void retrieve(SquareList& result, RectI const& rect) {
+        auto& pRect = rect;
+        auto& fSpriteList = result;
+        auto indexes = getIndexes(pRect);
+        for (auto const& index : indexes) {
+            if(index != -1 && _nodes[0] != nullptr) {
+                _nodes[index].retrieve(fSpriteList, pRect);
+            }
+            for (auto& object : _objects) {
+                fSpriteList.push_back(object);
+            }
+        }
+    }
+    void setCatcher(RectCatcher const& catcher) {
+        _catcher = catcher;
+    }
     void clear() {
         _objects.clear();
         for (auto& tree : _nodes) {
@@ -44,6 +60,44 @@ public:
             }
         }
     }
+    void insert(SquareOne const& sprite) {
+        // 从精灵获取区域
+        RectI pRect = _catcher(sprite);
+
+        if(_nodes[0] != nullptr) {
+            auto indexes = getIndexes(pRect);
+            for (auto const& index : indexes) {
+                if(index != -1) {
+                    _nodes[index]->insert(sprite);
+                    return;
+                }
+            }
+        }
+
+        _objects.push_back(sprite);
+
+        if(_objects.size() > MAX_OBJECTS && _level < MAX_LEVELS) {
+
+            if(_nodes[0] == nullptr) {
+                split();
+            }
+            int i = 0;
+            while(i < _objects.size()) {
+                auto& sqaureOne = _objects[i];
+                RectI oRect = _catcher(sqaureOne);
+                auto indexes = getIndexes(oRect);
+                for (auto const& index : indexes) {
+                    if (index != -1) {
+                        _nodes[index]->insert(sqaureOne);
+                        _objects.erase(_objects.begin()+i);
+                    } else {
+                        ++i;
+                    }
+                }
+            }
+        }
+    }
+protected:
     void split() {
         int x = (int)_bounds.x;
         int y = (int)_bounds.y;
@@ -108,57 +162,6 @@ public:
             indexes.push_back(-1);
         }
         return indexes;
-    }
-    void insert(SquareOne const& sprite) {
-        // 从精灵获取区域
-        RectI pRect = _catcher(sprite);
-
-        if(_nodes[0] != nullptr) {
-            auto indexes = this->getIndexes(pRect);
-            for (auto const& index : indexes) {
-                if(index != -1) {
-                    _nodes[index]->insert(sprite);
-                    return;
-                }
-            }
-        }
-
-        _objects.push_back(sprite);
-
-        if(_objects.size() > MAX_OBJECTS && _level < MAX_LEVELS) {
-
-            if(_nodes[0] == nullptr) {
-                split();
-            }
-            int i = 0;
-            while(i < _objects.size()) {
-                auto& sqaureOne = _objects[i];
-                RectI oRect = _catcher(sqaureOne);
-                auto indexes = getIndexes(oRect);
-                for (auto const& index : indexes) {
-                    if (index != -1) {
-                        _nodes[index]->insert(sqaureOne);
-                        _objects.erase(_objects.begin()+i);
-                    }
-                }
-            }
-        }
-    }
-    void retrieve(SquareList& result, RectI const& rect) {
-        auto& pRect = rect;
-        auto& fSpriteList = result;
-        auto indexes = getIndexes(pRect);
-        for (auto const& index : indexes) {
-            if(index != -1 && _nodes[0] != nullptr) {
-                _nodes[index].retrieve(fSpriteList, pRect);
-            }
-            for (auto& object : _objects) {
-                fSpriteList.push_back(object);
-            }
-        }
-    }
-    void setCatcher(RectCatcher const& catcher) {
-        _catcher = catcher;
     }
 protected:
     int _level;

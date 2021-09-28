@@ -16,7 +16,7 @@
 class HelloWorld : public GamePadWidget {
 public:
     ~HelloWorld() {
-        
+
     }
     HelloWorld() {
         auto renderer = _game.renderer();
