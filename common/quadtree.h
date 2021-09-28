@@ -16,7 +16,7 @@ class QuadTree {
 public:
     typedef std::shared_ptr<QuadTree> Ptr;
     typedef std::shared_ptr<T> SquareOne;
-    typedef std::vector<SquareOne> SquareList;
+    typedef std::list<SquareOne> SquareList;
     typedef std::vector<Ptr> QuadTreeList;
     typedef std::function<RectI(SquareOne const&)> RectCatcher;
     enum {
@@ -81,17 +81,16 @@ public:
             if(_nodes[0] == nullptr) {
                 split();
             }
-            int i = 0;
-            while(i < _objects.size()) {
-                auto& sqaureOne = _objects[i];
+            for (auto iter = _objects.begin(); iter != _objects.end();) {
+                auto& sqaureOne = *iter;
                 RectI oRect = _catcher(sqaureOne);
                 auto indexes = getIndexes(oRect);
                 for (auto const& index : indexes) {
                     if (index != -1) {
                         _nodes[index]->insert(sqaureOne);
-                        _objects.erase(_objects.begin()+i);
+                        _objects.erase(iter++);
                     } else {
-                        ++i;
+                        ++iter;
                     }
                 }
             }
