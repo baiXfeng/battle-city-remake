@@ -3,7 +3,7 @@
 //
 
 #include "gamepad.h"
-#include "view.h"
+#include "widget.h"
 #include "game.h"
 #include "action.h"
 

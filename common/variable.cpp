@@ -4,7 +4,7 @@
 
 #include "variable.h"
 #include "fps.h"
-#include "view.h"
+#include "widget.h"
 #include "gamepad.h"
 #include "audio.h"
 

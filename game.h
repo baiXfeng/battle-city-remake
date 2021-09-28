@@ -8,19 +8,17 @@
 #include "common/game.h"
 #include "common/loadres.h"
 #include "common/render.h"
-#include "common/view.h"
+#include "common/widget.h"
 #include "common/action.h"
+#include "common/quadtree.h"
 #include <list>
 
 class HelloWorld : public GamePadWidget {
 public:
     ~HelloWorld() {
-        printf("release.\n");
+        
     }
     HelloWorld() {
-
-        printf("new hello world.\n");
-
         auto renderer = _game.renderer();
         auto bg = res::load_texture(renderer, "assets/bg.jpg");
         auto root = this;
@@ -37,7 +35,7 @@ public:
         root->addChild(maskView);
 
         {
-            auto call = Action::Ptr(new CallBackVoid([&]{
+            auto call = Action::New<CallBackVoid>([&]{
                 auto a1 = Action::Ptr(new PushSceneAction<HelloWorld>(true));
                 auto a1_delay = Action::Ptr(new Delay(1.0f));
                 auto a1_seq = Action::Ptr(new Sequence({a1, a1_delay}));
@@ -45,7 +43,7 @@ public:
                     //printf("开幕.\n");
                 }));
                 _game.screen().cut_to(a1_seq, 0.33f);
-            }));
+            });
             auto delay = Action::Ptr(new Delay(2.0f));
             auto seq = Action::Ptr(new Sequence({delay, call}));
             auto action = Action::Ptr(new Repeat(seq));

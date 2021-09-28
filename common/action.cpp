@@ -3,7 +3,7 @@
 //
 
 #include "action.h"
-#include "view.h"
+#include "widget.h"
 #include "game.h"
 
 void TestAction() {

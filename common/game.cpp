@@ -4,7 +4,7 @@
 
 #include "game.h"
 #include "fps.h"
-#include "view.h"
+#include "widget.h"
 
 #include <memory>
 #include <iostream>

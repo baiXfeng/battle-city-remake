@@ -2,7 +2,7 @@
 // Created by baifeng on 2021/9/24.
 //
 
-#include "view.h"
+#include "widget.h"
 #include "render.h"
 #include "game.h"
 #include "assert.h"
@@ -418,44 +418,36 @@ void ImageWidget::onDraw(SDL_Renderer* renderer) {
 
 //=====================================================================================
 
-ButtonWidget::ButtonWidget(TexturePtr const& normal, TexturePtr const& pressed, TexturePtr const& disabled):_enable(true) {
-    bool visibles[3] = {true, false, false};
-    for (int i = 0; i < 3; ++i) {
-        auto imageView = Ptr(new ImageWidget(nullptr));
-        imageView->setVisible(visibles[i]);
-        Widget::addChild(imageView);
-    }
+ButtonWidget::ButtonWidget(TexturePtr const& normal, TexturePtr const& pressed, TexturePtr const& disabled):
+ImageWidget(normal),
+_state(NORMAL),
+_enable(true) {
     setNormalTexture(normal);
     setPressedTexture(pressed);
     setDisabledTexture(disabled);
 }
 
 void ButtonWidget::setNormalTexture(TexturePtr const& normal) {
-    auto imageView = _children[0]->to<ImageWidget>();
-    imageView->setTexture(normal);
-    this->setSize(imageView->size());
+    _texture[NORMAL] = normal;
 }
 
 void ButtonWidget::setPressedTexture(TexturePtr const& pressed) {
-    auto imageView = _children[1]->to<ImageWidget>();
-    imageView->setTexture(pressed);
+    _texture[PRESSED] = pressed;
 }
 
 void ButtonWidget::setDisabledTexture(TexturePtr const& disabled) {
-    auto imageView = _children[2]->to<ImageWidget>();
-    imageView->setTexture(disabled);
+    _texture[DISABLED] = disabled;
 }
 
 void ButtonWidget::setEnable(bool enable) {
-    _enable = enable;
-    setPressed(false);
-    _children[0]->setVisible(_enable);
+    setState((_enable = enable) ? NORMAL : DISABLED);
 }
 
 void ButtonWidget::setPressed(bool pressed) {
-    _children[0]->setVisible(!pressed);
-    _children[1]->setVisible(pressed);
-    _children[2]->setVisible(!_enable);
+    if (not _enable) {
+        return;
+    }
+    setState(pressed ? PRESSED : NORMAL);
 }
 
 bool ButtonWidget::enable() const {
@@ -463,7 +455,7 @@ bool ButtonWidget::enable() const {
 }
 
 bool ButtonWidget::pressed() const {
-    return _children[1]->visible();
+    return _state == PRESSED;
 }
 
 void ButtonWidget::setClick(CallBack const& cb) {
@@ -471,9 +463,17 @@ void ButtonWidget::setClick(CallBack const& cb) {
 }
 
 void ButtonWidget::click() {
-    if (_callback != nullptr) {
+    if (_enable and _callback != nullptr) {
         _callback();
     }
+}
+
+void ButtonWidget::setState(State state) {
+    if (_state == state) {
+        return;
+    }
+    setTexture(_texture[state]);
+    _state = state;
 }
 
 //=====================================================================================

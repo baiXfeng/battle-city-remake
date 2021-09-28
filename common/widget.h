@@ -2,8 +2,8 @@
 // Created by baifeng on 2021/9/24.
 //
 
-#ifndef SDL2_UI_VIEW_H
-#define SDL2_UI_VIEW_H
+#ifndef SDL2_UI_WIDGET_H
+#define SDL2_UI_WIDGET_H
 
 #include <memory>
 #include <vector>
@@ -25,6 +25,10 @@ public:
     typedef std::shared_ptr<Action> ActionPtr;
     typedef WidgetPtr Ptr;
 public:
+    template<typename T, typename... Args>
+    static Ptr New(Args const&... args) {
+        return Ptr(new T(args...));
+    }
     Widget();
     virtual ~Widget();
 public:
@@ -138,10 +142,15 @@ private:
     TexturePtr _texture;
 };
 
-class ButtonWidget : public Widget {
+class ButtonWidget : public ImageWidget {
 public:
     typedef std::function<void()> CallBack;
     typedef std::shared_ptr<Texture> TexturePtr;
+    enum State {
+        NORMAL = 0,
+        PRESSED,
+        DISABLED,
+    };
 public:
     ButtonWidget(TexturePtr const& normal, TexturePtr const& pressed, TexturePtr const& disabled = nullptr);
 public:
@@ -157,9 +166,12 @@ public:
     void click();
 private:
     void addChild(WidgetPtr& widget) override {}
+    void setState(State state);
 private:
     bool _enable;
+    State _state;
     CallBack _callback;
+    TexturePtr _texture[3];
 };
 
 class DrawColor {
@@ -240,4 +252,4 @@ private:
     WindowWidget* _root;
 };
 
-#endif //SDL2_UI_VIEW_H
+#endif //SDL2_UI_WIDGET_H

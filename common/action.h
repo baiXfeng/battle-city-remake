@@ -22,6 +22,10 @@ public:
     };
     typedef std::shared_ptr<Action> Ptr;
 public:
+    template<typename T, typename... Args>
+    static Ptr New(Args const&... args) {
+        return Ptr(new T(args...));
+    }
     Action();
     virtual ~Action();
 public:
