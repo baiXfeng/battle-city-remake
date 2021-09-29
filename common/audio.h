@@ -13,9 +13,14 @@
 
 class Music {
 public:
+    typedef std::shared_ptr<Music> Ptr;
+public:
     Music();
     ~Music();
 public:
+    static Ptr New() {
+        return Ptr(new Music);
+    }
     bool load(std::string const& name);
     int play(int loops);
 private:
@@ -26,6 +31,11 @@ private:
 
 class SoundEffect {
 public:
+    typedef std::shared_ptr<SoundEffect> Ptr;
+public:
+    static Ptr New() {
+        return Ptr(new SoundEffect);
+    }
     SoundEffect();
     ~SoundEffect();
 public:

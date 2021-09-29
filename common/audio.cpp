@@ -70,7 +70,7 @@ AudioSystem::AudioSystem() {
 void AudioSystem::loadMusic(std::string const& name) {
     auto iter = _musicCache.find(name);
     if (iter == _musicCache.end()) {
-        _musicCache.insert(std::make_pair(name, std::make_shared<Music>()));
+        _musicCache.insert(std::make_pair(name, Music::New()));
         iter = _musicCache.find(name);
         if (!iter->second->load(name)) {
             std::cout << "Failed to load music: " << name << " [" << SDL_GetError() << "]" << std::endl;
@@ -102,7 +102,7 @@ void AudioSystem::releaseMusic(std::string const& name) {
 void AudioSystem::loadEffect(std::string const& name) {
     auto iter = _effectCache.find(name);
     if (iter == _effectCache.end()) {
-        _effectCache.insert(std::make_pair(name, std::make_shared<SoundEffect>()));
+        _effectCache.insert(std::make_pair(name, SoundEffect::New()));
         iter = _effectCache.find(name);
         if (!iter->second->load(name)) {
             std::cout << "Failed to load audio: " << name << " [" << SDL_GetError() << "]" << std::endl;
