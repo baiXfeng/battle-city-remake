@@ -7,7 +7,8 @@
 RenderCopy::RenderCopy():
 _texture(nullptr),
 _srcrect({0,0,0,0}),
-_size({0,0}) {}
+_size({0,0}),
+_opacity(255) {}
 
 void RenderCopy::setTexture(SDL_Texture* texture) {
     _texture = texture;
@@ -17,9 +18,7 @@ void RenderCopy::setTexture(SDL_Texture* texture) {
         SDL_QueryTexture(_texture, nullptr, nullptr, &width, &height);
         _srcrect.w = width;
         _srcrect.h = height;
-        if (_size.x == 0 and _size.y == 0) {
-            _size = {width, height};
-        }
+        _size = {width, height};
     }
 }
 
@@ -31,6 +30,15 @@ void RenderCopy::setTexture(SDL_Texture* texture, SDL_Rect const& srcrect) {
 void RenderCopy::setSize(int w, int h) {
     _size.x = w;
     _size.y = h;
+}
+
+void RenderCopy::setOpacity(int opacity) {
+    _opacity = opacity % 256;
+    SDL_SetTextureAlphaMod(_texture, _opacity);
+}
+
+int RenderCopy::opacity() const {
+    return _opacity;
 }
 
 Vector2i const& RenderCopy::size() const {

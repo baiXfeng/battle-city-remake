@@ -85,6 +85,10 @@ public:
     Vector2f const& scale() const;
     virtual void onModifyScale(Vector2f const& scale);
 public:
+    void setOpacity(unsigned char opacity);
+    unsigned char opacity() const;
+    virtual void onModifyOpacity(unsigned char opacity);
+public:
     void runAction(ActionPtr const& action);
     void stopAction(ActionPtr const& action);
     void stopAction(std::string const& name);
@@ -99,6 +103,7 @@ protected:
     bool _update;
     bool _pause_action_when_hidden;
     bool _dirty;
+    unsigned char _opacity;
     Widget* _parent;
     Vector2f _position;
     Vector2f _global_position;
@@ -193,6 +198,9 @@ private:
 class MaskWidget : public Widget {
 public:
     MaskWidget(SDL_Color const& c);
+public:
+    void setColor(SDL_Color const& c);
+    SDL_Color const& color() const;
 private:
     void onDraw(SDL_Renderer* renderer) override;
 private:

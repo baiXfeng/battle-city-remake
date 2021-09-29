@@ -11,7 +11,9 @@
 #include "common/widget.h"
 #include "common/action.h"
 #include "common/quadtree.h"
+#include "common/collision.h"
 #include <list>
+#include "src/view.h"
 
 class HelloWorld : public GamePadWidget {
 public:
@@ -29,12 +31,10 @@ public:
         auto iconView = Widget::Ptr(new ImageWidget(bg));
         iconView->setScale(0.5f, 0.5f);
         iconView->setPosition(480, 272);
+        iconView->setOpacity(100);
         root->addChild(iconView);
 
-        auto maskView = Widget::Ptr(new MaskWidget({255, 0, 0, 40}));
-        root->addChild(maskView);
-
-        {
+        if (false) {
             auto call = Action::New<CallBackVoid>([&]{
                 auto a1 = Action::Ptr(new PushSceneAction<HelloWorld>(true));
                 auto a1_delay = Action::Ptr(new Delay(1.0f));
@@ -68,14 +68,6 @@ public:
             iconView->setPosition(480, 272);
             iconView->setAnchor({0.5f, 0.5f});
         }
-
-        {
-            auto blink = Action::Ptr(new Blink(iconView.get(), 1.0f));
-            auto repeat = Action::Ptr(new Repeat(blink));
-            iconView->runAction(repeat);
-        }
-
-        gamepad_sleep(1.0f);
     }
 private:
     void onButtonDown(int key) override {
@@ -89,7 +81,12 @@ private:
 class MyGame : public Game::App {
 public:
     void init() override {
-        _game.screen().push<HelloWorld>();
+        auto logoView = new LogoView;
+        logoView->setFinishCall([]{
+            _game.screen().push<HelloWorld>();
+        });
+        auto ptr = Widget::Ptr(logoView);
+        _game.screen().push(ptr);
     }
     void update(float delta) override {
         _game.screen().update(delta);

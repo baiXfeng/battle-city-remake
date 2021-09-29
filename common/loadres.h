@@ -15,7 +15,11 @@ class Texture {
 public:
     typedef std::shared_ptr<Texture> Ptr;
 public:
-    Texture(SDL_Texture* texture):_texture(texture) {}
+    Texture(SDL_Texture* texture):_texture(texture) {
+#if !defined(__vita__)
+        //SDL_SetTextureBlendMode(_texture, SDL_BLENDMODE_BLEND);
+#endif
+    }
     virtual ~Texture() {
         if (_texture) {
             SDL_DestroyTexture(_texture);

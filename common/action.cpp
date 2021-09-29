@@ -174,7 +174,8 @@ State ProgressAction::Step(float dt) {
         _callback(1.0f);
         return FINISH;
     }
-    _callback(_ticks / _duration);
+    auto value = _ticks / _duration;
+    _callback(value >= 1.0f ? 1.0f : value);
     return RUNNING;
 }
 

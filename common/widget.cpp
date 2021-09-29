@@ -39,17 +39,18 @@ void TestWidget() {
 //=====================================================================================
 
 Widget::Widget():
-        _parent(nullptr),
-        _visible(true),
-        _update(false),
-        _pause_action_when_hidden(false),
-        _dirty(true),
-        _action(std::make_shared<ActionExecuter>()),
-        _position({0.0f, 0.0f}),
-        _global_position({0.0f, 0.0f}),
-        _size({0.0f, 0.0f}),
-        _anchor({0.0f, 0.0f}),
-        _scale({1.0f, 1.0f}) {
+_parent(nullptr),
+_visible(true),
+_update(false),
+_pause_action_when_hidden(false),
+_dirty(true),
+_action(std::make_shared<ActionExecuter>()),
+_position({0.0f, 0.0f}),
+_global_position({0.0f, 0.0f}),
+_size({0.0f, 0.0f}),
+_anchor({0.0f, 0.0f}),
+_scale({1.0f, 1.0f}),
+_opacity(255) {
     _children.reserve(10);
     ++_widgetCount;
 #if defined(__vita__)
@@ -346,6 +347,19 @@ Vector2f const& Widget::scale() const {
     return _scale;
 }
 
+void Widget::setOpacity(unsigned char opacity) {
+    _opacity = opacity;
+    this->onModifyOpacity(_opacity);
+}
+
+unsigned char Widget::opacity() const {
+    return _opacity;
+}
+
+void Widget::onModifyOpacity(unsigned char opacity) {
+
+}
+
 void Widget::runAction(ActionPtr const& action) {
     _action->add(action);
 }
@@ -413,6 +427,7 @@ void ImageWidget::onDirty() {
 }
 
 void ImageWidget::onDraw(SDL_Renderer* renderer) {
+    _target->setOpacity(_opacity);
     _target->draw(renderer, global_position().to<int>());
 }
 
@@ -479,7 +494,16 @@ void ButtonWidget::setState(State state) {
 //=====================================================================================
 
 MaskWidget::MaskWidget(SDL_Color const& c):_color(c) {
+    setOpacity(c.a);
+}
 
+void MaskWidget::setColor(SDL_Color const& c) {
+    _color = c;
+    setOpacity(c.a);
+}
+
+SDL_Color const& MaskWidget::color() const {
+    return _color;
 }
 
 void MaskWidget::onDraw(SDL_Renderer* renderer) {
@@ -491,6 +515,7 @@ void MaskWidget::onDraw(SDL_Renderer* renderer) {
         size.x,
         size.y
     };
+    _color.a = _opacity;
     dc.setColor(_color);
     SDL_RenderFillRectF(renderer, &dst);
 }

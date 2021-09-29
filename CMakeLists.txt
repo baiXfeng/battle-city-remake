@@ -27,6 +27,7 @@ file( GLOB
 		common/*.cpp
 )
 
+include_directories(".")
 add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 
 if (BUILD_PSV)

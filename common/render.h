@@ -17,9 +17,12 @@ public:
     void setTexture(SDL_Texture* texture, SDL_Rect const& srcrect);
     void setSize(int w, int h);
     Vector2i const& size() const;
+    void setOpacity(int opacity);
+    int opacity() const;
 public:
     virtual void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0});
 protected:
+    int _opacity;
     SDL_Texture* _texture;
     SDL_Rect _srcrect;
     Vector2i _size;
