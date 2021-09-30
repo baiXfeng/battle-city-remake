@@ -39,4 +39,21 @@ private:
     std::vector<Vector2f> _position;
 };
 
+class SelectLevelView : public GamePadWidget {
+public:
+    SelectLevelView();
+private:
+    void onButtonDown(int key) override;
+    void onButtonUp(int key) override;
+    void addLevel();
+    void subLevel();
+    void autoAddLevel(bool add);
+    void stopAutoAddLevel();
+private:
+    int _level;
+    TTFLabel* _label;
+    CurtainWidget* _curtain;
+    float _duration;
+};
+
 #endif //SDL2_UI_VIEW_H

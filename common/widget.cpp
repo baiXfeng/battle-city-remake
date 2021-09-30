@@ -120,6 +120,10 @@ void Widget::setVisible(bool visible) {
     _visible = visible;
 }
 
+void Widget::performLayout() {
+    this->modifyLayout();
+}
+
 void Widget::addChild(WidgetPtr& widget) {
     if (widget->_parent) {
         widget->_parent->removeChild(widget);
@@ -176,7 +180,7 @@ void Widget::update(float delta) {
         _action->update(delta);
     }
     if (_dirty) {
-        this->modifyPosition();
+        this->modifyLayout();
         _dirty = false;
     }
     if (not update) {
@@ -251,17 +255,12 @@ std::string const& Widget::name() const {
     return _name;
 }
 
-void Widget::modifyPosition() {
-    if (not _parent) {
-        return;
-    }
+void Widget::modifyLayout() {
     _global_size = _size * _scale.self_abs();
-    _global_position = _parent->_global_position + (_position - _global_size * _anchor);
+    _global_position = (_parent ? _parent->_global_position : Vector2f{0, 0}) + (_position - _global_size * _anchor);
     this->onDirty();
-    _dirty = false;
-
     for (auto& child : _children) {
-        child->modifyPosition();
+        child->modifyLayout();
     }
 }
 
@@ -539,75 +538,42 @@ void MaskWidget::onDraw(SDL_Renderer* renderer) {
 //=====================================================================================
 
 CurtainWidget::CurtainWidget(SDL_Color const& c) {
+    Vector2f anchor[2] = {
+            {0.5f, 1.0f},
+            {0.5f, 0.0f},
+    };
     for (int i = 0; i < 2; ++i) {
-        auto mask = Widget::Ptr(new MaskWidget(c));
-        addChild(mask);
-        _mask[i] = mask;
+        addChild(_mask[i]= Widget::Ptr(new MaskWidget(c)));
         _mask[i]->setVisible(false);
-        _mask[i]->setSize(_mask[i]->size() * Vector2f{1.2f, 1.2f});
+        _mask[i]->setAnchor(anchor[i]);
     }
     enableUpdate(true);
 }
-
-void CurtainWidget::Start(Action::Ptr const& deploy, float duration, Action::Ptr const& complete) {
-    assert(deploy != nullptr and "CurtainWidget::Start deploy can not nullptr.");
-    _action[0] = deploy;
-    _action[1] = complete;
-    _duration = duration;
-    this->Close();
-}
-
-void CurtainWidget::Close() {
-    Vector2f anchor[2] = {
-            {0.5f, 1.0f},
-            {0.5f, 0.0f}
-    };
+void CurtainWidget::fadeIn(float duration) {
     Vector2f position[2] = {
             {size().x * 0.5f, 0.0f},
-            {size().x * 0.5f, size().y * 1.0f}
+            {size().x * 0.5f, size().y},
     };
+    float step[2] = {size().y * 0.5f, size().y * -0.5f};
     for (int i = 0; i < 2; ++i) {
         _mask[i]->setVisible(true);
         _mask[i]->setPosition(position[i]);
-        _mask[i]->setAnchor(anchor[i]);
-    }
-    {
-        auto move = Action::Ptr(new MoveTo(
-                _mask[0].get(),
-                {size().x*0.5f, size().y*0.5f},
-                _duration * 0.5f));
-        auto close_call = _action[0] == nullptr ? Action::Ptr(new PopSceneAction) : _action[0];
-        auto open_call = Action::Ptr(new CallBackVoid(std::bind(&CurtainWidget::Open, this)));
-        auto action = Action::Ptr(new Sequence({move, close_call, open_call}));
-        _mask[0]->runAction(action);
-    }
-    {
-        auto move = Action::Ptr(new MoveTo(
-                _mask[1].get(),
-                {size().x*0.5f, size().y*0.5f},
-                _duration * 0.5f));
-        _mask[1]->runAction(move);
+        moveMaskVertical(_mask[i]->to<MaskWidget>(), step[i], duration);
     }
 }
 
-void CurtainWidget::Open() {
-    Vector2f position[2] = {
-            {size().x * 0.5f, 0.0f},
-            {size().x * 0.5f, size().y * 1.0f}
-    };
+void CurtainWidget::fadeOut(float duration) {
+    float step[2] = {size().y * -0.5f, size().y * 0.5f};
     for (int i = 0; i < 2; ++i) {
-        auto move = Action::Ptr(new MoveTo(
-                _mask[i].get(),
-                position[i],
-                _duration * 0.5f));
-        if (i == 0) {
-            auto open_call = _action[1] == nullptr ? Action::Ptr(new EmptyAction) : _action[1];
-            auto action = Action::Ptr(new Sequence({move, open_call}));
-            _mask[i]->runAction(action);
-            continue;
-        }
-        _mask[i]->runAction(move);
+        _mask[i]->setVisible(true);
+        _mask[i]->setPosition(size().x * 0.5f, size().y * 0.5f);
+        moveMaskVertical(_mask[i]->to<MaskWidget>(), step[i], duration);
     }
+}
+
+void CurtainWidget::moveMaskVertical(MaskWidget* target, float yStep, float duration) {
+    auto move = Action::Ptr(new MoveBy(target, {0, yStep}, duration));
+    target->runAction(move);
 }
 
 //=====================================================================================
@@ -648,14 +614,6 @@ void ScreenWidget::pop() {
 
 void ScreenWidget::popAll() {
     _root->removeAllChildren();
-}
-
-void ScreenWidget::cut_to(Action::Ptr const& deploy, float duration, Action::Ptr const& complete) {
-    _curtain->Start(deploy, duration, complete);
-}
-
-void ScreenWidget::cut_back(float duration, Action::Ptr const& complete) {
-    this->cut_to(nullptr, duration, complete);
 }
 
 void ScreenWidget::update(float delta) {

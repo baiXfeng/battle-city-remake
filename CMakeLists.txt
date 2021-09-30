@@ -74,8 +74,8 @@ if (BUILD_PSV)
 		list(APPEND VPKFILES "${ITEM}")
 	ENDFOREACH()
 
-	set(VITA_APP_NAME "SDL2-UI")
-	set(VITA_TITLEID  "SDL200001") #目录名必须9个字符
+	set(VITA_APP_NAME "Battle City")
+	set(VITA_TITLEID  "SDL2BC001") #目录名必须9个字符
 	set(VITA_VERSION  "01.00")
 
 	vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})

@@ -45,7 +45,7 @@ public:
                 auto a2 = Action::Ptr(new CallBackVoid([]() {
                     //printf("开幕.\n");
                 }));
-                _game.screen().cut_to(a1_seq, 0.33f);
+                //_game.screen().cut_to(a1_seq, 0.33f);
             });
             auto delay = Action::Ptr(new Delay(2.0f));
             auto seq = Action::Ptr(new Sequence({delay, call}));
@@ -146,6 +146,7 @@ StartView::StartView():_index(0), _canSelect(false) {
 
     auto root = Widget::New<WindowWidget>();
     root->setName("root");
+    root->setPosition(0, size().y);
     addChild(root);
 
     Widget::Ptr widget;
@@ -180,7 +181,7 @@ StartView::StartView():_index(0), _canSelect(false) {
     {
         auto title = new TTFLabel;
         title->setFont(font);
-        title->setString("1 player");
+        title->setString("1 PLAYER");
         title->setAnchor(0.5f, 0.0f);
         title->setPosition(size().x * 0.5f, size().y * 0.52f);
         widget.reset(title);
@@ -209,7 +210,7 @@ StartView::StartView():_index(0), _canSelect(false) {
     {
         auto title = new TTFLabel;
         title->setFont(font);
-        title->setString("2 player");
+        title->setString("2 PLAYER");
         title->setAnchor(0.5f, 0.0f);
         title->setPosition(size().x * 0.5f, size().y * 0.58f);
         widget.reset(title);
@@ -247,16 +248,15 @@ StartView::StartView():_index(0), _canSelect(false) {
         root->addChild(widget);
 
         auto copyright = root->find("copyright");
-        copyright->setPosition(title->position().x - title->size().x * 0.5f, size().y * 0.9f - 2);
+        copyright->setPosition(title->position().x - title->size().x * 0.5f, size().y * 0.9f - 1);
     }
 
-    this->modifyPosition();
+    root->performLayout();
 }
 
 void StartView::onEnter() {
     GamePadWidget::onEnter();
     auto root = find("root");
-    root->setPosition(0, size().y);
     auto move = Action::New<MoveBy>(root, Vector2f{0.0f, -size().y}, 3.0f);
     auto callback = Action::New<CallBackVoid>([&]{
         this->_canSelect = true;
@@ -267,13 +267,13 @@ void StartView::onEnter() {
 
 void StartView::onButtonDown(int key) {
     if (key == KeyCode::START) {
-        if (not _canSelect) {
+        if (_canSelect) {
+            onStart(_index);
+        } else {
             auto root = find("root");
             root->setPosition(0, 0);
             root->stopAllActions();
             _canSelect = true;
-        } else {
-            onStart(_index);
         }
     } else if (key == KeyCode::SELECT) {
         if (_canSelect) {
@@ -284,9 +284,103 @@ void StartView::onButtonDown(int key) {
 }
 
 void StartView::onStart(int index) {
-    printf("%d\n", index);
+    if (index == 0) {
+        // 选关
+        auto widget = New<SelectLevelView>();
+        addChild(widget);
+    }
 }
 
+//=====================================================================================
+
+SelectLevelView::SelectLevelView():_level(1), _duration(0.3f) {
+
+    Ptr widget;
+
+    {
+        auto view = new CurtainWidget({128, 128, 128, 255});
+        view->fadeIn(_duration);
+        widget.reset(view);
+        addChild(widget);
+        _curtain = view;
+    }
+
+    {
+        auto font = res::load_ttf_font(fontName, 16);
+        font->setColor({0, 0, 0, 255});
+        auto label = new TTFLabel;
+        label->setFont(font);
+        label->setAnchor(0.5f, 0.5f);
+        label->setPosition(size().x * 0.5f, size().y * 0.5f);
+        label->setString("STAGE 1");
+        label->setVisible(false);
+        widget.reset(label);
+        addChild(widget);
+        _label = label;
+    }
+
+    defer([&]{
+        _label->setVisible(true);
+    }, _duration);
+}
+
+void SelectLevelView::onButtonDown(int key) {
+    if (!_label->visible()) {
+        return;
+    }
+    if (key == KeyCode::A or key == KeyCode::X) {
+        addLevel();
+        autoAddLevel(true);
+    } else if (key == KeyCode::B or key == KeyCode::Y) {
+        subLevel();
+        autoAddLevel(false);
+    } else if (key == KeyCode::SELECT) {
+        // 回退
+        float duration = _duration * 0.8f;
+        _label->setVisible(false);
+        _curtain->fadeOut(duration);
+        defer([&]{
+            this->removeFromParent();
+        }, duration);
+        gamepad_sleep(duration);
+    }
+}
+
+void SelectLevelView::onButtonUp(int key) {
+    if (key == KeyCode::A or key == KeyCode::X or key == KeyCode::B or key == KeyCode::Y) {
+        stopAutoAddLevel();
+    }
+}
+
+void SelectLevelView::addLevel() {
+    _level = ++_level >= 35 ? 35 : _level;
+    _label->setString("STAGE " + std::to_string(_level));
+}
+
+void SelectLevelView::subLevel() {
+    _level = --_level <= 1 ? 1 : _level;
+    _label->setString("STAGE " + std::to_string(_level));
+}
+
+void SelectLevelView::autoAddLevel(bool add) {
+    auto delay = Action::New<Delay>(0.5f);
+    auto call = Action::New<CallBackVoid>(std::bind(add ? &SelectLevelView::addLevel : &SelectLevelView::subLevel, this));
+    auto delay1 = Action::New<Delay>(0.05f);
+    auto action_seq = Action::Ptr(new Sequence({call, delay1}));
+    auto repeat = Action::Ptr(new Repeat(action_seq));
+    auto seq = Action::Ptr(new Sequence({delay, repeat}));
+    auto action = Action::New<Repeat>(seq);
+    action->setName("auto-add-level");
+    stopAutoAddLevel();
+    runAction(action);
+}
+
+void SelectLevelView::stopAutoAddLevel() {
+    stopAction("auto-add-level");
+}
+
+//=====================================================================================
+
 Widget::Ptr firstScene() {
-    return Widget::New<StartView>();
+    return Widget::New<LogoView>();
 }

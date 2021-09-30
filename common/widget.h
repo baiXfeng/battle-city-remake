@@ -46,11 +46,12 @@ public:
     template<class T> T* to() {
         return dynamic_cast<T*>(this);
     }
-    void defer(std::function<void()> const& func, float delay = 0.0f);
-    void defer(Widget* sender, std::function<void(Widget*)> const& func, float delay = 0.0f);
+    void defer(std::function<void()> const& func, float delay);
+    void defer(Widget* sender, std::function<void(Widget*)> const& func, float delay);
 public:
     void enableUpdate(bool update);
     void setVisible(bool visible);
+    void performLayout();
 public:
     virtual void addChild(WidgetPtr& widget);
     virtual void removeChild(WidgetPtr& widget);
@@ -103,7 +104,7 @@ public:
     void stopAllActions();
     void pauseAllActionWhenHidden(bool yes = true);
 protected:
-    void modifyPosition();
+    void modifyLayout();
     virtual void onEnter() {}
     virtual void onExit() {}
 protected:
@@ -222,14 +223,14 @@ public:
     typedef std::function<void(Widget*)> CallFunc;
 public:
     CurtainWidget(SDL_Color const& c = {0, 0, 0, 255});
-    void Start(ActionPtr const& deploy, float duration, ActionPtr const& complete);
+public:
+    void fadeIn(float duration);
+    void fadeOut(float duration);
 private:
-    void Close();
-    void Open();
+    void moveMaskVertical(MaskWidget* target, float yStep, float duration);
 private:
     float _duration;
     Widget::Ptr _mask[2];
-    ActionPtr _action[2];
 };
 
 class ScreenWidget : protected WindowWidget {
@@ -249,8 +250,6 @@ public:
         this->pop();
         this->template push<T>(args...);
     }
-    void cut_to(ActionPtr const& deploy, float duration = 0.33f, ActionPtr const& complete = nullptr);
-    void cut_back(float duration = 0.33f, ActionPtr const& complete = nullptr);
 public:
     void update(float delta);
     void render(SDL_Renderer* renderer);
