@@ -34,6 +34,15 @@ public:
         iconView->setOpacity(100);
         root->addChild(iconView);
 
+        auto label_ptr = Widget::New<TTFLabel>();
+        auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 18);
+        auto label = label_ptr->to<TTFLabel>();
+        label->setFont(font);
+        label->setString("Hello World!", {255, 255, 255, 255});
+        label->setPosition(480, 272);
+        label->setAnchor(0.5f, 0.5f);
+        root->addChild(label_ptr);
+
         if (false) {
             auto call = Action::New<CallBackVoid>([&]{
                 auto a1 = Action::Ptr(new PushSceneAction<HelloWorld>(true));

@@ -8,6 +8,7 @@
 #include "assert.h"
 #include "loadres.h"
 #include "action.h"
+#include "font.h"
 
 static int _widgetCount = 0;
 
@@ -411,12 +412,18 @@ ImageWidget::ImageWidget(TexturePtr const& texture, SDL_Rect const& srcrect):_ta
 }
 
 void ImageWidget::setTexture(TexturePtr const& texture) {
+    if (texture == nullptr) {
+        return;
+    }
     _target->setTexture(texture->data());
     this->_texture = texture;
     this->setSize(_target->size().to<float>());
 }
 
 void ImageWidget::setTexture(TexturePtr const& texture, SDL_Rect const& srcrect) {
+    if (texture == nullptr) {
+        return;
+    }
     _target->setTexture(texture->data(), srcrect);
     this->_texture = texture;
     this->setSize(_target->size().to<float>());
@@ -681,4 +688,24 @@ void ScreenWidget::stopAction(std::string const& name) {
 
 void ScreenWidget::onEvent(SDL_Event& event) {
 
+}
+
+//=====================================================================================
+
+TTFLabel::TTFLabel():ImageWidget(nullptr) {}
+
+void TTFLabel::setFont(TTFontPtr const& font) {
+    _font = font;
+}
+
+TTFont::Ptr const& TTFLabel::font() const {
+    return _font;
+}
+
+void TTFLabel::setString(std::string const& s, SDL_Color const& color) {
+    if (_font == nullptr) {
+        return;
+    }
+    _font->setColor(color);
+    setTexture(_font->createWithUTF8(_game.renderer(), s.c_str()));
 }

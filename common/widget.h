@@ -260,4 +260,18 @@ private:
     WindowWidget* _root;
 };
 
+class TTFont;
+class TTFLabel : public ImageWidget {
+public:
+    typedef std::shared_ptr<TTFont> TTFontPtr;
+public:
+    TTFLabel();
+    void setFont(TTFontPtr const& font);
+    TTFontPtr const& font() const;
+public:
+    void setString(std::string const& s, SDL_Color const& color = {0, 0, 0, 255});
+private:
+    TTFontPtr _font;
+};
+
 #endif //SDL2_UI_WIDGET_H

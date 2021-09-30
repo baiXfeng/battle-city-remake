@@ -9,6 +9,7 @@
 #include <memory>
 #include <iostream>
 #include <SDL.h>
+#include <SDL_ttf.h>
 
 SDL_Window* sdl_window = nullptr;
 SDL_Renderer* sdl_renderer = nullptr;
@@ -89,6 +90,7 @@ int initSDL(std::string const& windowTitle) {
 
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);   // Initialize SDL2
     //SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+    TTF_Init();
 
     //检查操纵杆
     if( SDL_NumJoysticks() < 1 ) {
@@ -150,6 +152,7 @@ void finiSDL() {
     SDL_JoystickClose( _gGameController );
     _gGameController = nullptr;
 
+    //TTF_Quit();
     SDL_DestroyWindow(sdl_window);
     SDL_Quit();
 }

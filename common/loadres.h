@@ -7,68 +7,20 @@
 
 #include <SDL.h>
 #include <SDL_image.h>
-#include <memory>
-#include <string>
-#include <map>
-
-class Texture {
-public:
-    typedef std::shared_ptr<Texture> Ptr;
-public:
-    Texture(SDL_Texture* texture):_texture(texture) {
-#if !defined(__vita__)
-        //SDL_SetTextureBlendMode(_texture, SDL_BLENDMODE_BLEND);
-#endif
-    }
-    virtual ~Texture() {
-        if (_texture) {
-            SDL_DestroyTexture(_texture);
-            _texture = nullptr;
-        }
-    }
-public:
-    SDL_Texture* data() const {
-        return _texture;
-    }
-    void setPath(std::string const& path) {
-        _path = path;
-    }
-    std::string const& path() const {
-        return _path;
-    }
-protected:
-    SDL_Texture* _texture;
-    std::string _path;
-};
+#include "texture.h"
+#include "font.h"
 
 namespace res {
-    static std::map<std::string, Texture::Ptr> _textureCache;
-    static std::string const& getAssetsPath() {
-        static std::string assets_path;
-#if defined(__vita__)
-        if (assets_path.empty()) {
-            assets_path = "app0:";
-        }
-#endif
-        return assets_path;
-    }
-    static Texture::Ptr load_texture(SDL_Renderer *renderer, std::string const& fileName) {
-        Texture::Ptr result = _textureCache[fileName];
-        if (result != nullptr) {
-            return result;
-        }
-        auto texture = IMG_LoadTexture(renderer, (getAssetsPath()+fileName).c_str());
-        result = std::make_shared<Texture>(texture);
-        result->setPath(fileName);
-        _textureCache[fileName] = result;
-        return result;
-    }
-    static void free_texture(std::string const& name) {
-        _textureCache.erase(name);
-    }
-    static void free_texture(Texture::Ptr const& texture) {
-        _textureCache.erase(texture->path());
-    }
+    std::string const& getAssetsPath();
+
+    Texture::Ptr load_texture(SDL_Renderer* renderer, std::string const& fileName);
+    void free_texture(std::string const& name);
+    void free_texture(Texture::Ptr const& texture);
+    void free_all_texture();
+
+    TTFont::Ptr load_ttf_font(std::string const& fileName, unsigned int size);
+    void free_ttf_font(TTFont::Ptr const& font);
+    void free_all_ttf_font();
 };
 
 #endif //SDL2_UI_LOADRES_H
