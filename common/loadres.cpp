@@ -5,6 +5,7 @@
 #include "loadres.h"
 #include <map>
 #include <list>
+#include <algorithm>
 
 namespace res {
 

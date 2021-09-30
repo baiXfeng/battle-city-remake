@@ -15,6 +15,13 @@
 
 void TestWidget();
 
+#define WIDGET_CREATE_FUNC(TYPE) \
+public:                          \
+    template<typename... Args>   \
+    WidgetPtr Create(Args const&... args) { \
+        return Ptr(new TYPE(args...));      \
+    }
+
 class Action;
 class ActionExecuter;
 class Widget : public GamePadListener {
@@ -73,6 +80,7 @@ public:
     void setSize(Vector2f const& size);
     void setSize(float sx, float sy);
     Vector2f const& size() const;
+    Vector2f const& global_size() const;
     virtual void onModifySize(Vector2f const& size);
 public:
     void setAnchor(Vector2f const& anchor);
@@ -107,6 +115,7 @@ protected:
     Widget* _parent;
     Vector2f _position;
     Vector2f _global_position;
+    Vector2f _global_size;
     Vector2f _size;
     Vector2f _scale;
     Vector2f _anchor;
@@ -231,6 +240,7 @@ public:
     void push(Widget::Ptr& widget);
     void replace(Widget::Ptr& widget);
     void pop();
+    void popAll();
     template <typename T, typename... Args> void push(Args const&... args) {
         Widget::Ptr widget(new T(args...));
         this->push(widget);
@@ -269,9 +279,30 @@ public:
     void setFont(TTFontPtr const& font);
     TTFontPtr const& font() const;
 public:
-    void setString(std::string const& s, SDL_Color const& color = {0, 0, 0, 255});
+    void setString(std::string const& s);
+    void setString(std::string const& s, SDL_Color const& color);
 private:
     TTFontPtr _font;
+};
+
+class FrameAnimationWidget : public ImageWidget {
+public:
+    typedef std::vector<TexturePtr> FrameArray;
+public:
+    FrameAnimationWidget();
+public:
+    void setFrames(FrameArray const& frames);
+    void play(float duration, bool loop = true);
+    void play_once(float duration);
+    void stop();
+private:
+    void onUpdate(float delta) override;
+private:
+    bool _loop;
+    int _index;
+    float _frame_tick;
+    float _frame_time;
+    FrameArray _frames;
 };
 
 #endif //SDL2_UI_WIDGET_H

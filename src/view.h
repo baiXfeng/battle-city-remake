@@ -7,6 +7,8 @@
 
 #include "common/widget.h"
 
+Widget::Ptr firstScene();
+
 class MaskWidget;
 class LogoView : public GamePadWidget {
     typedef std::function<void()> Callback;
@@ -22,6 +24,19 @@ private:
     bool _canClick;
     MaskWidget* _mask;
     Callback _callback;
+};
+
+class StartView : public GamePadWidget {
+public:
+    StartView();
+private:
+    void onEnter() override;
+    void onButtonDown(int key) override;
+    void onStart(int index);
+private:
+    bool _canSelect;
+    int _index;
+    std::vector<Vector2f> _position;
 };
 
 #endif //SDL2_UI_VIEW_H

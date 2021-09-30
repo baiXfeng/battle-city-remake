@@ -15,87 +15,11 @@
 #include <list>
 #include "src/view.h"
 
-class HelloWorld : public GamePadWidget {
-public:
-    ~HelloWorld() {
-
-    }
-    HelloWorld() {
-        auto renderer = _game.renderer();
-        auto bg = res::load_texture(renderer, "assets/bg.jpg");
-        auto root = this;
-
-        auto bgView = Widget::Ptr(new ImageWidget(bg));
-        root->addChild(bgView);
-
-        auto iconView = Widget::Ptr(new ImageWidget(bg));
-        iconView->setScale(0.5f, 0.5f);
-        iconView->setPosition(480, 272);
-        iconView->setOpacity(100);
-        root->addChild(iconView);
-
-        auto label_ptr = Widget::New<TTFLabel>();
-        auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 18);
-        auto label = label_ptr->to<TTFLabel>();
-        label->setFont(font);
-        label->setString("Hello World!", {255, 255, 255, 255});
-        label->setPosition(480, 272);
-        label->setAnchor(0.5f, 0.5f);
-        root->addChild(label_ptr);
-
-        if (false) {
-            auto call = Action::New<CallBackVoid>([&]{
-                auto a1 = Action::Ptr(new PushSceneAction<HelloWorld>(true));
-                auto a1_delay = Action::Ptr(new Delay(1.0f));
-                auto a1_seq = Action::Ptr(new Sequence({a1, a1_delay}));
-                auto a2 = Action::Ptr(new CallBackVoid([]() {
-                    //printf("开幕.\n");
-                }));
-                _game.screen().cut_to(a1_seq, 0.33f);
-            });
-            auto delay = Action::Ptr(new Delay(2.0f));
-            auto seq = Action::Ptr(new Sequence({delay, call}));
-            auto action = Action::Ptr(new Repeat(seq));
-            root->runAction(action);
-        }
-
-        {
-            auto zoom_big = Action::Ptr(new ScaleBy(bgView.get(), {1.0f, 1.0f}, 0.5f));
-            auto zone_small = Action::Ptr(new ScaleBy(bgView.get(), {-1.0f, -1.0f}, 0.5f));
-            auto action_seq = Action::Ptr(new Sequence({zoom_big, zone_small}));
-            auto repeat = Action::Ptr(new Repeat(action_seq));
-            bgView->runAction(repeat);
-            bgView->setScale({0.5f, 0.5f});
-        }
-
-        {
-            auto move1 = Action::Ptr(new MoveBy(iconView.get(), {240, 0}, 1.0f));
-            auto move2 = Action::Ptr(new MoveBy(iconView.get(), {-240, 0}, 1.0f));
-            auto seq = Action::Ptr(new Sequence({move1, move2}));
-            auto repeat = Action::Ptr(new Repeat(seq));
-            iconView->runAction(repeat);
-            iconView->setPosition(480, 272);
-            iconView->setAnchor({0.5f, 0.5f});
-        }
-    }
-private:
-    void onButtonDown(int key) override {
-        if (key == KeyCode::X) {
-            _game.screen().replace<HelloWorld>();
-            //_game.screen().pop();
-        }
-    }
-};
-
 class MyGame : public Game::App {
 public:
     void init() override {
-        auto logoView = new LogoView;
-        logoView->setFinishCall([]{
-            _game.screen().push<HelloWorld>();
-        });
-        auto ptr = Widget::Ptr(logoView);
-        _game.screen().push(ptr);
+        auto view = firstScene();
+        _game.screen().push(view);
     }
     void update(float delta) override {
         _game.screen().update(delta);

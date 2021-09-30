@@ -49,6 +49,7 @@ _action(std::make_shared<ActionExecuter>()),
 _position({0.0f, 0.0f}),
 _global_position({0.0f, 0.0f}),
 _size({0.0f, 0.0f}),
+_global_size({0.0f, 0.0f}),
 _anchor({0.0f, 0.0f}),
 _scale({1.0f, 1.0f}),
 _opacity(255) {
@@ -61,6 +62,7 @@ _opacity(255) {
     SDL_RenderGetLogicalSize(_game.renderer(), &width, &height);
     this->setSize(width, height);
 #endif
+    _global_size = _size;
 }
 
 Widget::~Widget() {
@@ -253,8 +255,11 @@ void Widget::modifyPosition() {
     if (not _parent) {
         return;
     }
-    _global_position = _parent->_global_position + (_position - _size * _scale.self_abs() * _anchor);
+    _global_size = _size * _scale.self_abs();
+    _global_position = _parent->_global_position + (_position - _global_size * _anchor);
     this->onDirty();
+    _dirty = false;
+
     for (auto& child : _children) {
         child->modifyPosition();
     }
@@ -304,6 +309,10 @@ void Widget::setSize(float sx, float sy) {
 
 Vector2f const& Widget::size() const {
     return _size;
+}
+
+Vector2f const& Widget::global_size() const {
+    return _global_size;
 }
 
 void Widget::onModifyAnchor(Vector2f const& anchor) {
@@ -430,7 +439,7 @@ void ImageWidget::setTexture(TexturePtr const& texture, SDL_Rect const& srcrect)
 }
 
 void ImageWidget::onDirty() {
-    _target->setSize(_size.x * fabs(_scale.x), _size.y * fabs(_scale.y));
+    _target->setSize(_global_size.x, _global_size.y);
 }
 
 void ImageWidget::onDraw(SDL_Renderer* renderer) {
@@ -637,6 +646,10 @@ void ScreenWidget::pop() {
     }
 }
 
+void ScreenWidget::popAll() {
+    _root->removeAllChildren();
+}
+
 void ScreenWidget::cut_to(Action::Ptr const& deploy, float duration, Action::Ptr const& complete) {
     _curtain->Start(deploy, duration, complete);
 }
@@ -702,10 +715,76 @@ TTFont::Ptr const& TTFLabel::font() const {
     return _font;
 }
 
-void TTFLabel::setString(std::string const& s, SDL_Color const& color) {
+void TTFLabel::setString(std::string const& s) {
     if (_font == nullptr) {
         return;
     }
-    _font->setColor(color);
     setTexture(_font->createWithUTF8(_game.renderer(), s.c_str()));
+}
+
+void TTFLabel::setString(std::string const& s, SDL_Color const& color) {
+    if (_font != nullptr) {
+        _font->setColor(color);
+    }
+    setString(s);
+}
+
+//=====================================================================================
+
+FrameAnimationWidget::FrameAnimationWidget():
+ImageWidget(nullptr),
+_index(0),
+_frame_tick(0.0f),
+_frame_time(0.0f),
+_loop(false) {
+    enableUpdate(false);
+}
+
+void FrameAnimationWidget::setFrames(FrameArray const& frames) {
+    _frames = frames;
+    if (_frames.size()) {
+        setTexture(_frames[0]);
+    }
+}
+
+void FrameAnimationWidget::play(float duration, bool loop) {
+    if (_frames.empty()) {
+        return;;
+    }
+    _loop = loop;
+    _frame_time = duration / _frames.size();
+    _frame_tick = 0.0f;
+    _index = 0;
+    enableUpdate(true);
+}
+
+void FrameAnimationWidget::play_once(float duration) {
+    this->play(duration, false);
+}
+
+void FrameAnimationWidget::stop() {
+    if (_frames.empty()) {
+        return;;
+    }
+    setTexture(_frames[0]);
+    enableUpdate(false);
+}
+
+void FrameAnimationWidget::onUpdate(float delta) {
+    bool modify = false;
+    while ((_frame_tick += delta) >= _frame_time) {
+        _frame_tick -= _frame_time;
+        if (++_index >= _frames.size()) {
+            if (_loop) {
+                _index = 0;
+            } else {
+                _index = _frames.size() - 1;
+                enableUpdate(false);
+            }
+        }
+        modify = true;
+    }
+    if (modify) {
+        setTexture(_frames[_index]);
+    }
 }
