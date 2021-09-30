@@ -6,6 +6,7 @@
 #include "common/loadres.h"
 #include "common/game.h"
 #include "common/action.h"
+#include "common/audio.h"
 
 std::string fontName = "assets/fonts/prstart.ttf";
 
@@ -92,8 +93,9 @@ LogoView::LogoView():_canClick(false) {
     _mask = mask->to<MaskWidget>();
 
     setFinishCall([]{
-        _game.screen().push<StartView>();
+        _game.screen().replace<StartView>();
     });
+    _game.setRenderColor({0, 0, 0, 255});
 }
 
 void LogoView::onButtonDown(int key) {
@@ -342,7 +344,16 @@ void SelectLevelView::onButtonDown(int key) {
         defer([&]{
             this->removeFromParent();
         }, duration);
-        gamepad_sleep(duration);
+        sleep_gamepad(duration);
+    } else if (key == KeyCode::START) {
+        auto sound = "assets/sounds/stage_start.ogg";
+        _game.audio().loadEffect(sound);
+        _game.audio().playEffect(sound);
+        sleep_gamepad(10.0f);
+        defer([&]{
+            sleep_gamepad(1.8f);
+            _game.screen().replace<BattleView>();
+        }, 1.8f);
     }
 }
 
@@ -381,6 +392,159 @@ void SelectLevelView::stopAutoAddLevel() {
 
 //=====================================================================================
 
+BattleView::BattleView() {
+    Ptr widget;
+
+    auto root = New<WindowWidget>();
+    addChild(root);
+
+    Vector2f root_size;
+
+    {
+        auto view = new BattleFieldView;
+        widget.reset(view);
+        root->addChild(widget);
+        root_size.x += view->size().x;
+        root_size.y = view->size().y;
+    }
+
+    {
+        auto view = new BattleInfoView;
+        widget.reset(view);
+        root->addChild(widget);
+        root_size.x += view->size().x;
+        root_size.y = view->size().y;
+    }
+
+    root->setSize(root_size);
+    root->setPosition((size().x - root_size.x) * 0.5f, (size().y - root_size.y) * 0.5f);
+
+    {
+        auto view = new CurtainWidget({128, 128, 128, 255});
+        view->fadeOut(0.3f);
+        widget.reset(view);
+        addChild(widget);
+
+        auto delay = Action::New<Delay>(0.3f);
+        auto call = Action::Ptr(new CallBackSender(view, [&](Widget* sender) {
+            sender->removeFromParent();
+        }));
+        view->runAction(Action::Ptr(new Sequence({delay, call})));
+    }
+
+    _game.setRenderColor({128, 128, 128, 255});
+    this->performLayout();
+}
+
+//=====================================================================================
+
+static int const _mapSize = 13 * 40;
+
+BattleFieldView::BattleFieldView() {
+
+    auto old_size = this->size();
+    this->setSize(_mapSize, _mapSize);
+
+    Ptr widget;
+
+    {
+        auto view = Ptr(new MaskWidget({0, 0, 0, 255}));
+        view->setSize(size());
+        addChild(view);
+    }
+}
+
+//=====================================================================================
+
+static int const _enemy_icon_size = 20;
+
+BattleInfoView::BattleInfoView() {
+
+    Ptr widget;
+    int const padding = 18;
+    auto const old_size = size();
+
+    setSize(_enemy_icon_size * 2 + padding * 2, _mapSize);
+
+    if (false) {
+        auto view = Ptr(new MaskWidget({255, 255, 0, 120}));
+        view->setSize(size());
+        addChild(view);
+    }
+
+    {
+        float x = 0, y = 0;
+        for (int i = 0; i < 20; ++i) {
+            auto view = createEnemyIcon();
+            view->setPosition(padding+x+view->size().x*(i%2), padding+2+y+view->size().y*(i/2));
+            widget.reset(view);
+            addChild(widget);
+        }
+    }
+
+    auto font = res::load_ttf_font(fontName, _enemy_icon_size);
+
+    {
+        auto label = new TTFLabel;
+        label->setFont(font);
+        label->setString("IP");
+        label->setAnchor(0.5f, 1.0f);
+        label->setPosition(size().x * 0.5f, size().y * 0.6f);
+        widget.reset(label);
+        addChild(widget);
+    }
+
+    {
+        auto icon = res::load_texture(_game.renderer(), "assets/images/lives.png");
+        auto view = New<ImageWidget>(icon);
+        view->setAnchor(1.0f, 0.0f);
+        view->setPosition(size().x * 0.5f, size().y * 0.6f);
+        view->setSize(_enemy_icon_size, _enemy_icon_size);
+        addChild(view);
+    }
+
+    {
+        auto label = new TTFLabel;
+        label->setFont(font);
+        label->setString("1");
+        label->setAnchor(0.0f, 0.0f);
+        label->setPosition(size().x * 0.5f, size().y * 0.6f);
+        widget.reset(label);
+        addChild(widget);
+    }
+
+    {
+        auto bg = res::load_texture(_game.renderer(), "assets/images/flag.png");
+        auto view = New<ImageWidget>(bg);
+        view->setAnchor(0.5f, 1.0f);
+        view->setPosition(size().x * 0.5f, _mapSize * 0.85f);
+        view->setSize(_enemy_icon_size * 2, _enemy_icon_size * 2);
+        addChild(view);
+    }
+
+    {
+        auto label = new TTFLabel;
+        label->setFont(font);
+        label->setString("1");
+        label->setAnchor(0.0f, 0.0f);
+        label->setPosition(size().x * 0.5f, size().y * 0.85f);
+        widget.reset(label);
+        addChild(widget);
+    }
+
+    this->setPosition(_mapSize, 0.0f);
+}
+
+ImageWidget* BattleInfoView::createEnemyIcon() {
+    auto icon = res::load_texture(_game.renderer(), "assets/images/enemy.png");
+    //auto sign = res::load_texture(_game.renderer(), "");
+    auto widget = new ImageWidget(icon);
+    widget->setSize(_enemy_icon_size, _enemy_icon_size);
+    return widget;
+}
+
+//=====================================================================================
+
 Widget::Ptr firstScene() {
-    return Widget::New<LogoView>();
+    return Widget::New<BattleView>();
 }

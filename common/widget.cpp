@@ -405,7 +405,7 @@ void GamePadWidget::onExit() {
     _game.gamepad().remove(this->ptr());
 }
 
-void GamePadWidget::gamepad_sleep(float seconds) {
+void GamePadWidget::sleep_gamepad(float seconds) {
     _game.gamepad().sleep(seconds);
 }
 

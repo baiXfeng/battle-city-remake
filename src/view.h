@@ -56,4 +56,21 @@ private:
     float _duration;
 };
 
+class BattleView : public GamePadWidget {
+public:
+    BattleView();
+};
+
+class BattleFieldView : public WindowWidget {
+public:
+    BattleFieldView();
+};
+
+class BattleInfoView : public Widget {
+public:
+    BattleInfoView();
+private:
+    ImageWidget* createEnemyIcon();
+};
+
 #endif //SDL2_UI_VIEW_H

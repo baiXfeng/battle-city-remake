@@ -46,12 +46,14 @@ public:
     SDL_Renderer* renderer() const;
     SDL_Window* window() const;
     void setDelegate(Delegate* p);
+    void setRenderColor(SDL_Color const& c);
     int run();
 private:
-    Game():_delegate(nullptr) {}
+    Game();
     void input();
 private:
     Delegate* _delegate;
+    SDL_Color _color;
 };
 
 #define _game Game::instance()

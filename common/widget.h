@@ -134,7 +134,7 @@ class GamePadWidget : public WindowWidget {
 protected:
     void onEnter() override;
     void onExit() override;
-    void gamepad_sleep(float seconds);
+    void sleep_gamepad(float seconds);
 };
 
 class RenderCopy;

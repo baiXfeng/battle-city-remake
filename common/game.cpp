@@ -36,6 +36,14 @@ void Game::setDelegate(Delegate* p) {
     _delegate = p;
 }
 
+void Game::setRenderColor(SDL_Color const& c) {
+    _color = c;
+}
+
+Game::Game():_delegate(nullptr), _color({0, 0, 0, 255}) {
+
+}
+
 void Game::input() {
     SDL_Event e;
     while( SDL_PollEvent( &e ) != 0 ) {
@@ -71,7 +79,7 @@ int Game::run() {
         fps().start();
         this->input();
         _delegate->update(delta);
-        SDL_SetRenderDrawColor(sdl_renderer, 0x0, 0x0, 0x0, 0xff );
+        SDL_SetRenderDrawColor(sdl_renderer, _color.r, _color.g, _color.b, _color.a );
         SDL_RenderClear(sdl_renderer);
         _delegate->render(sdl_renderer);
         SDL_RenderPresent(sdl_renderer);
