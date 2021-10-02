@@ -63,14 +63,24 @@ public:
 public:
     virtual void update(float delta);
     virtual void draw(SDL_Renderer* renderer);
-    virtual void onUpdate(float delta);
-    virtual void onDraw(SDL_Renderer* renderer);
-    virtual void onDirty();
+protected:
+    virtual void onUpdate(float delta) {}
+    virtual void onDraw(SDL_Renderer* renderer) {}
+    virtual void onDirty() {}
+public:
+    virtual void enter();
+    virtual void exit();
+protected:
+    virtual void onEnter() {}
+    virtual void onExit() {}
 public:
     Widget* find(std::string const& name);
     Widget* gfind(std::string const& name);
     void setName(std::string const& name);
     std::string const& name() const;
+public:
+    void set_userdata(void* data);
+    void* userdata() const;
 public:
     void setPosition(Vector2f const& position);
     void setPosition(float dx, float dy);
@@ -105,14 +115,13 @@ public:
     void pauseAllActionWhenHidden(bool yes = true);
 protected:
     void modifyLayout();
-    virtual void onEnter() {}
-    virtual void onExit() {}
 protected:
     bool _visible;
     bool _update;
     bool _pause_action_when_hidden;
     bool _dirty;
     unsigned char _opacity;
+    void* _userdata;
     Widget* _parent;
     Vector2f _position;
     Vector2f _global_position;
@@ -132,8 +141,8 @@ public:
 
 class GamePadWidget : public WindowWidget {
 protected:
-    void onEnter() override;
-    void onExit() override;
+    void enter() override;
+    void exit() override;
     void sleep_gamepad(float seconds);
 };
 
@@ -149,7 +158,7 @@ public:
 public:
     void setTexture(TexturePtr const& texture);
     void setTexture(TexturePtr const& texture, SDL_Rect const& srcrect);
-private:
+protected:
     void onDraw(SDL_Renderer* renderer) override;
     void onDirty() override;
 private:

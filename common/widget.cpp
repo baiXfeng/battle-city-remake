@@ -41,6 +41,7 @@ void TestWidget() {
 
 Widget::Widget():
 _parent(nullptr),
+_userdata(nullptr),
 _visible(true),
 _update(false),
 _pause_action_when_hidden(false),
@@ -131,7 +132,7 @@ void Widget::addChild(WidgetPtr& widget) {
     }
     _children.push_back(widget);
     widget->_parent = this;
-    widget->onEnter();
+    widget->enter();
 }
 
 void Widget::removeChild(WidgetPtr& widget) {
@@ -142,7 +143,7 @@ void Widget::removeChild(Widget* widget) {
     for (auto iter = _children.begin(); iter != _children.end(); iter++) {
         if (iter->get() == widget) {
             root()->runAction(Action::Ptr(new KeepAlive<Widget>(*iter))); // 下一帧之前保留引用
-            widget->onExit();
+            widget->exit();
             widget->_parent = nullptr;
             _children.erase(iter);
             return;
@@ -153,7 +154,7 @@ void Widget::removeChild(Widget* widget) {
 void Widget::removeAllChildren() {
     for (int i = _children.size()-1; i >= 0; --i) {
         auto& child = _children[i];
-        child->onExit();
+        child->exit();
         child->_parent = nullptr;
     }
     _children.clear();
@@ -203,16 +204,12 @@ void Widget::draw(SDL_Renderer* renderer) {
     }
 }
 
-void Widget::onUpdate(float delta) {
-
+void Widget::enter() {
+    onEnter();
 }
 
-void Widget::onDraw(SDL_Renderer* renderer) {
-
-}
-
-void Widget::onDirty() {
-
+void Widget::exit() {
+    onExit();
 }
 
 Widget* Widget::find(std::string const& name) {
@@ -255,10 +252,19 @@ std::string const& Widget::name() const {
     return _name;
 }
 
+void Widget::set_userdata(void* data) {
+    _userdata = data;
+}
+
+void* Widget::userdata() const {
+    return _userdata;
+}
+
 void Widget::modifyLayout() {
     _global_size = _size * _scale.self_abs();
     _global_position = (_parent ? _parent->_global_position : Vector2f{0, 0}) + (_position - _global_size * _anchor);
     this->onDirty();
+    _dirty = false;
     for (auto& child : _children) {
         child->modifyLayout();
     }
@@ -397,11 +403,13 @@ WindowWidget::WindowWidget() {
 
 //=====================================================================================
 
-void GamePadWidget::onEnter() {
+void GamePadWidget::enter() {
     _game.gamepad().add(this->ptr());
+    onEnter();
 }
 
-void GamePadWidget::onExit() {
+void GamePadWidget::exit() {
+    onExit();
     _game.gamepad().remove(this->ptr());
 }
 

@@ -7,6 +7,7 @@
 #include "common/game.h"
 #include "common/action.h"
 #include "common/audio.h"
+#include "data.h"
 
 std::string fontName = "assets/fonts/prstart.ttf";
 
@@ -115,7 +116,6 @@ void LogoView::setFinishCall(Callback const& cb) {
 }
 
 void LogoView::onEnter() {
-    GamePadWidget::onEnter();
     auto fadein = Action::Ptr(new ProgressAction(std::bind(&LogoView::onFadeIn, this, std::placeholders::_1), 0.5f));
     auto delay1 = Action::Ptr(new Delay(1.0f));
     auto clickon = Action::New<CallBackVoid>([&]{
@@ -257,7 +257,6 @@ StartView::StartView():_index(0), _canSelect(false) {
 }
 
 void StartView::onEnter() {
-    GamePadWidget::onEnter();
     auto root = find("root");
     auto move = Action::New<MoveBy>(root, Vector2f{0.0f, -size().y}, 3.0f);
     auto callback = Action::New<CallBackVoid>([&]{
@@ -300,7 +299,7 @@ SelectLevelView::SelectLevelView():_level(1), _duration(0.3f) {
     Ptr widget;
 
     {
-        auto view = new CurtainWidget({128, 128, 128, 255});
+        auto view = new CurtainWidget({115, 115, 115, 255});
         view->fadeIn(_duration);
         widget.reset(view);
         addChild(widget);
@@ -420,7 +419,7 @@ BattleView::BattleView() {
     root->setPosition((size().x - root_size.x) * 0.5f, (size().y - root_size.y) * 0.5f);
 
     {
-        auto view = new CurtainWidget({128, 128, 128, 255});
+        auto view = new CurtainWidget({115, 115, 115, 255});
         view->fadeOut(0.3f);
         widget.reset(view);
         addChild(widget);
@@ -432,15 +431,16 @@ BattleView::BattleView() {
         view->runAction(Action::Ptr(new Sequence({delay, call})));
     }
 
-    _game.setRenderColor({128, 128, 128, 255});
+    _game.setRenderColor({115, 115, 115, 255});
     this->performLayout();
 }
 
 //=====================================================================================
 
-static int const _mapSize = 13 * 40;
+static int const _tileSize = Tile::SIZE;
+static int const _mapSize = 13 * _tileSize;
 
-BattleFieldView::BattleFieldView() {
+BattleFieldView::BattleFieldView():_root(nullptr) {
 
     auto old_size = this->size();
     this->setSize(_mapSize, _mapSize);
@@ -452,6 +452,53 @@ BattleFieldView::BattleFieldView() {
         view->setSize(size());
         addChild(view);
     }
+
+    {
+        auto view = New<WindowWidget>();
+        view->setSize(size());
+        addChild(view);
+        _root = view.get();
+    }
+
+    {
+        TileBuilder builder;
+        TileBuilder::TileArray result;
+        result.reserve(1000);
+
+        builder.gen(result, "base", {6 * _tileSize, 12 * _tileSize});
+        builder.gen(result, "big-brick", {1 * _tileSize, 1 * _tileSize});
+        builder.gen(result, "big-steel", {2 * _tileSize, 2 * _tileSize});
+        builder.gen(result, "water", {3 * _tileSize, 3 * _tileSize});
+        builder.gen(result, "trees", {4 * _tileSize, 4 * _tileSize});
+        builder.gen(result, "brick", {5 * _tileSize, 5 * _tileSize});
+        builder.gen(result, "steel", {6 * _tileSize, 6 * _tileSize});
+        builder.gen(result, "ice-floor", {0 * _tileSize, 0 * _tileSize});
+
+        builder.gen(result, "brick-", {1 * _tileSize, 0 * _tileSize});
+        builder.gen(result, "steel-", {1 * _tileSize, 0.5f * _tileSize});
+        builder.gen(result, "brick|", {3 * _tileSize, 0 * _tileSize});
+        builder.gen(result, "steel|", {3.5f * _tileSize, 0 * _tileSize});
+
+        for (auto& widget : result) {
+            addElement(widget);
+        }
+        sortElements();
+    }
+}
+
+void BattleFieldView::addElement(Widget::Ptr& widget) {
+    _root->addChild(widget);
+}
+
+bool sortWidget(Widget::Ptr const& first, Widget::Ptr const& second) {
+    auto data_1 = (TileData*)first->userdata();
+    auto data_2 = (TileData*)second->userdata();
+    assert(data_1 != nullptr and data_2 != nullptr and "BattleFieldView::sortElements fail.");
+    return data_1->layer < data_2->layer;
+}
+
+void BattleFieldView::sortElements() {
+    std::sort(_root->children().begin(), _root->children().end(), sortWidget);
 }
 
 //=====================================================================================
@@ -545,6 +592,208 @@ ImageWidget* BattleInfoView::createEnemyIcon() {
 
 //=====================================================================================
 
+class FrameAnimationAction : public Action {
+public:
+    typedef std::vector<Texture::Ptr> Frames;
+public:
+    FrameAnimationAction(ImageWidget* target, Frames const& arr, float duration):
+    _textures(arr),
+    _target(target),
+    _index(0),
+    _timer(0.0f),
+    _timer_max(duration / arr.size()) {}
+private:
+    State Step(float dt) override {
+        if ((_timer += dt) >= _timer_max) {
+            _timer -= _timer_max;
+            if (++_index >= _textures.size()) {
+                _index = 0;
+            }
+            _target->setTexture(_textures[_index]);
+            _target->setSize(_tileSize, _tileSize);
+        }
+        return RUNNING;
+    }
+private:
+    int _index;
+    float _timer;
+    float _timer_max;
+    ImageWidget* _target;
+    Frames _textures;
+};
+
+TileView::TileView(TYPE t):
+ImageWidget(nullptr),
+_type(NONE),
+_data(std::make_shared<TileData>()) {
+    set_userdata(_data.get());
+    setType(t);
+}
+
+void TileView::setType(TYPE t) {
+    if (_type == t) {
+        return;
+    }
+    Texture::Ptr texture;
+    _type = t;
+    _data->layer = 1;
+    _data->type = _type;
+    _action->clear();
+    switch (t) {
+        case BASE:
+            texture = res::load_texture(_game.renderer(), "assets/images/base.png");
+            setTexture(texture);
+            break;
+        case BRICK_0:
+        case BRICK_1:
+        case BRICK_2:
+        case BRICK_3:
+        {
+            texture = res::load_texture(_game.renderer(), "assets/images/wall_brick.png");
+            int half_width = int(size().x) >> 1;
+            int half_height = int(size().y) >> 1;
+            SDL_Rect srcrect[4] = {
+                    {0, 0, half_width, half_height},
+                    {half_width, 0, half_width, half_height},
+                    {0, half_height, half_width, half_height},
+                    {half_width, half_height, half_width, half_height},
+            };
+            setTexture(texture, srcrect[t-BRICK_0]);
+            setSize(_tileSize >> 1, _tileSize >> 1);
+            return;
+        }
+            break;
+        case STEEL_0:
+        case STEEL_1:
+        case STEEL_2:
+        case STEEL_3:
+        {
+            texture = res::load_texture(_game.renderer(), "assets/images/wall_steel.png");
+            int half_width = int(size().x) >> 1;
+            int half_height = int(size().y) >> 1;
+            SDL_Rect srcrect[4] = {
+                    {0, 0, half_width, half_height},
+                    {half_width, 0, half_width, half_height},
+                    {0, half_height, half_width, half_height},
+                    {half_width, half_height, half_width, half_height},
+            };
+            setTexture(texture, srcrect[t-STEEL_0]);
+            setSize(_tileSize >> 1, _tileSize >> 1);
+            return;
+        }
+            break;
+        case TREES:
+            texture = res::load_texture(_game.renderer(), "assets/images/trees.png");
+            setTexture(texture);
+            _data->layer = 2;
+            break;
+        case ICE_FLOOR:
+            texture = res::load_texture(_game.renderer(), "assets/images/ice_floor.png");
+            setTexture(texture);
+            _data->layer = 0;
+            break;
+        case WATER:
+        {
+            FrameAnimationAction::Frames frames = {
+                    res::load_texture(_game.renderer(), "assets/images/water_1.png"),
+                    res::load_texture(_game.renderer(), "assets/images/water_2.png"),
+            };
+            setTexture(frames[0]);
+            runAction(Action::Ptr(new FrameAnimationAction(this, frames, 1.0f)));
+            setSize(_tileSize, _tileSize);
+            return;
+        }
+            break;
+        default:
+            break;
+    }
+    setSize(_tileSize, _tileSize);
+}
+
+TileView::TYPE TileView::type() const {
+    return _type;
+}
+
+void TileView::update(float delta) {
+    if (not _action->empty()) {
+        _action->update(delta);
+    }
+    if (_dirty) {
+        this->modifyLayout();
+    }
+}
+
+void TileView::draw(SDL_Renderer* renderer) {
+    ImageWidget::onDraw(renderer);
+}
+
+//=====================================================================================
+
+void TileBuilder::gen(TileArray& result, std::string const& type, Vector2f const& position) {
+    if (type == "water") {
+        gen_tile(result, TileType::WATER, position);
+    } else if (type == "trees") {
+        gen_tile(result, TileType::TREES, position);
+    } else if (type == "ice-floor") {
+        gen_tile(result, TileType::ICE_FLOOR, position);
+    } else if (type == "base") {
+        gen_tile(result, TileType::BASE, position);
+    } else if (type == "brick") {
+        get_block(result, TileType::BRICK_0, position);
+    } else if (type == "steel") {
+        get_block(result, TileType::STEEL_0, position);
+    } else if (type == "big-brick") {
+        auto half_size = _tileSize >> 1;
+        get_block(result, TileType::BRICK_0, position);
+        get_block(result, TileType::BRICK_0, position + Vector2f{half_size, 0});
+        get_block(result, TileType::BRICK_0, position + Vector2f{0, half_size});
+        get_block(result, TileType::BRICK_0, position + Vector2f{half_size, half_size});
+    } else if (type == "big-steel") {
+        auto half_size = _tileSize >> 1;
+        get_block(result, TileType::STEEL_0, position);
+        get_block(result, TileType::STEEL_0, position + Vector2f{half_size, 0});
+        get_block(result, TileType::STEEL_0, position + Vector2f{0, half_size});
+        get_block(result, TileType::STEEL_0, position + Vector2f{half_size, half_size});
+    } else if (type == "brick-") {
+        auto half_size = _tileSize >> 1;
+        get_block(result, TileType::BRICK_0, position);
+        get_block(result, TileType::BRICK_0, position + Vector2f{half_size, 0});
+    } else if (type == "brick|") {
+        auto half_size = _tileSize >> 1;
+        get_block(result, TileType::BRICK_0, position);
+        get_block(result, TileType::BRICK_0, position + Vector2f{0, half_size});
+    } else if (type == "steel-") {
+        auto half_size = _tileSize >> 1;
+        get_block(result, TileType::STEEL_0, position);
+        get_block(result, TileType::STEEL_0, position + Vector2f{half_size, 0});
+    } else if (type == "steel|") {
+        auto half_size = _tileSize >> 1;
+        get_block(result, TileType::STEEL_0, position);
+        get_block(result, TileType::STEEL_0, position + Vector2f{0, half_size});
+    }
+}
+
+void TileBuilder::gen_tile(TileArray& r, TileType t, Vector2f const& position) {
+    auto widget = Widget::New<TileView>(t);
+    widget->setPosition(position);
+    r.push_back(widget);
+}
+
+void TileBuilder::get_block(TileArray& r, TileType begin, Vector2f const& position) {
+    static int const block_size = Tile::SIZE >> 1;
+    Vector2f offset[4] = {
+            {0, 0},
+            {block_size >> 1, 0},
+            {0, block_size >> 1},
+            {block_size >> 1, block_size >> 1},
+    };
+    for (int i = 0; i < 4; ++i) {
+        gen_tile(r, TileType(begin + i), position + offset[i]);
+    }
+}
+
+//=====================================================================================
+
 Widget::Ptr firstScene() {
-    return Widget::New<BattleView>();
+    return Widget::New<LogoView>();
 }

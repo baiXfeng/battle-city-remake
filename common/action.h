@@ -53,6 +53,7 @@ public:
     void remove(std::string const& name);
     void remove(Action::Ptr const& action);
     void clear();
+    bool empty() const;
 protected:
     Actions _actions;
 };
@@ -183,12 +184,13 @@ private:
 
 class Blink : public Action {
 public:
-    Blink(Widget* target, float duration);
+    Blink(Widget* target, int times, float duration);
     State Step(float delta) override;
     void Reset() override;
 private:
     bool _visible;
-    int _timer;
+    float _timer;
+    float _timer_max;
     Widget* _target;
     float _duration;
     float _ticks;

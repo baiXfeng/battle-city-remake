@@ -66,16 +66,18 @@ void ActionExecuter::remove(std::string const& name) {
 }
 
 void ActionExecuter::remove(Action::Ptr const& action) {
-    for (auto iter = _actions.begin(); iter != _actions.end(); iter++) {
-        if (iter->get() == action.get()) {
-            _actions.erase(iter);
-            return;
-        }
+    auto iter = std::find(_actions.begin(), _actions.end(), action);
+    if (iter != _actions.end()) {
+        _actions.erase(iter);
     }
 }
 
 void ActionExecuter::clear() {
     _actions.clear();
+}
+
+bool ActionExecuter::empty() const {
+    return _actions.empty();
 }
 
 //=====================================================================================
@@ -275,27 +277,32 @@ void MoveBy::Reset() {
 
 //=====================================================================================
 
-Blink::Blink(Widget* target, float duration):_target(target), _duration(duration), _visible(target->visible()), _ticks(0.0f), _timer(0) {
+Blink::Blink(Widget* target, int times, float duration):
+_target(target),
+_duration(duration),
+_visible(target->visible()),
+_ticks(0.0f),
+_timer(0),
+_timer_max(duration / (times+1)) {
 
 }
 
 State Blink::Step(float delta) {
-    _ticks += delta;
-    if (_ticks >= _duration) {
-        return FINISH;
+    auto state = RUNNING;
+    if ((_ticks += delta) >= _duration) {
+        state = FINISH;
     }
-    _timer += delta * 1000;
-    if (_timer >= 16 * 8) {
+    if ((_timer += delta) >= _timer_max) {
         _target->setVisible(!_target->visible());
-        _timer = 0;
+        _timer -= _timer_max;
     }
-    return RUNNING;
+    return state;
 }
 
 void Blink::Reset() {
     _target->setVisible(_visible);
     _ticks = 0.0f;
-    _timer = 0;
+    _timer = 0.0f;
 }
 
 //=====================================================================================

@@ -24,7 +24,7 @@ public:
     typedef std::unordered_map<void*, RectI> RectCache;
     enum {
         MAX_LEVELS = 4,
-        MAX_OBJECTS = 10,
+        MAX_OBJECTS = 15,
     };
 public:
     QuadTree(int level, RectI const& bounds, RectCatcher const& catcher):_level(level), _bounds(bounds), _catcher(catcher) {}
