@@ -12,6 +12,7 @@
 #include "common/action.h"
 #include "common/quadtree.h"
 #include "common/collision.h"
+#include "common/event.h"
 #include <list>
 #include "src/view.h"
 

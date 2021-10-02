@@ -17,6 +17,7 @@ void GameVariable::initVariable() {
     _screen = std::make_shared<ScreenWidget>();
     _gamepad = std::make_shared<GamePad>();
     _audio = std::make_shared<AudioSystem>();
+    _event = std::make_shared<EventCenter>();
 }
 
 Fps& GameVariable::fps() {
@@ -33,4 +34,8 @@ GamePad& GameVariable::gamepad() {
 
 AudioSystem& GameVariable::audio() {
     return *_audio.get();
+}
+
+EventCenter& GameVariable::event() {
+    return *_event.get();
 }

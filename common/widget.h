@@ -12,6 +12,7 @@
 #include <SDL.h>
 #include "types.h"
 #include "gamepad.h"
+#include "event.h"
 
 void TestWidget();
 
@@ -24,7 +25,7 @@ public:                          \
 
 class Action;
 class ActionExecuter;
-class Widget : public GamePadListener {
+class Widget : public GamePadListener, public Event::Listener {
 public:
     typedef std::shared_ptr<Widget> WidgetPtr;
     typedef std::vector<WidgetPtr> WidgetArray;

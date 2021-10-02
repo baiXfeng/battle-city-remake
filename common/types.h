@@ -88,4 +88,23 @@ public:
 typedef Rect<int> RectI;
 typedef Rect<float> RectF;
 
+class Data {
+public:
+    virtual ~Data() {}
+};
+
+template<class T>
+class DataPack : public Data {
+public:
+    DataPack(T const& data):_data(data) {}
+    T& data() {
+        return _data;
+    }
+    T const& data() const {
+        return _data;
+    }
+private:
+    T _data;
+};
+
 #endif //SDL2_UI_TYPES_H

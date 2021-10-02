@@ -11,6 +11,7 @@ class Fps;
 class ScreenWidget;
 class GamePad;
 class AudioSystem;
+class EventCenter;
 class GameVariable {
 public:
     GameVariable();
@@ -20,6 +21,7 @@ public:
     ScreenWidget& screen();
     GamePad& gamepad();
     AudioSystem& audio();
+    EventCenter& event();
 protected:
     void initVariable();
 protected:
@@ -27,6 +29,7 @@ protected:
     std::shared_ptr<ScreenWidget> _screen;
     std::shared_ptr<GamePad> _gamepad;
     std::shared_ptr<AudioSystem> _audio;
+    std::shared_ptr<EventCenter> _event;
 };
 
 #endif //SDL2_UI_VARIABLE_H
