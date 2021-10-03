@@ -22,7 +22,7 @@ public:
         R2,
     } JOYIDX;
     typedef enum {
-        UNKNOWN,
+        UNKNOWN = 0,
         UP,
         DOWN,
         LEFT,
@@ -35,6 +35,7 @@ public:
         B,
         X,
         Y,
+        MAX,
     } KeyCode;
 public:
     virtual ~GamePadListener() {}
@@ -50,7 +51,8 @@ public:
     typedef std::shared_ptr<Widget> WidgetPtr;
     typedef std::list<WidgetPtr> List;
     typedef std::vector<int> KeyMap;
-    typedef std::unordered_map<int, bool> KeyState;
+    typedef std::vector<bool> KeyState;
+    typedef GamePadListener::KeyCode KeyCode;
 public:
     GamePad();
 public:

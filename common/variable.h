@@ -15,7 +15,7 @@ class EventCenter;
 class GameVariable {
 public:
     GameVariable();
-    virtual ~GameVariable() {}
+    virtual ~GameVariable();
 public:
     Fps& fps();
     ScreenWidget& screen();

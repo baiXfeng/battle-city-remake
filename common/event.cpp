@@ -3,6 +3,7 @@
 //
 
 #include "event.h"
+#include <algorithm>
 
 void EventCenter::add(int event_id, Listener* listener) {
     this->remove(event_id, listener);

@@ -5,6 +5,8 @@
 #ifndef SDL2_UI_DATA_H
 #define SDL2_UI_DATA_H
 
+#include "common/types.h"
+
 namespace Tile {
     static int const SIZE = 40;
 }
@@ -15,6 +17,7 @@ public:
 public:
     int layer;
     int type;
+    RectI rect;
 };
 
 #endif //SDL2_UI_DATA_H

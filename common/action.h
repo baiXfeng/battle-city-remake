@@ -52,6 +52,7 @@ public:
     void add(Action::Ptr const& action);
     void remove(std::string const& name);
     void remove(Action::Ptr const& action);
+    bool has(std::string const& name) const;
     void clear();
     bool empty() const;
 protected:
@@ -68,14 +69,33 @@ private:
     CallFunc _func;
 };
 
-class CallBackSender : public Action {
+template<typename T>
+class CallBackT : public Action {
 public:
-    typedef std::function<void(Widget*)> CallFunc;
+    typedef std::function<void(T const&)> CallFunc;
 public:
-    CallBackSender(Widget* target, CallFunc const& cf);
-    State Step(float dt) override;
+    CallBackT(T const& target, CallFunc const& cf):_target(target), _func(cf) {}
+    State Step(float dt) override {
+        _func(_target);
+        return FINISH;
+    }
 private:
-    Widget* _target;
+    T _target;
+    CallFunc _func;
+};
+
+class CallBackSender : public CallBackT<Widget*> {
+public:
+    CallBackSender(Widget* target, CallFunc const& cf):CallBackT<Widget*>(target, cf) {}
+};
+
+class CallBackDelta : public Action {
+public:
+    typedef std::function<void(float)> CallFunc;
+public:
+    CallBackDelta(CallFunc const& cf);
+    State Step(float delta) override;
+private:
     CallFunc _func;
 };
 
@@ -206,21 +226,6 @@ protected:
     State Step(float delta) override;
 protected:
     bool _replace;
-};
-
-template<class T>
-class PushSceneAction : public IPushSceneAction {
-public:
-    PushSceneAction(bool replace):IPushSceneAction(replace) {}
-private:
-    WidgetPtr create() override {
-        return WidgetPtr(new T);
-    }
-};
-
-class PopSceneAction : public Action {
-private:
-    State Step(float delta) override;
 };
 
 template <class T>

@@ -204,6 +204,10 @@ void Widget::draw(SDL_Renderer* renderer) {
     }
 }
 
+void Widget::dirty() {
+    onDirty();
+}
+
 void Widget::enter() {
     onEnter();
 }
@@ -263,7 +267,7 @@ void* Widget::userdata() const {
 void Widget::modifyLayout() {
     _global_size = _size * _scale.self_abs();
     _global_position = (_parent ? _parent->_global_position : Vector2f{0, 0}) + (_position - _global_size * _anchor);
-    this->onDirty();
+    this->dirty();
     _dirty = false;
     for (auto& child : _children) {
         child->modifyLayout();
@@ -285,6 +289,14 @@ void Widget::setPosition(float dx, float dy) {
     _position.y = dy;
     _dirty = true;
     this->onModifyPosition(_position);
+}
+
+void Widget::setPositionX(float dx) {
+    setPosition(dx, _position.y);
+}
+
+void Widget::setPositionY(float dy) {
+    setPosition(_position.x, dy);
 }
 
 Vector2f const& Widget::position() const {
@@ -387,6 +399,10 @@ void Widget::stopAction(std::string const& name) {
     _action->remove(name);
 }
 
+bool Widget::hasAction(std::string const& name) const {
+    return _action->has(name);
+}
+
 void Widget::stopAllActions() {
     _action->clear();
 }
@@ -445,8 +461,9 @@ void ImageWidget::setTexture(TexturePtr const& texture, SDL_Rect const& srcrect)
     this->setSize(_target->size().to<float>());
 }
 
-void ImageWidget::onDirty() {
+void ImageWidget::dirty() {
     _target->setSize(_global_size.x, _global_size.y);
+    this->onDirty();
 }
 
 void ImageWidget::onDraw(SDL_Renderer* renderer) {
@@ -703,7 +720,7 @@ _index(0),
 _frame_tick(0.0f),
 _frame_time(0.0f),
 _loop(false) {
-    enableUpdate(false);
+    enableUpdate(true);
 }
 
 void FrameAnimationWidget::setFrames(FrameArray const& frames) {
@@ -721,7 +738,8 @@ void FrameAnimationWidget::play(float duration, bool loop) {
     _frame_time = duration / _frames.size();
     _frame_tick = 0.0f;
     _index = 0;
-    enableUpdate(true);
+    setTexture(_frames[0]);
+    startAnimate();
 }
 
 void FrameAnimationWidget::play_once(float duration) {
@@ -733,10 +751,17 @@ void FrameAnimationWidget::stop() {
         return;;
     }
     setTexture(_frames[0]);
-    enableUpdate(false);
+    stopAction("animate");
 }
 
-void FrameAnimationWidget::onUpdate(float delta) {
+void FrameAnimationWidget::startAnimate() {
+    auto call = Action::Ptr(new CallBackDelta(std::bind(&FrameAnimationWidget::onAnimate, this, std::placeholders::_1)));
+    auto action = Action::New<Repeat>(call);
+    action->setName("animate");
+    runAction(action);
+}
+
+void FrameAnimationWidget::onAnimate(float delta) {
     bool modify = false;
     while ((_frame_tick += delta) >= _frame_time) {
         _frame_tick -= _frame_time;
@@ -745,7 +770,7 @@ void FrameAnimationWidget::onUpdate(float delta) {
                 _index = 0;
             } else {
                 _index = _frames.size() - 1;
-                enableUpdate(false);
+                stopAction("animate");
             }
         }
         modify = true;

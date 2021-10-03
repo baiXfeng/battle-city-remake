@@ -65,13 +65,13 @@ public:
     virtual void update(float delta);
     virtual void draw(SDL_Renderer* renderer);
 protected:
+    virtual void dirty();
     virtual void onUpdate(float delta) {}
     virtual void onDraw(SDL_Renderer* renderer) {}
     virtual void onDirty() {}
-public:
+protected:
     virtual void enter();
     virtual void exit();
-protected:
     virtual void onEnter() {}
     virtual void onExit() {}
 public:
@@ -85,6 +85,8 @@ public:
 public:
     void setPosition(Vector2f const& position);
     void setPosition(float dx, float dy);
+    void setPositionX(float dx);
+    void setPositionY(float dy);
     Vector2f const& position() const;
     Vector2f const& global_position() const;
     virtual void onModifyPosition(Vector2f const& position);
@@ -112,6 +114,7 @@ public:
     void runAction(ActionPtr const& action);
     void stopAction(ActionPtr const& action);
     void stopAction(std::string const& name);
+    bool hasAction(std::string const& name) const;
     void stopAllActions();
     void pauseAllActionWhenHidden(bool yes = true);
 protected:
@@ -161,7 +164,7 @@ public:
     void setTexture(TexturePtr const& texture, SDL_Rect const& srcrect);
 protected:
     void onDraw(SDL_Renderer* renderer) override;
-    void onDirty() override;
+    void dirty() override;
 private:
     RenderCopyPtr _target;
     TexturePtr _texture;
@@ -305,7 +308,8 @@ public:
     void play_once(float duration);
     void stop();
 private:
-    void onUpdate(float delta) override;
+    void startAnimate();
+    void onAnimate(float delta);
 private:
     bool _loop;
     int _index;

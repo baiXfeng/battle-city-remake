@@ -12,12 +12,20 @@ GameVariable::GameVariable() {
 
 }
 
+GameVariable::~GameVariable() {
+    _screen = nullptr;
+    _gamepad = nullptr;
+    _event = nullptr;
+    _audio = nullptr;
+    _fps = nullptr;
+}
+
 void GameVariable::initVariable() {
     _fps = std::make_shared<Fps>();
-    _screen = std::make_shared<ScreenWidget>();
-    _gamepad = std::make_shared<GamePad>();
     _audio = std::make_shared<AudioSystem>();
     _event = std::make_shared<EventCenter>();
+    _gamepad = std::make_shared<GamePad>();
+    _screen = std::make_shared<ScreenWidget>();
 }
 
 Fps& GameVariable::fps() {

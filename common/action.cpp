@@ -5,6 +5,7 @@
 #include "action.h"
 #include "widget.h"
 #include "game.h"
+#include <algorithm>
 
 void TestAction() {
 
@@ -72,6 +73,15 @@ void ActionExecuter::remove(Action::Ptr const& action) {
     }
 }
 
+bool ActionExecuter::has(std::string const& name) const {
+    for (auto iter = _actions.begin(); iter != _actions.end(); iter++) {
+        if (iter->get()->name() == name) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void ActionExecuter::clear() {
     _actions.clear();
 }
@@ -91,12 +101,12 @@ State CallBackVoid::Step(float dt) {
     return FINISH;
 }
 
-CallBackSender::CallBackSender(Widget* target, CallFunc const& cf):_target(target), _func(cf) {
+CallBackDelta::CallBackDelta(CallFunc const& cf):_func(cf) {
 
 }
 
-State CallBackSender::Step(float dt) {
-    _func(_target);
+State CallBackDelta::Step(float dt) {
+    _func(dt);
     return FINISH;
 }
 
@@ -283,7 +293,7 @@ _duration(duration),
 _visible(target->visible()),
 _ticks(0.0f),
 _timer(0),
-_timer_max(duration / (times+1)) {
+_timer_max(duration / (times * 2)) {
 
 }
 
@@ -303,27 +313,4 @@ void Blink::Reset() {
     _target->setVisible(_visible);
     _ticks = 0.0f;
     _timer = 0.0f;
-}
-
-//=====================================================================================
-
-IPushSceneAction::IPushSceneAction(bool replace):_replace(replace) {
-
-}
-
-State IPushSceneAction::Step(float delta) {
-    auto scene = this->create();
-    if (_replace) {
-        _game.screen().replace(scene);
-    } else {
-        _game.screen().push(scene);
-    }
-    return FINISH;
-}
-
-//=====================================================================================
-
-State PopSceneAction::Step(float delta) {
-    _game.screen().pop();
-    return FINISH;
 }

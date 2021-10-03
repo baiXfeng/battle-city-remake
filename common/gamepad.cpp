@@ -35,6 +35,7 @@ GamePad::GamePad():_keyboard_event(false), _sleep(false) {
 #if defined(__vita__)
     initKeyMapVita(_keyValue);
 #endif
+    _keyState.resize(KeyCode::MAX, false);
 }
 
 void GamePad::sleep(float seconds) {
@@ -51,11 +52,7 @@ void GamePad::sleep(float seconds) {
 }
 
 bool GamePad::isPressed(int key) const {
-    auto iter = _keyState.find(key);
-    if (iter == _keyState.end()) {
-        return false;
-    }
-    return iter->second;
+    return _keyState[key];
 }
 
 void GamePad::add(WidgetPtr const& widget) {
@@ -68,11 +65,11 @@ void GamePad::remove(WidgetPtr const& widget) {
 }
 
 void GamePad::remove(Widget const* widget) {
-    if (_widget.get() == widget) {
-        _widget = nullptr;
-    }
     for (auto iter = _views.begin(); iter != _views.end(); iter++) {
         if (iter->get() == widget) {
+            if (_views.back() == *iter) {
+                _keyState.clear();
+            }
             _views.erase(iter);
             return;
         }
@@ -90,9 +87,8 @@ void GamePad::onEvent(SDL_Event const& event) {
                 return;
             }
             _keyState[key] = false;
-            if (_widget != nullptr and not _sleep) {
-                _widget->onButtonUp(key);
-                _widget = nullptr;
+            if (_views.size() and not _sleep) {
+                _views.back()->onButtonUp(key);
             }
         }
             break;
@@ -104,10 +100,8 @@ void GamePad::onEvent(SDL_Event const& event) {
             }
             _keyState[key] = true;
             if (_views.size() and not _sleep) {
-                _widget = _views.back();
-                _widget->onButtonDown(key);
+                _views.back()->onButtonDown(key);
             }
-            //printf("button = %d\n", key);
         }
             break;
         case SDL_JOYAXISMOTION:

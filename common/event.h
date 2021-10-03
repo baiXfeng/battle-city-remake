@@ -24,7 +24,7 @@ public:
         return dp->data();
     }
     template<class T> T const& data() const {
-        auto dp = static_cast<DataPack<T>*>(getData());
+        auto dp = static_cast<DataPack<T>*>((Data*)getData());
         return dp->data();
     }
     int Id() const {
