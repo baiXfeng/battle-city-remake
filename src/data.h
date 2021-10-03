@@ -17,7 +17,6 @@ public:
 public:
     int layer;
     int type;
-    RectI rect;
 };
 
 #endif //SDL2_UI_DATA_H

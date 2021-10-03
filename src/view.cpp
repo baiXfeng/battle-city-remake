@@ -428,8 +428,12 @@ static int const _tileSize = Tile::SIZE;
 static int const _mapSize = 13 * _tileSize;
 
 static RectI tileRectCatcher(QuadTree<Widget::Ptr>::Square const& square) {
-    auto data = (TileData*)square->userdata();
-    return data->rect;
+    return RectI{
+        square->position().x - square->size().x * square->anchor().x,
+        square->position().y - square->size().y * square->anchor().y,
+        square->size().x,
+        square->size().y,
+    };
 }
 
 BattleFieldView::BattleFieldView():
@@ -439,7 +443,7 @@ _player(nullptr) {
     auto old_size = this->size();
     this->setSize(_mapSize, _mapSize);
 
-    _quadtree = QuadTreePtr(new QuadTree<Widget::Ptr>(0, {0, 0, int(size().x), int(size().y)}, tileRectCatcher));
+    _quadtree = DebugQuadTreeT::Ptr(new DebugQuadTreeT(0, {0, 0, int(size().x), int(size().y)}, tileRectCatcher));
 
     Ptr widget;
 
@@ -463,12 +467,6 @@ _player(nullptr) {
 
         builder.gen(result, "base", {6 * _tileSize, 12 * _tileSize});
 
-        builder.gen(result, "ice-floor", {9 * _tileSize, 3 * _tileSize});
-        builder.gen(result, "ice-floor", {3 * _tileSize, 3 * _tileSize});
-        builder.gen(result, "ice-floor", {3 * _tileSize, 9 * _tileSize});
-        builder.gen(result, "ice-floor", {9 * _tileSize, 9 * _tileSize});
-
-        /*
         builder.gen(result, "big-steel", {2 * _tileSize, 2 * _tileSize});
         builder.gen(result, "water", {3 * _tileSize, 3 * _tileSize});
         builder.gen(result, "trees", {4 * _tileSize, 4 * _tileSize});
@@ -480,7 +478,6 @@ _player(nullptr) {
         builder.gen(result, "steel-", {1 * _tileSize, 0.5f * _tileSize});
         builder.gen(result, "brick|", {3 * _tileSize, 0 * _tileSize});
         builder.gen(result, "steel|", {3.5f * _tileSize, 0 * _tileSize});
-         */
 
         for (auto& widget : result) {
             addElement(widget);
@@ -494,13 +491,15 @@ _player(nullptr) {
         builder.gen(result, TankView::PLAYER_1, {3.5f * _tileSize, 5 * _tileSize});
         _player = result[0]->to<TankView>();
 
-        {
+        {/*
             auto call = Action::Ptr(
                     new CallBackT<TankView*>(_player,std::bind(&BattleFieldView::onTankMoveCollision, this, std::placeholders::_1)));
             auto call1 = Action::Ptr(
                     new CallBackT<Widget::Ptr>(result[0], std::bind(&BattleFieldView::onTankUpdateQuadTree, this, std::placeholders::_1)));
-            auto repeat = Action::New<Repeat>(call);
+            auto seq = Action::Ptr(new Sequence({call1, call}));
+            auto repeat = Action::New<Repeat>(seq);
             runAction(repeat);
+            */
         }
 
         for (auto& widget : result) {
@@ -515,6 +514,20 @@ void BattleFieldView::onUpdate(float delta) {
     procTankControl();
 }
 
+void BattleFieldView::draw(SDL_Renderer* renderer) {
+    if (!_visible) {
+        return;
+    }
+    for (auto& child : _children) {
+        child->draw(renderer);
+    }
+    onDraw(renderer);
+}
+
+void BattleFieldView::onDraw(SDL_Renderer* renderer) {
+    _quadtree->draw(renderer, _global_position.to<int>());
+}
+
 void BattleFieldView::onTankUpdateQuadTree(Widget::Ptr const& tank) {
     _quadtree->remove(tank);
     _quadtree->insert(tank);
@@ -527,14 +540,18 @@ void BattleFieldView::onTankMoveCollision(TankView* tank) {
             flags[widget.get()] = false;
         }
     }
+    auto position = tank->position() - tank->size() * tank->anchor();
     RectI rect{
-        int(tank->global_position().x),
-        int(tank->global_position().y),
-        int(tank->global_size().x),
-        int(tank->global_size().y),
+        int(position.x),
+        int(position.y),
+        int(tank->size().x),
+        int(tank->size().y),
     };
     WidgetQuadTree::SquareList result;
     _quadtree->retrieve(result, rect);
+    _quadtree->unique(result, [](WidgetQuadTree::Square const& obj){
+        return obj.get();
+    });
     _checklist = result;
     printf("对象: %d\n", (int)result.size());
 
@@ -564,6 +581,10 @@ void BattleFieldView::onTankMoveCollision(TankView* tank) {
 void BattleFieldView::onButtonDown(int key) {
     if (key >= KeyCode::UP and key <= KeyCode::RIGHT) {
         add_key(key);
+    } else if (key == KeyCode::START) {
+        this->onTankMoveCollision(_player);
+    } else if (key == KeyCode::SELECT) {
+        this->onTankUpdateQuadTree(_player->ptr());
     }
 }
 
@@ -879,10 +900,7 @@ void TileView::draw(SDL_Renderer* renderer) {
 }
 
 void TileView::onDirty() {
-    _data->rect.x = _global_position.x;
-    _data->rect.y = _global_position.y;
-    _data->rect.w = _global_size.x;
-    _data->rect.h = _global_size.y;
+
 }
 
 //=====================================================================================
@@ -953,10 +971,6 @@ void TankView::limitPosition() {
 }
 
 void TankView::onDirty() {
-    _data->rect.x = _global_position.x;
-    _data->rect.y = _global_position.y;
-    _data->rect.w = _global_size.x;
-    _data->rect.h = _global_size.y;
     setSize(_tileSize, _tileSize);
 }
 

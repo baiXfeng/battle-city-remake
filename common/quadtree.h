@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include "types.h"
+#include "render.h"
 
 template<typename T>
 class QuadTree {
@@ -21,7 +22,6 @@ public:
     typedef std::list<Square> SquareList;
     typedef std::vector<Ptr> QuadTreeList;
     typedef std::function<RectI(Square const&)> RectCatcher;
-    typedef std::unordered_map<void*, RectI> RectCache;
     typedef std::function<void*(T const&)> Pointer;
     enum {
         MAX_LEVELS = 4,
@@ -61,31 +61,45 @@ public:
         }
     }
     void clear() {
-        _rects.clear();
         _objects.clear();
         _nodes.clear();
     }
-    void insert(Square const& sprite, bool save_rect = true) {
-
-        RectI pRect = _catcher(sprite);
-        if (save_rect) {
-            _rects[sprite.get()] = pRect;
+    void insert(Square const& sprite) {
+        insert_square(sprite, _catcher(sprite));
+    }
+    void remove(Square const& sprite) {
+        remove_square(sprite, _catcher(sprite));
+    }
+    QuadTreeList const& nodes() const {
+        return _nodes;
+    }
+    RectI const& bound() const {
+        return _bounds;
+    }
+protected:
+    void remove_square(Square const& sprite, RectI const& rect) {
+        auto indexes = getIndexes(rect);
+        if (_nodes.empty() or indexes.front() == -1) {
+            this->erase(sprite);
+        } else if (_nodes.size()) {
+            for (auto const& index : indexes) {
+                _nodes[index]->remove_square(sprite, rect);
+            }
         }
-
+    }
+    void insert_square(Square const& sprite, RectI const& rect) {
         if(_nodes.size()) {
-            auto indexes = getIndexes(pRect);
+            auto indexes = getIndexes(rect);
             if (indexes.front() != -1) {
                 for (auto const& index : indexes) {
-                    _nodes[index]->insert(sprite, false);
+                    _nodes[index]->insert_square(sprite, rect);
                 }
                 return;
             }
         }
-
         _objects.push_back(sprite);
 
         if(_objects.size() > MAX_OBJECTS && _level < MAX_LEVELS) {
-
             if(_nodes.empty()) {
                 split();
             }
@@ -97,30 +111,13 @@ public:
                     ++iter;
                 } else {
                     for (auto const& index : indexes) {
-                        _nodes[index]->insert(sqaureOne, false);
+                        _nodes[index]->insert_square(sqaureOne, rect);
                     }
                     _objects.erase(iter++);
                 }
             }
         }
     }
-    void remove(Square const& sprite) {
-        auto iter = _rects.find(sprite.get());
-        if (iter == _rects.end()) {
-            return;
-        }
-        auto& rect = iter->second;
-        auto tree = find(rect);
-        tree->erase(sprite);
-        _rects.erase(iter);
-    }
-    QuadTreeList const& nodes() const {
-        return _nodes;
-    }
-    RectI const& bound() const {
-        return _bounds;
-    }
-protected:
     void split() {
         int x = (int)_bounds.x;
         int y = (int)_bounds.y;
@@ -193,24 +190,35 @@ protected:
             _objects.erase(iter);
         }
     }
-    QuadTree* find(RectI const& rect) {
-        if (_nodes.size()) {
-            auto indexes = getIndexes(rect);
-            for (auto const& index : indexes) {
-                if(index != -1) {
-                    return _nodes[index]->find(rect);
-                }
-            }
-        }
-        return this;
-    }
 protected:
     int _level;
     RectI _bounds;
     SquareList _objects;
     QuadTreeList _nodes;
     RectCatcher _catcher;
-    RectCache _rects;
+};
+
+template<class T>
+class DebugQuadTree : public QuadTree<T> {
+public:
+    typedef std::shared_ptr<DebugQuadTree<T>> Ptr;
+    typedef QuadTree<T> QuadTreeT;
+    typedef typename QuadTree<T>::RectCatcher RectCatcher;
+public:
+    DebugQuadTree(int level, RectI const& bounds, RectCatcher const& catcher):QuadTreeT(level, bounds, catcher) {}
+    void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0}) {
+        draw(renderer, *this, position);
+    }
+private:
+    void draw(SDL_Renderer* renderer, QuadTreeT const& quadtree, Vector2i const& position) {
+        RenderDrawRect rect;
+        rect.setColor({255, 255, 255, 255});
+        rect.setSize(quadtree.bound().w-1, quadtree.bound().h-1);
+        rect.draw(renderer, position + Vector2i{quadtree.bound().x, quadtree.bound().y});
+        for (auto& node : quadtree.nodes()) {
+            draw(renderer, *node.get(), position);
+        }
+    }
 };
 
 #endif //SDL2_UI_QUADTREE_H

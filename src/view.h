@@ -64,10 +64,13 @@ public:
 
 class TankView;
 class BattleFieldView : public GamePadWidget {
+    typedef DebugQuadTree<Widget::Ptr> DebugQuadTreeT;
 public:
     BattleFieldView();
 private:
     void onUpdate(float delta) override;
+    void draw(SDL_Renderer* renderer) override;
+    void onDraw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
     void addElement(Widget::Ptr& widget);
@@ -80,7 +83,7 @@ private:
     void add_key(int key);
     bool remove_key(int key);
 private:
-    typedef QuadTree<Widget::Ptr> WidgetQuadTree;
+    typedef DebugQuadTreeT WidgetQuadTree;
     typedef std::shared_ptr<WidgetQuadTree> QuadTreePtr;
     Widget* _root;
     TankView* _player;
