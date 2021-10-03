@@ -7,7 +7,10 @@
 #include "common/game.h"
 #include "common/action.h"
 #include "common/audio.h"
+#include "common/collision.h"
+#include "const.h"
 #include "data.h"
+#include <assert.h>
 
 std::string fontName = "assets/fonts/prstart.ttf";
 
@@ -38,22 +41,6 @@ public:
         label->setPosition(480, 272);
         label->setAnchor(0.5f, 0.5f);
         root->addChild(label_ptr);
-
-        if (false) {
-            auto call = Action::New<CallBackVoid>([&]{
-                auto a1 = Action::Ptr(new PushSceneAction<HelloWorld>(true));
-                auto a1_delay = Action::Ptr(new Delay(1.0f));
-                auto a1_seq = Action::Ptr(new Sequence({a1, a1_delay}));
-                auto a2 = Action::Ptr(new CallBackVoid([]() {
-                    //printf("开幕.\n");
-                }));
-                //_game.screen().cut_to(a1_seq, 0.33f);
-            });
-            auto delay = Action::Ptr(new Delay(2.0f));
-            auto seq = Action::Ptr(new Sequence({delay, call}));
-            auto action = Action::Ptr(new Repeat(seq));
-            root->runAction(action);
-        }
 
         {
             auto zoom_big = Action::Ptr(new ScaleBy(bgView.get(), {1.0f, 1.0f}, 0.5f));
@@ -440,10 +427,19 @@ BattleView::BattleView() {
 static int const _tileSize = Tile::SIZE;
 static int const _mapSize = 13 * _tileSize;
 
-BattleFieldView::BattleFieldView():_root(nullptr) {
+static RectI tileRectCatcher(QuadTree<Widget>::Square const& square) {
+    auto data = (TileData*)square->userdata();
+    return data->rect;
+}
+
+BattleFieldView::BattleFieldView():
+_root(nullptr),
+_player(nullptr) {
 
     auto old_size = this->size();
     this->setSize(_mapSize, _mapSize);
+
+    _quadtree = QuadTreePtr(new QuadTree<Widget>(0, {0, 0, int(size().x), int(size().y)}, tileRectCatcher));
 
     Ptr widget;
 
@@ -482,12 +478,137 @@ BattleFieldView::BattleFieldView():_root(nullptr) {
         for (auto& widget : result) {
             addElement(widget);
         }
-        sortElements();
     }
+
+    {
+        TankBuilder builder;
+        TankBuilder::TankArray result;
+
+        builder.gen(result, TankView::PLAYER_1, {3.5f * _tileSize, 5 * _tileSize});
+        _player = result[0]->to<TankView>();
+
+        {
+            auto call = Action::Ptr(
+                    new CallBackT<TankView*>(_player,std::bind(&BattleFieldView::onTankMoveCollision, this, std::placeholders::_1)));
+            auto call1 = Action::Ptr(
+                    new CallBackT<Widget::Ptr>(result[0], std::bind(&BattleFieldView::onTankUpdateQuadTree, this, std::placeholders::_1)));
+            auto repeat = Action::New<Repeat>(call);
+            runAction(repeat);
+        }
+
+        {
+            auto blink = Action::Ptr(new Blink(_player, 5, 1.0f));
+            auto repeat = Action::New<Repeat>(blink);
+            repeat->setName("tile-blink");
+            _player->runAction(repeat);
+        }
+
+        for (auto& widget : result) {
+            addElement(widget);
+        }
+    }
+
+    sortElements();
+}
+
+void BattleFieldView::onUpdate(float delta) {
+    procTankControl();
+}
+
+void BattleFieldView::onTankUpdateQuadTree(Widget::Ptr const& tank) {
+    _quadtree->remove(tank);
+    _quadtree->insert(tank);
+}
+
+void BattleFieldView::onTankMoveCollision(TankView* tank) {
+    return;
+    std::map<Widget*, bool> flags;
+    if (_checklist.size()) {
+        for (auto& widget : _checklist) {
+            flags[widget.get()] = false;
+        }
+    }
+    RectI rect{
+        int(tank->global_position().x),
+        int(tank->global_position().y),
+        int(tank->global_size().x),
+        int(tank->global_size().y),
+    };
+    WidgetQuadTree::SquareList result;
+    _quadtree->retrieve(result, rect);
+    _checklist = result;
+    printf("对象: %d\n", (int)result.size());
+
+    for (auto& widget : _checklist) {
+        flags[widget.get()] = true;
+    }
+
+    for (auto& iter : flags) {
+        if (iter.first == tank) {
+            continue;
+        }
+        if (iter.second) {
+            if (!iter.first->hasAction("tile-blink")) {
+                auto widget = iter.first;
+                auto blink = Action::Ptr(new Blink(widget, 5, 0.5f));
+                auto repeat = Action::New<Repeat>(blink);
+                repeat->setName("tile-blink");
+                widget->runAction(repeat);
+            }
+        } else {
+            iter.first->stopAction("tile-blink");
+        }
+    }
+}
+
+void BattleFieldView::onButtonDown(int key) {
+    if (key >= KeyCode::UP and key <= KeyCode::RIGHT) {
+        add_key(key);
+    }
+}
+
+void BattleFieldView::onButtonUp(int key) {
+    if (key >= KeyCode::UP and key <= KeyCode::RIGHT) {
+        remove_key(key);
+    }
+}
+
+void BattleFieldView::procTankControl() {
+    auto& gamepad = _game.gamepad();
+    std::map<int, int> keyMap = {
+            {KeyCode::UP, TankView::UP},
+            {KeyCode::DOWN, TankView::DOWN},
+            {KeyCode::LEFT, TankView::LEFT},
+            {KeyCode::RIGHT, TankView::RIGHT},
+    };
+    if (_keylist.size()) {
+        _player->move(TankView::Direction(keyMap[_keylist.back()]));
+    } else {
+        _player->stop();
+    }
+}
+
+void BattleFieldView::add_key(int key) {
+    _keylist.push_back(key);
+}
+
+bool BattleFieldView::remove_key(int key) {
+    auto iter = std::find(_keylist.begin(), _keylist.end(), key);
+    if (iter != _keylist.end()) {
+        _keylist.erase(iter);
+        return true;
+    }
+    return false;
 }
 
 void BattleFieldView::addElement(Widget::Ptr& widget) {
     _root->addChild(widget);
+
+    auto data = (TileData*)widget->userdata();
+    if (data->type != TileView::TREES) {
+        // 除了树以外的砖块，都加入四叉树进行碰撞处理
+        _quadtree->insert(widget);
+    }
 }
 
 bool sortWidget(Widget::Ptr const& first, Widget::Ptr const& second) {
@@ -505,7 +626,33 @@ void BattleFieldView::sortElements() {
 
 static int const _enemy_icon_size = 20;
 
+BattleInfoView::~BattleInfoView() {
+    _game.event().remove(EventID::ENEMY_NUMBER_CHANGED, this);
+    _game.event().remove(EventID::PLAYER1_NUMBER_CHANGED, this);
+}
+
+void BattleInfoView::onEvent(Event const& e) {
+    if (e.Id() == EventID::ENEMY_NUMBER_CHANGED) {
+        auto value = e.data<int>();
+        onEnemyNumberChanged(value);
+    } else if (e.Id() == EventID::PLAYER1_NUMBER_CHANGED) {
+        auto value = e.data<int>();
+        onPlayerNumberChanged(value);
+    }
+}
+
+void BattleInfoView::onEnemyNumberChanged(int n) {
+
+}
+
+void BattleInfoView::onPlayerNumberChanged(int n) {
+
+}
+
 BattleInfoView::BattleInfoView() {
+
+    _game.event().add(EventID::ENEMY_NUMBER_CHANGED, this);
+    _game.event().add(EventID::PLAYER1_NUMBER_CHANGED, this);
 
     Ptr widget;
     int const padding = 18;
@@ -701,6 +848,7 @@ void TileView::setType(TYPE t) {
             setTexture(frames[0]);
             runAction(Action::Ptr(new FrameAnimationAction(this, frames, 1.0f)));
             setSize(_tileSize, _tileSize);
+            _data->layer = 0;
             return;
         }
             break;
@@ -710,7 +858,7 @@ void TileView::setType(TYPE t) {
     setSize(_tileSize, _tileSize);
 }
 
-TileView::TYPE TileView::type() const {
+int TileView::type() const {
     return _type;
 }
 
@@ -725,6 +873,88 @@ void TileView::update(float delta) {
 
 void TileView::draw(SDL_Renderer* renderer) {
     ImageWidget::onDraw(renderer);
+}
+
+void TileView::onDirty() {
+    _data->rect.x = _global_position.x;
+    _data->rect.y = _global_position.y;
+    _data->rect.w = _global_size.x;
+    _data->rect.h = _global_size.y;
+}
+
+//=====================================================================================
+
+TankView::TankView(TYPE t, TexturesArray const& array):
+_type(t),
+_texArr(array),
+_data(std::make_shared<TileData>()),
+_dir(MAX) {
+    setAnchor(0.5f, 0.5f);
+    set_userdata(_data.get());
+    _data->type = _type;
+    _data->layer = 1;
+    auto mask = Ptr(new MaskWidget({255, 0, 0, 255}));
+    mask->setSize(_tileSize, _tileSize);
+    addChild(mask);
+}
+
+void TankView::move(Direction dir) {
+    _dir = dir;
+    setFrames(_texArr[dir]);
+    play(0.15f);
+    Vector2f speed[4] = {
+            {0.0f, -100.0f},
+            {100.0f, 0.0f},
+            {0.0f, 100.0f},
+            {-100.0f, 0.0f},
+    };
+    _move = speed[dir];
+}
+
+void TankView::turn(Direction dir) {
+    setTexture(_texArr[dir].front());
+}
+
+void TankView::stop(Direction dir) {
+    if (dir == UP or dir == DOWN) {
+        _move.y = 0.0f;
+    } else if (dir == LEFT or dir == RIGHT) {
+        _move.x = 0.0f;
+    } else {
+        _move = {0, 0};
+    }
+}
+
+void TankView::onUpdate(float delta) {
+    setPosition( position() + _move * delta );
+    limitPosition();
+}
+
+void TankView::limitPosition() {
+    int half_width = int(size().x) >> 1;
+    int half_height = int(size().y) >> 1;
+    if (position().y < half_height and _move.y < 0.0f) {
+        setPositionY(half_height);
+        _move.y = 0.0f;
+    } else if (position().y > parent()->size().y - half_height and _move.y > 0.0f) {
+        setPositionY(parent()->size().y - half_height);
+        _move.y = 0.0f;
+    }
+    if (position().x < half_width and _move.x < 0.0f) {
+        setPositionX(half_width);
+        _move.x = 0.0f;
+    } else if (position().x > parent()->size().x - half_width and _move.x > 0.0f) {
+        setPositionX(parent()->size().x - half_width);
+        _move.x = 0.0f;
+    }
+}
+
+void TankView::onDirty() {
+    _data->rect.x = _global_position.x;
+    _data->rect.y = _global_position.y;
+    _data->rect.w = _global_size.x;
+    _data->rect.h = _global_size.y;
+    setSize(_tileSize, _tileSize);
 }
 
 //=====================================================================================
@@ -743,31 +973,31 @@ void TileBuilder::gen(TileArray& result, std::string const& type, Vector2f const
     } else if (type == "steel") {
         get_block(result, TileType::STEEL_0, position);
     } else if (type == "big-brick") {
-        auto half_size = _tileSize >> 1;
+        float half_size = _tileSize >> 1;
         get_block(result, TileType::BRICK_0, position);
         get_block(result, TileType::BRICK_0, position + Vector2f{half_size, 0});
         get_block(result, TileType::BRICK_0, position + Vector2f{0, half_size});
         get_block(result, TileType::BRICK_0, position + Vector2f{half_size, half_size});
     } else if (type == "big-steel") {
-        auto half_size = _tileSize >> 1;
+        float half_size = _tileSize >> 1;
         get_block(result, TileType::STEEL_0, position);
         get_block(result, TileType::STEEL_0, position + Vector2f{half_size, 0});
         get_block(result, TileType::STEEL_0, position + Vector2f{0, half_size});
         get_block(result, TileType::STEEL_0, position + Vector2f{half_size, half_size});
     } else if (type == "brick-") {
-        auto half_size = _tileSize >> 1;
+        float half_size = _tileSize >> 1;
         get_block(result, TileType::BRICK_0, position);
         get_block(result, TileType::BRICK_0, position + Vector2f{half_size, 0});
     } else if (type == "brick|") {
-        auto half_size = _tileSize >> 1;
+        float half_size = _tileSize >> 1;
         get_block(result, TileType::BRICK_0, position);
         get_block(result, TileType::BRICK_0, position + Vector2f{0, half_size});
     } else if (type == "steel-") {
-        auto half_size = _tileSize >> 1;
+        float half_size = _tileSize >> 1;
         get_block(result, TileType::STEEL_0, position);
         get_block(result, TileType::STEEL_0, position + Vector2f{half_size, 0});
     } else if (type == "steel|") {
-        auto half_size = _tileSize >> 1;
+        float half_size = _tileSize >> 1;
         get_block(result, TileType::STEEL_0, position);
         get_block(result, TileType::STEEL_0, position + Vector2f{0, half_size});
     }
@@ -776,6 +1006,7 @@ void TileBuilder::gen(TileArray& result, std::string const& type, Vector2f const
 void TileBuilder::gen_tile(TileArray& r, TileType t, Vector2f const& position) {
     auto widget = Widget::New<TileView>(t);
     widget->setPosition(position);
+    widget->performLayout();
     r.push_back(widget);
 }
 
@@ -794,6 +1025,35 @@ void TileBuilder::get_block(TileArray& r, TileType begin, Vector2f const& positi
 
 //=====================================================================================
 
+void TankBuilder::gen(TankArray& r, TankType t, Vector2f const& position) {
+    TankView::TexturesArray texArray;
+    gen_textures(texArray, t);
+    auto view = new TankView(t, texArray);
+    view->setPosition(position + Vector2f{Tile::SIZE >> 1, Tile::SIZE >> 1});
+    view->performLayout();
+    r.push_back(Widget::Ptr(view));
+}
+
+void TankBuilder::gen_textures(TexturesArray& array, TankType t) {
+    array.clear();
+    array.resize(Direction::MAX);
+    auto& up = array[Direction::UP];
+    auto& right = array[Direction::RIGHT];
+    auto& down = array[Direction::DOWN];
+    auto& left = array[Direction::LEFT];
+    switch (t) {
+        case TankType::PLAYER_1:
+        {
+
+        }
+            break;
+        default:
+            break;
+    }
+}
+
+//=====================================================================================
+
 Widget::Ptr firstScene() {
-    return Widget::New<LogoView>();
+    return Widget::New<BattleView>();
 }

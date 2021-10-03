@@ -6,6 +6,7 @@
 #define SDL2_UI_VIEW_H
 
 #include "common/widget.h"
+#include "common/quadtree.h"
 
 Widget::Ptr firstScene();
 
@@ -56,24 +57,46 @@ private:
     float _duration;
 };
 
-class BattleView : public GamePadWidget {
+class BattleView : public WindowWidget {
 public:
     BattleView();
 };
 
-class BattleFieldView : public WindowWidget {
+class TankView;
+class BattleFieldView : public GamePadWidget {
 public:
     BattleFieldView();
 private:
+    void onUpdate(float delta) override;
+    void onButtonDown(int key) override;
+    void onButtonUp(int key) override;
     void addElement(Widget::Ptr& widget);
     void sortElements();
+    void procTankControl();
 private:
+    void onTankUpdateQuadTree(Widget::Ptr const& tank);
+    void onTankMoveCollision(TankView* tank);
+private:
+    void add_key(int key);
+    bool remove_key(int key);
+private:
+    typedef QuadTree<Widget> WidgetQuadTree;
+    typedef std::shared_ptr<WidgetQuadTree> QuadTreePtr;
     Widget* _root;
+    TankView* _player;
+    QuadTreePtr _quadtree;
+    std::list<int> _keylist;
+    WidgetQuadTree::SquareList _checklist;
 };
 
 class BattleInfoView : public Widget {
 public:
     BattleInfoView();
+    ~BattleInfoView();
+private:
+    void onEvent(Event const& e) override;
+    void onEnemyNumberChanged(int n);
+    void onPlayerNumberChanged(int n);
 private:
     ImageWidget* createEnemyIcon();
 };
@@ -82,7 +105,7 @@ class TileData;
 class TileView : public ImageWidget {
 public:
     enum TYPE {
-        NONE = 0,
+        NONE = 0x100,
         BASE,
         BRICK_0,
         BRICK_1,
@@ -101,12 +124,49 @@ public:
     TileView(TYPE t);
 public:
     void setType(TYPE t);
-    TYPE type() const;
+    int type() const;
 private:
     void update(float delta) override;
     void draw(SDL_Renderer* renderer) override;
+    void onDirty() override;
 private:
     TYPE _type;
+    TileDataPtr _data;
+};
+
+class TankView : public FrameAnimationWidget {
+public:
+    enum Direction {
+        UP = 0,
+        RIGHT,
+        DOWN,
+        LEFT,
+        MAX,
+    };
+    enum TYPE {
+        NONE = 0x200,
+        PLAYER_1,
+        PLAYER_2,
+        PLAYER_3,
+        PLAYER_4,
+    };
+    typedef std::vector<TexturePtr> Textures;
+    typedef std::vector<Textures> TexturesArray;
+    typedef std::shared_ptr<TileData> TileDataPtr;
+public:
+    TankView(TYPE t, TexturesArray const& array);
+    void move(Direction dir);
+    void turn(Direction dir);
+    void stop(Direction dir = MAX);
+private:
+    void onUpdate(float delta) override;
+    void onDirty() override;
+    void limitPosition();
+private:
+    TYPE _type;
+    Direction _dir;
+    Vector2f _move;
+    TexturesArray _texArr;
     TileDataPtr _data;
 };
 
@@ -119,6 +179,18 @@ public:
 private:
     void gen_tile(TileArray& r, TileType t, Vector2f const& position);
     void get_block(TileArray& r, TileType begin, Vector2f const& position);
+};
+
+class TankBuilder {
+public:
+    typedef std::vector<Widget::Ptr> TankArray;
+    typedef TankView::Direction Direction;
+    typedef TankView::TYPE TankType;
+    typedef TankView::TexturesArray TexturesArray;
+public:
+    void gen(TankArray& r, TankType t, Vector2f const& position);
+private:
+    void gen_textures(TexturesArray& array, TankType t);
 };
 
 #endif //SDL2_UI_VIEW_H
