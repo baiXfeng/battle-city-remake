@@ -46,4 +46,25 @@ protected:
     Vector2f _anchor;
 };
 
+class RenderFillRect {
+public:
+    RenderFillRect();
+    virtual ~RenderFillRect() {}
+public:
+    void setSize(int w, int h);
+    Vector2i const& size() const;
+    void setColor(SDL_Color const& c);
+    SDL_Color const& color() const;
+public:
+    virtual void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0});
+protected:
+    Vector2i _size;
+    SDL_Color _color;
+};
+
+class RenderDrawRect : public RenderFillRect {
+public:
+    void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0}) override;
+};
+
 #endif //SDL2_UI_RENDER_H

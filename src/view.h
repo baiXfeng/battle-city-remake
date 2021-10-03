@@ -80,7 +80,7 @@ private:
     void add_key(int key);
     bool remove_key(int key);
 private:
-    typedef QuadTree<Widget> WidgetQuadTree;
+    typedef QuadTree<Widget::Ptr> WidgetQuadTree;
     typedef std::shared_ptr<WidgetQuadTree> QuadTreePtr;
     Widget* _root;
     TankView* _player;

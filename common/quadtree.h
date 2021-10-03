@@ -16,15 +16,16 @@
 template<typename T>
 class QuadTree {
 public:
+    typedef T Square;
     typedef std::shared_ptr<QuadTree> Ptr;
-    typedef std::shared_ptr<T> Square;
     typedef std::list<Square> SquareList;
     typedef std::vector<Ptr> QuadTreeList;
     typedef std::function<RectI(Square const&)> RectCatcher;
     typedef std::unordered_map<void*, RectI> RectCache;
+    typedef std::function<void*(T const&)> Pointer;
     enum {
         MAX_LEVELS = 4,
-        MAX_OBJECTS = 15,
+        MAX_OBJECTS = 10,
     };
 public:
     QuadTree(int level, RectI const& bounds, RectCatcher const& catcher):_level(level), _bounds(bounds), _catcher(catcher) {}
@@ -32,6 +33,19 @@ public:
 public:
     static Ptr New(int level, RectI const& bounds, RectCatcher const& catcher) {
         return Ptr(new QuadTree<T>(level, bounds, catcher));
+    }
+    void unique(SquareList& result, Pointer const& get) {
+        std::map<void*, bool> flags;
+        for (auto iter = result.begin(); iter != result.end();) {
+            auto key = get(*iter);
+            auto& value = flags[key];
+            if (value) {
+                result.erase(iter++);
+            } else {
+                value = true;
+                ++iter;
+            }
+        }
     }
     void retrieve(SquareList& result, RectI const& rect) {
         auto& pRect = rect;
@@ -41,9 +55,9 @@ public:
             if(index != -1 && _nodes.size()) {
                 _nodes[index]->retrieve(fSpriteList, pRect);
             }
-            for (auto& object : _objects) {
-                fSpriteList.push_back(object);
-            }
+        }
+        for (auto& object : _objects) {
+            fSpriteList.push_back(object);
         }
     }
     void clear() {
@@ -60,11 +74,11 @@ public:
 
         if(_nodes.size()) {
             auto indexes = getIndexes(pRect);
-            for (auto const& index : indexes) {
-                if(index != -1) {
+            if (indexes.front() != -1) {
+                for (auto const& index : indexes) {
                     _nodes[index]->insert(sprite, false);
-                    return;
                 }
+                return;
             }
         }
 
@@ -79,14 +93,13 @@ public:
                 auto& sqaureOne = *iter;
                 RectI oRect = _catcher(sqaureOne);
                 auto indexes = getIndexes(oRect);
-                for (auto const& index : indexes) {
-                    if (index != -1) {
+                if (indexes.front() == -1) {
+                    ++iter;
+                } else {
+                    for (auto const& index : indexes) {
                         _nodes[index]->insert(sqaureOne, false);
-                        _objects.erase(iter++);
-                    } else {
-                        ++iter;
                     }
-                    break;
+                    _objects.erase(iter++);
                 }
             }
         }
@@ -100,6 +113,12 @@ public:
         auto tree = find(rect);
         tree->erase(sprite);
         _rects.erase(iter);
+    }
+    QuadTreeList const& nodes() const {
+        return _nodes;
+    }
+    RectI const& bound() const {
+        return _bounds;
     }
 protected:
     void split() {

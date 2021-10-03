@@ -3,6 +3,7 @@
 //
 
 #include "render.h"
+#include "widget.h"
 
 RenderCopy::RenderCopy():
 _texture(nullptr),
@@ -110,4 +111,48 @@ void RenderCopyEx::draw(SDL_Renderer* renderer, Vector2i const& position) {
         flip = SDL_RendererFlip::SDL_FLIP_VERTICAL;
     }
     SDL_RenderCopyEx(renderer, _texture, &_srcrect, &dstrect, _angle, &center, flip);
+}
+
+RenderFillRect::RenderFillRect(): _color({0, 0, 0, 255}) {
+
+}
+
+void RenderFillRect::setSize(int w, int h) {
+    _size = {w, h};
+}
+
+Vector2i const& RenderFillRect::size() const {
+    return _size;
+}
+
+void RenderFillRect::setColor(SDL_Color const& c) {
+    _color = c;
+}
+
+SDL_Color const& RenderFillRect::color() const {
+    return _color;
+}
+
+void RenderFillRect::draw(SDL_Renderer* renderer, Vector2i const& position) {
+    DrawColor dc(renderer);
+    dc.setColor(_color);
+    SDL_Rect rect{
+        position.x,
+        position.y,
+        _size.x,
+        _size.y,
+    };
+    SDL_RenderFillRect(renderer, &rect);
+}
+
+void RenderDrawRect::draw(SDL_Renderer* renderer, Vector2i const& position) {
+    DrawColor dc(renderer);
+    dc.setColor(_color);
+    SDL_Rect rect{
+            position.x,
+            position.y,
+            _size.x,
+            _size.y,
+    };
+    SDL_RenderDrawRect(renderer, &rect);
 }

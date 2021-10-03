@@ -427,7 +427,7 @@ BattleView::BattleView() {
 static int const _tileSize = Tile::SIZE;
 static int const _mapSize = 13 * _tileSize;
 
-static RectI tileRectCatcher(QuadTree<Widget>::Square const& square) {
+static RectI tileRectCatcher(QuadTree<Widget::Ptr>::Square const& square) {
     auto data = (TileData*)square->userdata();
     return data->rect;
 }
@@ -439,7 +439,7 @@ _player(nullptr) {
     auto old_size = this->size();
     this->setSize(_mapSize, _mapSize);
 
-    _quadtree = QuadTreePtr(new QuadTree<Widget>(0, {0, 0, int(size().x), int(size().y)}, tileRectCatcher));
+    _quadtree = QuadTreePtr(new QuadTree<Widget::Ptr>(0, {0, 0, int(size().x), int(size().y)}, tileRectCatcher));
 
     Ptr widget;
 
@@ -462,7 +462,13 @@ _player(nullptr) {
         result.reserve(1000);
 
         builder.gen(result, "base", {6 * _tileSize, 12 * _tileSize});
-        builder.gen(result, "big-brick", {1 * _tileSize, 1 * _tileSize});
+
+        builder.gen(result, "ice-floor", {9 * _tileSize, 3 * _tileSize});
+        builder.gen(result, "ice-floor", {3 * _tileSize, 3 * _tileSize});
+        builder.gen(result, "ice-floor", {3 * _tileSize, 9 * _tileSize});
+        builder.gen(result, "ice-floor", {9 * _tileSize, 9 * _tileSize});
+
+        /*
         builder.gen(result, "big-steel", {2 * _tileSize, 2 * _tileSize});
         builder.gen(result, "water", {3 * _tileSize, 3 * _tileSize});
         builder.gen(result, "trees", {4 * _tileSize, 4 * _tileSize});
@@ -474,6 +480,7 @@ _player(nullptr) {
         builder.gen(result, "steel-", {1 * _tileSize, 0.5f * _tileSize});
         builder.gen(result, "brick|", {3 * _tileSize, 0 * _tileSize});
         builder.gen(result, "steel|", {3.5f * _tileSize, 0 * _tileSize});
+         */
 
         for (auto& widget : result) {
             addElement(widget);
@@ -496,13 +503,6 @@ _player(nullptr) {
             runAction(repeat);
         }
 
-        {
-            auto blink = Action::Ptr(new Blink(_player, 5, 1.0f));
-            auto repeat = Action::New<Repeat>(blink);
-            repeat->setName("tile-blink");
-            _player->runAction(repeat);
-        }
-
         for (auto& widget : result) {
             addElement(widget);
         }
@@ -521,7 +521,6 @@ void BattleFieldView::onTankUpdateQuadTree(Widget::Ptr const& tank) {
 }
 
 void BattleFieldView::onTankMoveCollision(TankView* tank) {
-    return;
     std::map<Widget*, bool> flags;
     if (_checklist.size()) {
         for (auto& widget : _checklist) {
@@ -550,13 +549,14 @@ void BattleFieldView::onTankMoveCollision(TankView* tank) {
         if (iter.second) {
             if (!iter.first->hasAction("tile-blink")) {
                 auto widget = iter.first;
-                auto blink = Action::Ptr(new Blink(widget, 5, 0.5f));
+                auto blink = Action::Ptr(new Blink(widget, 5, 1.0f));
                 auto repeat = Action::New<Repeat>(blink);
                 repeat->setName("tile-blink");
                 widget->runAction(repeat);
             }
         } else {
             iter.first->stopAction("tile-blink");
+            iter.first->setVisible(true);
         }
     }
 }
@@ -872,6 +872,9 @@ void TileView::update(float delta) {
 }
 
 void TileView::draw(SDL_Renderer* renderer) {
+    if (!_visible) {
+        return;
+    }
     ImageWidget::onDraw(renderer);
 }
 
@@ -908,7 +911,7 @@ void TankView::move(Direction dir) {
             {0.0f, 100.0f},
             {-100.0f, 0.0f},
     };
-    _move = speed[dir];
+    _move = speed[dir] * 3;
 }
 
 void TankView::turn(Direction dir) {
