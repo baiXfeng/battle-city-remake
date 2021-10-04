@@ -52,6 +52,7 @@ void Game::input() {
             continue;
         }
         gamepad().onEvent(e);
+        mouse().onEvent(e);
     }
 }
 

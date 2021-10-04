@@ -12,6 +12,7 @@
 #include <SDL.h>
 #include "types.h"
 #include "gamepad.h"
+#include "mouse.h"
 #include "event.h"
 
 void TestWidget();

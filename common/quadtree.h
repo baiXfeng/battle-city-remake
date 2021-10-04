@@ -48,16 +48,14 @@ public:
         }
     }
     void retrieve(SquareList& result, RectI const& rect) {
-        auto& pRect = rect;
-        auto& fSpriteList = result;
-        auto indexes = getIndexes(pRect);
-        for (auto const& index : indexes) {
-            if(index != -1 && _nodes.size()) {
-                _nodes[index]->retrieve(fSpriteList, pRect);
+        auto indexes = getIndexes(rect);
+        if (_nodes.size() and indexes.front() != -1) {
+            for (auto const& index : indexes) {
+                _nodes[index]->retrieve(result, rect);
             }
         }
         for (auto& object : _objects) {
-            fSpriteList.push_back(object);
+            result.push_back(object);
         }
     }
     void clear() {

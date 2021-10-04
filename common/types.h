@@ -102,6 +102,8 @@ public:
 template<class T>
 class DataPack : public Data {
 public:
+    template<typename... Args>
+    DataPack(Args const&... args):_data(args...) {}
     DataPack(T const& data):_data(data) {}
     T& data() {
         return _data;

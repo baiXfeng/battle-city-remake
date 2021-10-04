@@ -16,6 +16,7 @@
 #include <list>
 #include "src/view.h"
 #include "src/test_quadtree.h"
+#include "common/proxy.h"
 
 class MyGame : public Game::App {
 public:
