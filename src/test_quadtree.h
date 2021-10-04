@@ -66,8 +66,8 @@ public:
     }
     RectI rect() const {
         return RectI{
-                _position.x,
-                _position.y,
+                int(_position.x),
+                int(_position.y),
                 size().x,
                 size().y,
         };
@@ -108,7 +108,7 @@ public:
         for (int i = 0; i < 50; ++i) {
             auto obj = std::make_shared<Object>();
             obj->setColor({0, 255, 0, 255});
-            obj->setPosition({rand() % 960 - 40, rand() % 544 - 40});
+            obj->setPosition({rand() % 960 - 40.0f, rand() % 544 - 40.0f});
             _objects.push_back(obj);
             _quadtree->insert(obj);
         }

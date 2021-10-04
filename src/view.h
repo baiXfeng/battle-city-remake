@@ -76,6 +76,7 @@ private:
     void addElement(Widget::Ptr& widget);
     void sortElements();
     void procTankControl();
+    void gameOver();
 private:
     void onTankUpdateQuadTree(Widget::Ptr const& tank);
     void onTankMoveCollision(TankView* tank);
@@ -194,6 +195,18 @@ public:
     void gen(TankArray& r, TankType t, Vector2f const& position);
 private:
     void gen_textures(TexturesArray& array, TankType t);
+};
+
+class ScoreView : public WindowWidget {
+public:
+    ScoreView();
+};
+
+class GameOverView : public GamePadWidget {
+public:
+    GameOverView();
+private:
+    void onButtonDown(int key) override;
 };
 
 #endif //SDL2_UI_VIEW_H

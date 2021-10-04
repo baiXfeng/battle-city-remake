@@ -133,6 +133,8 @@ StartView::StartView():_index(0), _canSelect(false) {
     auto font = res::load_ttf_font(fontName, 16);
     font->setColor({255, 255, 255, 255});
 
+    _game.gamepad().sleep(0.0f);
+
     auto root = Widget::New<WindowWidget>();
     root->setName("root");
     root->setPosition(0, size().y);
@@ -337,7 +339,7 @@ void SelectLevelView::onButtonDown(int key) {
         _game.audio().playEffect(sound);
         sleep_gamepad(10.0f);
         defer([&]{
-            sleep_gamepad(1.8f);
+            sleep_gamepad(0.0f);
             _game.screen().replace<BattleView>();
         }, 1.8f);
     }
@@ -467,7 +469,12 @@ _player(nullptr) {
 
         builder.gen(result, "base", {6 * _tileSize, 12 * _tileSize});
 
-        builder.gen(result, "big-steel", {2 * _tileSize, 2 * _tileSize});
+        builder.gen(result, "big-steel", {0 * _tileSize, 0 * _tileSize});
+        builder.gen(result, "big-steel", {6.5f * _tileSize, 0 * _tileSize});
+        builder.gen(result, "big-steel", {0 * _tileSize, 6.5f * _tileSize});
+        builder.gen(result, "big-steel", {6.5f * _tileSize, 6.5f * _tileSize});
+        builder.gen(result, "big-steel", {9 * _tileSize, 9 * _tileSize});
+        /*
         builder.gen(result, "water", {3 * _tileSize, 3 * _tileSize});
         builder.gen(result, "trees", {4 * _tileSize, 4 * _tileSize});
         builder.gen(result, "brick", {5 * _tileSize, 5 * _tileSize});
@@ -478,6 +485,7 @@ _player(nullptr) {
         builder.gen(result, "steel-", {1 * _tileSize, 0.5f * _tileSize});
         builder.gen(result, "brick|", {3 * _tileSize, 0 * _tileSize});
         builder.gen(result, "steel|", {3.5f * _tileSize, 0 * _tileSize});
+         */
 
         for (auto& widget : result) {
             addElement(widget);
@@ -488,10 +496,10 @@ _player(nullptr) {
         TankBuilder builder;
         TankBuilder::TankArray result;
 
-        builder.gen(result, TankView::PLAYER_1, {3.5f * _tileSize, 5 * _tileSize});
+        builder.gen(result, TankView::PLAYER_1, {10.0f * _tileSize, 8 * _tileSize});
         _player = result[0]->to<TankView>();
 
-        {/*
+        if (false) {
             auto call = Action::Ptr(
                     new CallBackT<TankView*>(_player,std::bind(&BattleFieldView::onTankMoveCollision, this, std::placeholders::_1)));
             auto call1 = Action::Ptr(
@@ -499,7 +507,6 @@ _player(nullptr) {
             auto seq = Action::Ptr(new Sequence({call1, call}));
             auto repeat = Action::New<Repeat>(seq);
             runAction(repeat);
-            */
         }
 
         for (auto& widget : result) {
@@ -521,7 +528,7 @@ void BattleFieldView::draw(SDL_Renderer* renderer) {
     for (auto& child : _children) {
         child->draw(renderer);
     }
-    onDraw(renderer);
+    //onDraw(renderer);
 }
 
 void BattleFieldView::onDraw(SDL_Renderer* renderer) {
@@ -534,6 +541,7 @@ void BattleFieldView::onTankUpdateQuadTree(Widget::Ptr const& tank) {
 }
 
 void BattleFieldView::onTankMoveCollision(TankView* tank) {
+    return;
     std::map<Widget*, bool> flags;
     if (_checklist.size()) {
         for (auto& widget : _checklist) {
@@ -576,13 +584,35 @@ void BattleFieldView::onTankMoveCollision(TankView* tank) {
             iter.first->setVisible(true);
         }
     }
+
+    return;
+    for (auto& widget : result) {
+        if (widget.get() == tank) {
+            continue;
+        }
+        RectI r{
+            widget->position().x,
+            widget->position().y,
+            widget->size().x,
+            widget->size().y,
+        };
+        if (isCollision(rect, r)) {
+            _quadtree->remove(widget);
+            widget->removeFromParent();
+
+            auto iter = std::find(_checklist.begin(), _checklist.end(), widget);
+            if (iter != _checklist.end()) {
+                _checklist.erase(iter);
+            }
+        }
+    }
 }
 
 void BattleFieldView::onButtonDown(int key) {
     if (key >= KeyCode::UP and key <= KeyCode::RIGHT) {
         add_key(key);
     } else if (key == KeyCode::START) {
-        this->onTankMoveCollision(_player);
+        gameOver();
     } else if (key == KeyCode::SELECT) {
         this->onTankUpdateQuadTree(_player->ptr());
     }
@@ -607,6 +637,38 @@ void BattleFieldView::procTankControl() {
     } else {
         _player->stop();
     }
+}
+
+void BattleFieldView::gameOver() {
+    _game.gamepad().sleep(60.0f);
+
+    auto box = New<WindowWidget>();
+    box->setPosition(size().x * 0.5f, size().y * 1.1f);
+    box->setAnchor(0.5f, 0.5f);
+    addChild(box);
+
+    auto font = res::load_ttf_font(fontName, 20);
+    font->setColor({181, 49, 32, 255});
+
+    std::string title[2] = {"GAME", "OVER"};
+    for (int i = 0; i < 2; ++i) {
+        auto label = new TTFLabel;
+        label->setFont(font);
+        label->setString(title[i]);
+        label->setPosition(0.0f, i * label->size().y + i * 4);
+        auto widget = Ptr(label);
+        box->addChild(widget);
+        box->setSize(label->size().x, label->size().y * 2 + 4);
+    }
+
+    auto move = Action::Ptr(new MoveTo(box.get(), {size().x * 0.5f, size().y * 0.5f}, 2.5f));
+    auto delay = Action::New<Delay>(2.5f);
+    auto call = Action::New<CallBackVoid>([]{
+        _game.screen().replace<GameOverView>();
+    });
+    auto action = Action::Ptr(new Sequence({move, delay, call}));
+    box->runAction(action);
+    this->performLayout();
 }
 
 void BattleFieldView::add_key(int key) {
@@ -698,6 +760,7 @@ BattleInfoView::BattleInfoView() {
     }
 
     auto font = res::load_ttf_font(fontName, _enemy_icon_size);
+    font->setColor({0, 0, 0, 255});
 
     {
         auto label = new TTFLabel;
@@ -818,8 +881,8 @@ void TileView::setType(TYPE t) {
         case BRICK_3:
         {
             texture = res::load_texture(_game.renderer(), "assets/images/wall_brick.png");
-            int half_width = int(size().x) >> 1;
-            int half_height = int(size().y) >> 1;
+            int half_width = _tileSize >> 1;
+            int half_height = _tileSize >> 1;
             SDL_Rect srcrect[4] = {
                     {0, 0, half_width, half_height},
                     {half_width, 0, half_width, half_height},
@@ -827,7 +890,7 @@ void TileView::setType(TYPE t) {
                     {half_width, half_height, half_width, half_height},
             };
             setTexture(texture, srcrect[t-BRICK_0]);
-            setSize(_tileSize >> 1, _tileSize >> 1);
+            setSize(half_width, half_height);
             return;
         }
             break;
@@ -837,8 +900,8 @@ void TileView::setType(TYPE t) {
         case STEEL_3:
         {
             texture = res::load_texture(_game.renderer(), "assets/images/wall_steel.png");
-            int half_width = int(size().x) >> 1;
-            int half_height = int(size().y) >> 1;
+            int half_width = _tileSize >> 1;
+            int half_height = _tileSize >> 1;
             SDL_Rect srcrect[4] = {
                     {0, 0, half_width, half_height},
                     {half_width, 0, half_width, half_height},
@@ -846,7 +909,7 @@ void TileView::setType(TYPE t) {
                     {half_width, half_height, half_width, half_height},
             };
             setTexture(texture, srcrect[t-STEEL_0]);
-            setSize(_tileSize >> 1, _tileSize >> 1);
+            setSize(half_width, half_height);
             return;
         }
             break;
@@ -929,7 +992,7 @@ void TankView::move(Direction dir) {
             {0.0f, 100.0f},
             {-100.0f, 0.0f},
     };
-    _move = speed[dir] * 3;
+    _move = speed[dir] * 3.5f;
 }
 
 void TankView::turn(Direction dir) {
@@ -1070,6 +1133,49 @@ void TankBuilder::gen_textures(TexturesArray& array, TankType t) {
 }
 
 //=====================================================================================
+
+ScoreView::ScoreView() {
+    _game.setRenderColor({0, 0, 0, 255});
+
+    auto font = res::load_ttf_font(fontName, 14);
+
+    {
+
+    }
+}
+
+//=====================================================================================
+
+auto game_over_sound = "assets/sounds/game_over.ogg";
+
+GameOverView::GameOverView() {
+    _game.setRenderColor({0, 0, 0, 255});
+    _game.gamepad().sleep(0.0f);
+
+    auto delay = Action::New<Delay>(2.0f);
+    auto call = Action::New<CallBackVoid>([]{
+        _game.screen().replace<StartView>();
+    });
+    runAction(Action::Ptr(new Sequence({delay, call})));
+
+    auto icon = res::load_texture(_game.renderer(), "assets/images/game_over.png");
+    auto view = New<ImageWidget>(icon);
+    view->setPosition(size().x * 0.5f, size().y * 0.5f);
+    view->setAnchor(0.5f, 0.5f);
+    addChild(view);
+
+    _game.audio().loadEffect(game_over_sound);
+    _game.audio().playEffect(game_over_sound);
+
+    performLayout();
+}
+
+void GameOverView::onButtonDown(int key) {
+    if (key == KeyCode::START) {
+        _game.audio().releaseEffect(game_over_sound);
+        _game.screen().replace<StartView>();
+    }
+}
 
 Widget::Ptr firstScene() {
     return Widget::New<BattleView>();
