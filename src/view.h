@@ -199,7 +199,20 @@ private:
 
 class ScoreView : public WindowWidget {
 public:
+    enum Alignment {
+        LEFT = 0,
+        RIGHT,
+        MIDDLE,
+    };
     ScoreView();
+private:
+    void playAnimate();
+    TTFLabel* createLabel(std::string const& text, SDL_Color const& c, Alignment const& align);
+private:
+    int _index;
+    TTFLabel* _total;
+    std::vector<TTFLabel*> _number;
+    std::vector<TTFLabel*> _ops;
 };
 
 class GameOverView : public GamePadWidget {

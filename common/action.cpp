@@ -141,6 +141,8 @@ State Repeat::Step(float dt) {
         if (_action->Step(dt) == FINISH) {
             if (++_currCount >= _repeatCount) {
                 return FINISH;
+            } else {
+                _action->Reset();
             }
         }
     } else {

@@ -130,7 +130,7 @@ void LogoView::onFadeOut(float v) {
 //=====================================================================================
 
 StartView::StartView():_index(0), _canSelect(false) {
-    auto font = res::load_ttf_font(fontName, 16);
+    auto font = res::load_ttf_font(fontName, 18);
     font->setColor({255, 255, 255, 255});
 
     _game.gamepad().sleep(0.0f);
@@ -201,9 +201,9 @@ StartView::StartView():_index(0), _canSelect(false) {
     {
         auto title = new TTFLabel;
         title->setFont(font);
-        title->setString("2 PLAYER");
+        title->setString("TIP ME");
         title->setAnchor(0.5f, 0.0f);
-        title->setPosition(size().x * 0.5f, size().y * 0.58f);
+        title->setPosition(size().x * 0.5f, size().y * 0.6f);
         widget.reset(title);
         root->addChild(widget);
 
@@ -239,7 +239,7 @@ StartView::StartView():_index(0), _canSelect(false) {
         root->addChild(widget);
 
         auto copyright = root->find("copyright");
-        copyright->setPosition(title->position().x - title->size().x * 0.5f, size().y * 0.9f - 1);
+        copyright->setPosition(title->position().x - title->size().x * 0.5f, size().y * 0.9f);
     }
 
     root->performLayout();
@@ -247,7 +247,7 @@ StartView::StartView():_index(0), _canSelect(false) {
 
 void StartView::onEnter() {
     auto root = find("root");
-    auto move = Action::New<MoveBy>(root, Vector2f{0.0f, -size().y}, 3.0f);
+    auto move = Action::New<MoveBy>(root, Vector2f{0.0f, -size().y}, 4.0f);
     auto callback = Action::New<CallBackVoid>([&]{
         this->_canSelect = true;
     });
@@ -664,7 +664,7 @@ void BattleFieldView::gameOver() {
     auto move = Action::Ptr(new MoveTo(box.get(), {size().x * 0.5f, size().y * 0.5f}, 2.5f));
     auto delay = Action::New<Delay>(2.5f);
     auto call = Action::New<CallBackVoid>([]{
-        _game.screen().replace<GameOverView>();
+        _game.screen().replace<ScoreView>();
     });
     auto action = Action::Ptr(new Sequence({move, delay, call}));
     box->runAction(action);
@@ -1134,14 +1134,165 @@ void TankBuilder::gen_textures(TexturesArray& array, TankType t) {
 
 //=====================================================================================
 
-ScoreView::ScoreView() {
+ScoreView::ScoreView():_total(nullptr), _index(0) {
     _game.setRenderColor({0, 0, 0, 255});
 
-    auto font = res::load_ttf_font(fontName, 14);
+    Ptr widget;
+
+    SDL_Color red = {189, 64, 48, 255};
+    SDL_Color white = {255, 255, 255, 255};
+    SDL_Color yellow = {237, 167, 49, 255};
+
+    auto root = New<WindowWidget>();
+    root->setPosition(0.0f, 5.0f);
+    addChild(root);
 
     {
-
+        auto label = createLabel("HI-SCORE", red, RIGHT);
+        label->setPosition(size().x * 0.5f, size().y * 0.1f);
+        widget.reset(label);
+        root->addChild(widget);
     }
+
+    {
+        auto label = createLabel("20000", yellow, LEFT);
+        label->setPosition(size().x * 0.5f + 54, size().y * 0.1f);
+        widget.reset(label);
+        root->addChild(widget);
+    }
+
+    {
+        auto label = createLabel("STAGE  1", white, MIDDLE);
+        label->setPosition(size().x * 0.5f, size().y * 0.18f);
+        widget.reset(label);
+        root->addChild(widget);
+    }
+
+    {
+        auto label = createLabel("I-PLAYER", red, RIGHT);
+        label->setPosition(size().x * 0.4f, size().y * 0.26f);
+        widget.reset(label);
+        root->addChild(widget);
+    }
+
+    {
+        auto label = createLabel("0", yellow, RIGHT);
+        label->setPosition(size().x * 0.4f, size().y * 0.33f);
+        widget.reset(label);
+        root->addChild(widget);
+    }
+
+    Texture::Ptr texture[4] = {
+            res::load_texture(_game.renderer(), "assets/images/tank_basic_up_c0_t1.png"),
+            res::load_texture(_game.renderer(), "assets/images/tank_fast_up_c0_t1.png"),
+            res::load_texture(_game.renderer(), "assets/images/tank_power_up_c0_t1.png"),
+            res::load_texture(_game.renderer(), "assets/images/tank_armor_up_c0_t1.png"),
+    };
+    Texture::Ptr arrow = res::load_texture(_game.renderer(), "assets/images/arrow.png");
+
+    int const heightLine = 54;
+    for (int i = 0; i < 4; ++i) {
+        {
+            auto view = New<ImageWidget>(texture[i]);
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition(size().x * 0.5f, i * heightLine + size().y * 0.44f);
+            root->addChild(view);
+        }
+
+        {
+            auto view = New<ImageWidget>(arrow);
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition(size().x * 0.47f, i * heightLine + size().y * 0.44f);
+            root->addChild(view);
+        }
+
+        {
+            auto label = createLabel("0", white, RIGHT);
+            label->setPosition(size().x * 0.46f, i * heightLine + size().y * 0.44f);
+            label->setVisible(false);
+            widget.reset(label);
+            root->addChild(widget);
+            _number.push_back(label);
+        }
+
+        {
+            auto label = createLabel("PTS", white, RIGHT);
+            label->setPosition(size().x * 0.4f, i * heightLine + size().y * 0.44f);
+            widget.reset(label);
+            root->addChild(widget);
+        }
+
+        {
+            auto label = createLabel("0", white, RIGHT);
+            label->setPosition(size().x * 0.31f, i * heightLine + size().y * 0.44f);
+            label->setVisible(false);
+            widget.reset(label);
+            root->addChild(widget);
+            _ops.push_back(label);
+        }
+    }
+
+    auto mask = New<MaskWidget>(white);
+    mask->setSize(size().x * 0.2f, 5.0f);
+    mask->setAnchor(0.5f, 0.5f);
+    mask->setPosition(size().x * 0.5f, size().y * 0.79f);
+    root->addChild(mask);
+
+    {
+        auto label = createLabel("0", white, RIGHT);
+        label->setPosition(size().x * 0.46f, size().y * 0.83f);
+        label->setVisible(false);
+        widget.reset(label);
+        root->addChild(widget);
+        _total = label;
+    }
+
+    {
+        auto label = createLabel("TOTAL", white, RIGHT);
+        label->setPosition(size().x * 0.4f, size().y * 0.83f);
+        widget.reset(label);
+        root->addChild(widget);
+    }
+
+    this->performLayout();
+    this->playAnimate();
+}
+
+void ScoreView::playAnimate() {
+    _index = 0;
+    auto delay = Action::New<Delay>(0.5f);
+    auto call = Action::New<CallBackVoid>([&]{
+        _number[_index]->setVisible(true);
+        _ops[_index]->setVisible(true);
+        ++_index;
+    });
+    auto seq = Action::Ptr(new Sequence({delay, call}));
+    auto repeat = Action::New<Repeat>(seq, 4);
+    auto delay1 = Action::New<Delay>(0.8f);
+    auto call1 = Action::New<CallBackVoid>([&]{
+        _total->setVisible(true);
+    });
+    auto delay2 = Action::New<Delay>(1.9f);
+    auto call2 = Action::New<CallBackVoid>([&]{
+        _game.screen().replace<GameOverView>();
+    });
+    auto action = Action::Ptr(new Sequence({repeat, delay1, call1, delay2, call2}));
+    runAction(action);
+}
+
+TTFLabel* ScoreView::createLabel(std::string const& text, SDL_Color const& c, Alignment const& align) {
+    auto font = res::load_ttf_font(fontName, 18);
+    font->setColor(c);
+    auto label = new TTFLabel;
+    label->setFont(font);
+    label->setString(text);
+    Vector2f anchor[3] = {
+            {0.0f, 0.5f},
+            {1.0f, 0.5f},
+            {0.5f, 0.5f},
+    };
+    label->setAnchor(anchor[align]);
+    return label;
 }
 
 //=====================================================================================
@@ -1178,5 +1329,5 @@ void GameOverView::onButtonDown(int key) {
 }
 
 Widget::Ptr firstScene() {
-    return Widget::New<BattleView>();
+    return Widget::New<ScoreView>();
 }
