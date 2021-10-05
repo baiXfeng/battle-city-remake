@@ -29,4 +29,10 @@ namespace res {
         sprintf(name, "%sassets/fonts/%s.ogg", res::getAssetsPath().c_str(), key.c_str());
         return name;
     }
+
+    std::string levelName(std::string const& key) {
+        char name[128] = {0};
+        sprintf(name, "%sassets/levels/%s.lua", res::getAssetsPath().c_str(), key.c_str());
+        return name;
+    }
 }

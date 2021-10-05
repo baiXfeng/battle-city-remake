@@ -36,14 +36,14 @@ public:
         auto& state = _game.force_get<lutok3::State>("lua");
         state.openLibs();
 
-        state.doFile((res::getAssetsPath()+"assets/levels/level_info.lua").c_str());
+        state.doFile(res::levelName("level_info"));
 
         // 记录最大关卡数
         state.getGlobal("LEVEL_MAX");
         int value = state.get( );
         state.pop();
         _game.force_get<int>("level_max") = value == 0 ? 1 : value;
-        _game.force_get<int>("level") = 3;
+        _game.force_get<int>("level") = 10;
 
         registerLuaFunctions(state);
     }

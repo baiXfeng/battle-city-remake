@@ -105,8 +105,8 @@ local auto_tile_proc = {
     [15] = steel_down,
 
     [21] = waters,
-    [22] = trees,
-    [23] = ice_floors,
+    [31] = trees,
+    [41] = ice_floors,
 }
 
 local function get_pos(index)

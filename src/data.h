@@ -57,6 +57,7 @@ namespace res {
     std::string soundName(std::string const& key);
     std::string imageName(std::string const& key);
     std::string fontName(std::string const& key);
+    std::string levelName(std::string const& key);
 }
 
 #endif //SDL2_UI_DATA_H
