@@ -7,6 +7,7 @@
 
 #include "common/widget.h"
 #include "common/quadtree.h"
+#include "data.h"
 
 Widget::Ptr firstScene();
 
@@ -68,6 +69,7 @@ class BattleFieldView : public GamePadWidget {
 public:
     BattleFieldView();
 private:
+    void onLoadLevel();
     void onUpdate(float delta) override;
     void draw(SDL_Renderer* renderer) override;
     void onDraw(SDL_Renderer* renderer) override;
@@ -179,6 +181,7 @@ public:
     typedef std::vector<Widget::Ptr> TileArray;
     typedef TileView::TYPE TileType;
 public:
+    void gen(TileArray& r, AddTileList const& list);
     void gen(TileArray& r, std::string const& type, Vector2f const& position);
 private:
     void gen_tile(TileArray& r, TileType t, Vector2f const& position);

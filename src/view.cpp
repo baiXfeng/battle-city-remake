@@ -10,6 +10,7 @@
 #include "common/collision.h"
 #include "const.h"
 #include "data.h"
+#include "lutok3.h"
 #include <assert.h>
 
 std::string fontName = "assets/fonts/prstart.ttf";
@@ -312,6 +313,8 @@ SelectLevelView::SelectLevelView():_level(1), _duration(0.3f) {
     defer([&]{
         _label->setVisible(true);
     }, _duration);
+
+    _game.get<int>("level") = _level;
 }
 
 void SelectLevelView::onButtonDown(int key) {
@@ -342,6 +345,7 @@ void SelectLevelView::onButtonDown(int key) {
             sleep_gamepad(0.0f);
             _game.screen().replace<BattleView>();
         }, 1.8f);
+        _game.get<int>("level") = _level;
     }
 }
 
@@ -352,7 +356,8 @@ void SelectLevelView::onButtonUp(int key) {
 }
 
 void SelectLevelView::addLevel() {
-    _level = ++_level >= 35 ? 35 : _level;
+    int const level_max = _game.get<int>("level_max");
+    _level = ++_level >= level_max ? level_max : _level;
     _label->setString("STAGE " + std::to_string(_level));
 }
 
@@ -431,10 +436,10 @@ static int const _mapSize = 13 * _tileSize;
 
 static RectI tileRectCatcher(QuadTree<Widget::Ptr>::Square const& square) {
     return RectI{
-        square->position().x - square->size().x * square->anchor().x,
-        square->position().y - square->size().y * square->anchor().y,
-        square->size().x,
-        square->size().y,
+        int(square->position().x - square->size().x * square->anchor().x),
+        int(square->position().y - square->size().y * square->anchor().y),
+        int(square->size().x),
+        int(square->size().y),
     };
 }
 
@@ -462,7 +467,7 @@ _player(nullptr) {
         _root = view.get();
     }
 
-    {
+    if (false) {
         TileBuilder builder;
         TileBuilder::TileArray result;
         result.reserve(1000);
@@ -492,7 +497,7 @@ _player(nullptr) {
         }
     }
 
-    {
+    if (false) {
         TankBuilder builder;
         TankBuilder::TankArray result;
 
@@ -514,11 +519,32 @@ _player(nullptr) {
         }
     }
 
+    onLoadLevel();
     sortElements();
 }
 
+void BattleFieldView::onLoadLevel() {
+    auto& tile_list = _game.force_get<AddTileList>("add_tile_list");
+    tile_list.clear();
+
+    auto level = _game.get<int>("level");
+    char file[256] = {0};
+    sprintf(file, "%sassets/levels/level_%d.lua", res::getAssetsPath().c_str(), level);
+
+    auto& state = _game.get<lutok3::State>("lua");
+    state.doFile(file);
+
+    TileBuilder::TileArray array;
+    TileBuilder builder;
+    builder.gen(array, tile_list);
+
+    for (auto& widget : array) {
+        addElement(widget);
+    }
+}
+
 void BattleFieldView::onUpdate(float delta) {
-    procTankControl();
+    //procTankControl();
 }
 
 void BattleFieldView::draw(SDL_Renderer* renderer) {
@@ -591,10 +617,10 @@ void BattleFieldView::onTankMoveCollision(TankView* tank) {
             continue;
         }
         RectI r{
-            widget->position().x,
-            widget->position().y,
-            widget->size().x,
-            widget->size().y,
+            int(widget->position().x),
+            int(widget->position().y),
+            int(widget->size().x),
+            int(widget->size().y),
         };
         if (isCollision(rect, r)) {
             _quadtree->remove(widget);
@@ -1039,6 +1065,34 @@ void TankView::onDirty() {
 
 //=====================================================================================
 
+void TileBuilder::gen(TileArray& r, AddTileList const& list) {
+    typedef Tile::Type Type;
+    for (auto& tile : list) {
+        switch (tile.type) {
+            case Type::BASE:
+                gen(r, "base", {tile.x, tile.y});
+                break;
+            case Type::BRICK:
+                gen(r, "brick", {tile.x, tile.y});
+                break;
+            case Type::STEEL:
+                gen(r, "steel", {tile.x, tile.y});
+                break;
+            case Type::WATERS:
+                gen(r, "water", {tile.x, tile.y});
+                break;
+            case Type::TREES:
+                gen(r, "trees", {tile.x, tile.y});
+                break;
+            case Type::ICE_FLOOR:
+                gen(r, "ice-floor", {tile.x, tile.y});
+                break;
+            default:
+                break;
+        }
+    }
+}
+
 void TileBuilder::gen(TileArray& result, std::string const& type, Vector2f const& position) {
     if (type == "water") {
         gen_tile(result, TileType::WATER, position);
@@ -1052,34 +1106,6 @@ void TileBuilder::gen(TileArray& result, std::string const& type, Vector2f const
         get_block(result, TileType::BRICK_0, position);
     } else if (type == "steel") {
         get_block(result, TileType::STEEL_0, position);
-    } else if (type == "big-brick") {
-        float half_size = _tileSize >> 1;
-        get_block(result, TileType::BRICK_0, position);
-        get_block(result, TileType::BRICK_0, position + Vector2f{half_size, 0});
-        get_block(result, TileType::BRICK_0, position + Vector2f{0, half_size});
-        get_block(result, TileType::BRICK_0, position + Vector2f{half_size, half_size});
-    } else if (type == "big-steel") {
-        float half_size = _tileSize >> 1;
-        get_block(result, TileType::STEEL_0, position);
-        get_block(result, TileType::STEEL_0, position + Vector2f{half_size, 0});
-        get_block(result, TileType::STEEL_0, position + Vector2f{0, half_size});
-        get_block(result, TileType::STEEL_0, position + Vector2f{half_size, half_size});
-    } else if (type == "brick-") {
-        float half_size = _tileSize >> 1;
-        get_block(result, TileType::BRICK_0, position);
-        get_block(result, TileType::BRICK_0, position + Vector2f{half_size, 0});
-    } else if (type == "brick|") {
-        float half_size = _tileSize >> 1;
-        get_block(result, TileType::BRICK_0, position);
-        get_block(result, TileType::BRICK_0, position + Vector2f{0, half_size});
-    } else if (type == "steel-") {
-        float half_size = _tileSize >> 1;
-        get_block(result, TileType::STEEL_0, position);
-        get_block(result, TileType::STEEL_0, position + Vector2f{half_size, 0});
-    } else if (type == "steel|") {
-        float half_size = _tileSize >> 1;
-        get_block(result, TileType::STEEL_0, position);
-        get_block(result, TileType::STEEL_0, position + Vector2f{0, half_size});
     }
 }
 
@@ -1329,5 +1355,5 @@ void GameOverView::onButtonDown(int key) {
 }
 
 Widget::Ptr firstScene() {
-    return Widget::New<ScoreView>();
+    return Widget::New<BattleView>();
 }

@@ -64,7 +64,7 @@ namespace lutok3 {
         }
     }
 
-    void State::loadFile(const fs::path & filePath, const std::string & mode)
+    void State::loadFile(const std::string & filePath, const std::string & mode)
     {
         const char * modePtr = nullptr;
         if (!mode.empty())
@@ -72,7 +72,7 @@ namespace lutok3 {
             modePtr = mode.c_str();
         }
 
-        int rc = luaL_loadfilex(state, filePath.string().c_str(), modePtr);
+        int rc = luaL_loadfilex(state, filePath.c_str(), modePtr);
         switch (rc)
         {
         case LUA_ERRSYNTAX:
@@ -99,7 +99,7 @@ namespace lutok3 {
         pcall();
     }
 
-    void State::doFile(const fs::path & filePath, const std::string & mode)
+    void State::doFile(const std::string & filePath, const std::string & mode)
     {
         loadFile(filePath, mode);
         pcall();

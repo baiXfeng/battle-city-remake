@@ -17,10 +17,38 @@
 #include "src/view.h"
 #include "src/test_quadtree.h"
 #include "common/proxy.h"
+#include "lutok3.h"
+#include "src/luafunc.h"
+
+class Label : public TTFLabel {
+public:
+    Label(std::string const& text) {
+        setFont(res::load_ttf_font("assets/fonts/prstart.ttf", 18));
+        font()->setColor({255, 255, 255, 255});
+        setAnchor(0.5f, 0.5f);
+        setString(text);
+    }
+};
 
 class MyGame : public Game::App {
 public:
+    void initData() {
+        auto& state = _game.force_get<lutok3::State>("lua");
+        state.openLibs();
+
+        state.doFile((res::getAssetsPath()+"assets/levels/level_info.lua").c_str());
+
+        // 记录最大关卡数
+        state.getGlobal("LEVEL_MAX");
+        int value = state.get( );
+        state.pop();
+        _game.force_get<int>("level_max") = value == 0 ? 1 : value;
+        _game.force_get<int>("level") = 3;
+
+        registerLuaFunctions(state);
+    }
     void init() override {
+        this->initData();
         auto view = firstScene();
         _game.screen().push(view);
     }
@@ -31,6 +59,8 @@ public:
         _game.screen().render(renderer);
     }
     void fini() override {
+        _game.screen().popAll();
+        _game.remove("lua");
     }
 };
 

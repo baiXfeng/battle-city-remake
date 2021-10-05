@@ -12,18 +12,11 @@ extern "C" {
 #include <exception>
 #include <string>
 //#include <filesystem>
-#include <experimental/filesystem>
 #include <cstdint>
 #include <functional>
 #include <type_traits>
 
 namespace lutok3 {
-
-#if _MSC_VER >= 1900 && _MSC_VER < 2000
-    namespace fs = std::experimental::filesystem::v1;
-#else
-    namespace fs = std::experimental::filesystem;
-#endif
 
     class State;
     enum class LuaStatus;
@@ -147,9 +140,9 @@ namespace lutok3 {
         void openLibs();
 
         void loadString(const std::string & code);
-        void loadFile(const fs::path & filePath, const std::string & mode = "");
+        void loadFile(const std::string & filePath, const std::string & mode = "");
         void doString(const std::string & code);
-        void doFile(const fs::path & filePath, const std::string & mode = "");
+        void doFile(const std::string & filePath, const std::string & mode = "");
 
         void call(int nArgs = 0, int nResults = -1);
         void pcall(int nArgs = 0, int nResults = -1, Index handlerIndex = 0);

@@ -13,7 +13,7 @@ if (BUILD_PSV)
 	include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 	include_directories($ENV{VITASDK}/arm-vita-eabi/include/SDL2)
 else()
-	set(CMAKE_CXX_STANDARD 14)
+	set(CMAKE_CXX_STANDARD 17)
 endif()
 
 set(PROJECT_NAME "sdl2-ui")
@@ -46,6 +46,7 @@ include_directories(
 add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 
 if (BUILD_PSV)
+	add_definitions(-DLUA_C89_NUMBERS)
 	target_link_libraries(${PROJECT_NAME}
 			SDL2
 			SDL2_ttf
