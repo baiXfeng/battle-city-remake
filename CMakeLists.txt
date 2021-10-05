@@ -22,12 +22,27 @@ project(${PROJECT_NAME})
 set(BASIC_SOURCE "")
 file( GLOB
 		BASIC_SOURCE
-        *.cpp
-		src/*.cpp
-		common/*.cpp
+        *.c*
+		src/*.c*
+		common/*.c*
+		third/obs/obs/*.c*
+		third/lua/*.c*
+		third/lutok3/src/lutok3/*.c*
 )
 
-include_directories(".")
+list(REMOVE_ITEM BASIC_SOURCE
+		${CMAKE_CURRENT_SOURCE_DIR}/third/lua/lua.c
+		${CMAKE_CURRENT_SOURCE_DIR}/third/lua/ltests.c)
+
+include_directories(
+		.
+		third/cereal/include
+		third/eluna/eluna
+		third/lua
+		third/lutok3/src/lutok3
+		third/obs
+)
+
 add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 
 if (BUILD_PSV)
