@@ -43,7 +43,7 @@ public:
         int value = state.get( );
         state.pop();
         _game.force_get<int>("level_max") = value == 0 ? 1 : value;
-        _game.force_get<int>("level") = 10;
+        _game.force_get<int>("level") = 17;
 
         registerLuaFunctions(state);
     }
