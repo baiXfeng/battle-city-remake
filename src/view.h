@@ -79,6 +79,7 @@ private:
     void sortElements();
     void procTankControl();
     void gameOver();
+    void pause(bool v);
 private:
     void onTankUpdateQuadTree(Widget::Ptr const& tank);
     void onTankMoveCollision(TankView* tank);
@@ -88,6 +89,7 @@ private:
 private:
     typedef DebugQuadTreeT WidgetQuadTree;
     typedef std::shared_ptr<WidgetQuadTree> QuadTreePtr;
+    bool _pause;
     Widget* _root;
     TankView* _player;
     QuadTreePtr _quadtree;
@@ -182,10 +184,10 @@ public:
     typedef TileView::TYPE TileType;
 public:
     void gen(TileArray& r, AddTileList const& list);
-    void gen(TileArray& r, std::string const& type, Vector2f const& position);
+    void gen(TileArray& r, std::string const& type, Vector2i const& position);
 private:
-    void gen_tile(TileArray& r, TileType t, Vector2f const& position);
-    void get_block(TileArray& r, TileType begin, Vector2f const& position);
+    void gen_tile(TileArray& r, TileType t, Vector2i const& position);
+    void get_block(TileArray& r, TileType begin, Vector2i const& position);
 };
 
 class TankBuilder {
@@ -223,6 +225,20 @@ public:
     GameOverView();
 private:
     void onButtonDown(int key) override;
+};
+
+class CheatView : public GamePadWidget {
+public:
+    typedef std::function<void()> CallBack;
+public:
+    CheatView(CallBack const& cb = nullptr);
+private:
+    void onButtonDown(int key) override;
+private:
+    int _index;
+    Ptr _icon;
+    Vector2f _position[2];
+    CallBack _callback;
 };
 
 #endif //SDL2_UI_VIEW_H

@@ -131,6 +131,9 @@ void LogoView::onFadeOut(float v) {
 //=====================================================================================
 
 StartView::StartView():_index(0), _canSelect(false) {
+
+    _game.setRenderColor({0, 0, 0, 255});
+
     auto font = res::load_ttf_font(fontName, 18);
     font->setColor({255, 255, 255, 255});
 
@@ -357,12 +360,13 @@ void SelectLevelView::onButtonUp(int key) {
 
 void SelectLevelView::addLevel() {
     int const level_max = _game.get<int>("level_max");
-    _level = ++_level >= level_max ? level_max : _level;
+    _level = ++_level > level_max ? 1 : _level;
     _label->setString("STAGE " + std::to_string(_level));
 }
 
 void SelectLevelView::subLevel() {
-    _level = --_level <= 1 ? 1 : _level;
+    int const level_max = _game.get<int>("level_max");
+    _level = --_level <= 0 ? level_max : _level;
     _label->setString("STAGE " + std::to_string(_level));
 }
 
@@ -425,6 +429,12 @@ BattleView::BattleView() {
         view->runAction(Action::Ptr(new Sequence({delay, call})));
     }
 
+    auto font = res::load_ttf_font(res::fontName("prstart"), 18);
+    font->setColor({0, 0, 0, 255});
+    auto label = TTFLabel::New("L-CHEAT", font);
+    label->setPosition(15, 15);
+    addChild(label);
+
     _game.setRenderColor({115, 115, 115, 255});
     this->performLayout();
 }
@@ -445,7 +455,8 @@ static RectI tileRectCatcher(QuadTree<Widget::Ptr>::Square const& square) {
 
 BattleFieldView::BattleFieldView():
 _root(nullptr),
-_player(nullptr) {
+_player(nullptr),
+_pause(false) {
 
     auto old_size = this->size();
     this->setSize(_mapSize, _mapSize);
@@ -465,36 +476,6 @@ _player(nullptr) {
         view->setSize(size());
         addChild(view);
         _root = view.get();
-    }
-
-    if (false) {
-        TileBuilder builder;
-        TileBuilder::TileArray result;
-        result.reserve(1000);
-
-        builder.gen(result, "base", {6 * _tileSize, 12 * _tileSize});
-
-        builder.gen(result, "big-steel", {0 * _tileSize, 0 * _tileSize});
-        builder.gen(result, "big-steel", {6.5f * _tileSize, 0 * _tileSize});
-        builder.gen(result, "big-steel", {0 * _tileSize, 6.5f * _tileSize});
-        builder.gen(result, "big-steel", {6.5f * _tileSize, 6.5f * _tileSize});
-        builder.gen(result, "big-steel", {9 * _tileSize, 9 * _tileSize});
-        /*
-        builder.gen(result, "water", {3 * _tileSize, 3 * _tileSize});
-        builder.gen(result, "trees", {4 * _tileSize, 4 * _tileSize});
-        builder.gen(result, "brick", {5 * _tileSize, 5 * _tileSize});
-        builder.gen(result, "steel", {6 * _tileSize, 6 * _tileSize});
-        builder.gen(result, "ice-floor", {0 * _tileSize, 0 * _tileSize});
-
-        builder.gen(result, "brick-", {1 * _tileSize, 0 * _tileSize});
-        builder.gen(result, "steel-", {1 * _tileSize, 0.5f * _tileSize});
-        builder.gen(result, "brick|", {3 * _tileSize, 0 * _tileSize});
-        builder.gen(result, "steel|", {3.5f * _tileSize, 0 * _tileSize});
-         */
-
-        for (auto& widget : result) {
-            addElement(widget);
-        }
     }
 
     if (false) {
@@ -528,8 +509,7 @@ void BattleFieldView::onLoadLevel() {
     tile_list.clear();
 
     auto level = _game.get<int>("level");
-    char file[256] = {0};
-    sprintf(file, "%sassets/levels/level_%d.lua", res::getAssetsPath().c_str(), level);
+    auto file = res::levelName(level);
 
     auto& state = _game.get<lutok3::State>("lua");
     state.doFile(file);
@@ -638,9 +618,18 @@ void BattleFieldView::onButtonDown(int key) {
     if (key >= KeyCode::UP and key <= KeyCode::RIGHT) {
         add_key(key);
     } else if (key == KeyCode::START) {
-        gameOver();
+        //gameOver();
+        pause(!_pause);
     } else if (key == KeyCode::SELECT) {
-        this->onTankUpdateQuadTree(_player->ptr());
+        //this->onTankUpdateQuadTree(_player->ptr());
+    } else if (key == KeyCode::L1) {
+        if (!_pause) {
+            pause(true);
+        }
+        auto widget = Widget::New<CheatView>([&]{
+            pause(false);
+        });
+        _game.screen().scene_back()->addChild(widget);
     }
 }
 
@@ -662,6 +651,39 @@ void BattleFieldView::procTankControl() {
         _player->move(TankView::Direction(keyMap[_keylist.back()]));
     } else {
         _player->stop();
+    }
+}
+
+void BattleFieldView::pause(bool v) {
+    _pause = v;
+    if (_pause) {
+        auto font = res::load_ttf_font(res::fontName("prstart"), 18);
+        font->setColor({189, 64, 48, 255});
+
+        auto label = TTFLabel::New("PAUSE", font, {0.5f, 0.5f});
+        label->setName("pause_label");
+        label->setPosition(size().x * 0.5f, size().y * 0.5f);
+        parent()->addChild(label);
+
+        auto blink = Action::New<Blink>(label.get(), 1, 0.55f);
+        auto repeat = Action::New<Repeat>(blink);
+        label->runAction(repeat);
+
+        this->pauseAllActions();
+        this->enableUpdate(false);
+
+        auto sound = res::soundName("pause");
+        _game.audio().loadEffect(sound);
+        _game.audio().playEffect(sound);
+
+    } else {
+        parent()->removeChild(parent()->find("pause_label"));
+
+        this->resumeAllActions();
+        this->enableUpdate(true);
+
+        auto sound = res::soundName("pause");
+        _game.audio().releaseEffect(sound);
     }
 }
 
@@ -1093,7 +1115,7 @@ void TileBuilder::gen(TileArray& r, AddTileList const& list) {
     }
 }
 
-void TileBuilder::gen(TileArray& result, std::string const& type, Vector2f const& position) {
+void TileBuilder::gen(TileArray& result, std::string const& type, Vector2i const& position) {
     if (type == "water") {
         gen_tile(result, TileType::WATER, position);
     } else if (type == "trees") {
@@ -1109,16 +1131,16 @@ void TileBuilder::gen(TileArray& result, std::string const& type, Vector2f const
     }
 }
 
-void TileBuilder::gen_tile(TileArray& r, TileType t, Vector2f const& position) {
+void TileBuilder::gen_tile(TileArray& r, TileType t, Vector2i const& position) {
     auto widget = Widget::New<TileView>(t);
-    widget->setPosition(position);
+    widget->setPosition(position.to<float>());
     widget->performLayout();
     r.push_back(widget);
 }
 
-void TileBuilder::get_block(TileArray& r, TileType begin, Vector2f const& position) {
+void TileBuilder::get_block(TileArray& r, TileType begin, Vector2i const& position) {
     static int const block_size = Tile::SIZE >> 1;
-    Vector2f offset[4] = {
+    Vector2i offset[4] = {
             {0, 0},
             {block_size >> 1, 0},
             {0, block_size >> 1},
@@ -1354,6 +1376,77 @@ void GameOverView::onButtonDown(int key) {
     }
 }
 
+//=====================================================================================
+
+CheatView::CheatView(CallBack const& cb):_index(0), _callback(cb == nullptr ? []{} : cb) {
+
+    sleep_gamepad(0.35f);
+
+    auto mask = Ptr(new MaskWidget({0, 0, 0, 255}));
+    mask->setName("CheatView::mask");
+    addChild(mask);
+
+    Ptr widget;
+
+    auto scaleto = Action::Ptr(new ScaleTo(mask.get(), {1.0f, 1.0f}, 0.33f));
+    mask->setScale(0.01f, 0.01f);
+    mask->runAction(scaleto);
+
+    auto root = New<WindowWidget>();
+    root->setName("root");
+    addChild(root);
+
+    std::string title[2] = {"CHEAT LIST", "BACK TITLE"};
+    auto font = res::load_ttf_font(res::fontName("prstart"), 18);
+    font->setColor({255, 255, 255, 255});
+    for (int i = 0; i < 2; ++i) {
+        auto label = TTFLabel::New(title[i], font);
+        label->setAnchor(0.0f, 0.5f);
+        label->setPosition(80, 60 + i * 40);
+        root->addChild(label);
+
+        _position[i] = label->position() - Vector2f{40, 0};
+    }
+
+    auto animate = new FrameAnimationWidget;
+    animate->setFrames({
+        res::load_texture(_game.renderer(), res::imageName("tank_player1_right_c0_t1")),
+        res::load_texture(_game.renderer(), res::imageName("tank_player1_right_c0_t2")),
+    });
+    animate->setAnchor(0.5f, 0.5f);
+    animate->setPosition(_position[0]);
+    animate->play(0.15f);
+    animate->setName("tank");
+    widget.reset(animate);
+    root->addChild(widget);
+    _icon = widget;
+}
+
+void CheatView::onButtonDown(int key) {
+    if (key == KeyCode::L1 or key == KeyCode::B) {
+        auto mask = find("CheatView::mask");
+        auto scaleto  = Action::Ptr(new ScaleTo(mask, {0.01f, 0.01f}, 0.3f));
+        auto callback = Action::New<CallBackVoid>(_callback);
+        auto remove_self = Action::New<CallBackVoid>(std::bind(&CheatView::removeFromParent, this));
+        auto action = Action::Ptr(new Sequence({scaleto, callback, remove_self}));
+        this->runAction(action);
+        find("root")->setVisible(false);
+        sleep_gamepad(0.33f);
+    } else if (key == KeyCode::UP) {
+        _index = --_index <= -1 ? 1 : _index;
+        _icon->setPosition(_position[_index]);
+    } else if (key == KeyCode::DOWN) {
+        _index = ++_index >= 2 ? 0 : _index;
+        _icon->setPosition(_position[_index]);
+    } else if (key == KeyCode::A) {
+        if (_index == 1) {
+            _game.screen().replace<StartView>();
+        }
+    }
+}
+
+//=====================================================================================
+
 Widget::Ptr firstScene() {
-    return Widget::New<BattleView>();
+    return Widget::New<LogoView>();
 }
