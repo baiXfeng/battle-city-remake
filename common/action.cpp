@@ -44,7 +44,18 @@ State EmptyAction::Step(float dt) {
 
 //=====================================================================================
 
+ActionExecuter::ActionExecuter():_pause(false) {
+
+}
+
+void ActionExecuter::pause(bool v) {
+    _pause = v;
+}
+
 void ActionExecuter::update(float dt) {
+    if (_pause) {
+        return;
+    }
     auto list = _actions;
     for (auto& action : list) {
         if (action->Step(dt) == Action::FINISH) {

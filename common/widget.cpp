@@ -411,6 +411,14 @@ void Widget::pauseAllActionWhenHidden(bool yes) {
     _pause_action_when_hidden = yes;
 }
 
+void Widget::pauseAllActions() {
+    _action->pause(true);
+}
+
+void Widget::resumeAllActions() {
+    _action->pause(false);
+}
+
 //=====================================================================================
 
 WindowWidget::WindowWidget() {
@@ -689,6 +697,14 @@ void ScreenWidget::onEvent(SDL_Event& event) {
 //=====================================================================================
 
 TTFLabel::TTFLabel():ImageWidget(nullptr) {}
+
+TTFLabel::Ptr TTFLabel::New(std::string const& text, TTFontPtr const& font, Vector2f const& anchor) {
+    auto label = new TTFLabel;
+    label->setFont(font);
+    label->setString(text);
+    label->setAnchor(anchor);
+    return Ptr(label);
+}
 
 void TTFLabel::setFont(TTFontPtr const& font) {
     _font = font;

@@ -48,6 +48,8 @@ class ActionExecuter {
 public:
     typedef std::list<Action::Ptr> Actions;
 public:
+    ActionExecuter();
+public:
     void update(float dt);
     void add(Action::Ptr const& action);
     void remove(std::string const& name);
@@ -55,7 +57,9 @@ public:
     bool has(std::string const& name) const;
     void clear();
     bool empty() const;
+    void pause(bool v);
 protected:
+    bool _pause;
     Actions _actions;
 };
 

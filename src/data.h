@@ -58,6 +58,7 @@ namespace res {
     std::string imageName(std::string const& key);
     std::string fontName(std::string const& key);
     std::string levelName(std::string const& key);
+    std::string levelName(int level);
 }
 
 #endif //SDL2_UI_DATA_H

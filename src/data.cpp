@@ -13,26 +13,22 @@ type(0) {
 
 namespace res {
     std::string soundName(std::string const& key) {
-        char name[128] = {0};
-        sprintf(name, "%sassets/sounds/%s.ogg", res::getAssetsPath().c_str(), key.c_str());
-        return name;
+        return std::string("assets/sounds/") + key + ".ogg";
     }
 
     std::string imageName(std::string const& key) {
-        char name[128] = {0};
-        sprintf(name, "%sassets/images/%s.ogg", res::getAssetsPath().c_str(), key.c_str());
-        return name;
+        return std::string("assets/images/") + key + ".png";
     }
 
     std::string fontName(std::string const& key) {
-        char name[128] = {0};
-        sprintf(name, "%sassets/fonts/%s.ogg", res::getAssetsPath().c_str(), key.c_str());
-        return name;
+        return std::string("assets/fonts/") + key + ".ttf";
     }
 
     std::string levelName(std::string const& key) {
-        char name[128] = {0};
-        sprintf(name, "%sassets/levels/%s.lua", res::getAssetsPath().c_str(), key.c_str());
-        return name;
+        return getAssetsPath() + "assets/levels/" + key + ".lua";
+    }
+
+    std::string levelName(int level) {
+        return getAssetsPath() + "assets/levels/level_" + std::to_string(level) + ".lua";
     }
 }

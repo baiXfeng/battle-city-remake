@@ -118,6 +118,8 @@ public:
     bool hasAction(std::string const& name) const;
     void stopAllActions();
     void pauseAllActionWhenHidden(bool yes = true);
+    void pauseAllActions();
+    void resumeAllActions();
 protected:
     void modifyLayout();
 protected:
@@ -288,7 +290,9 @@ class TTFLabel : public ImageWidget {
 public:
     typedef std::shared_ptr<TTFont> TTFontPtr;
 public:
+    static Ptr New(std::string const& text, TTFontPtr const& font, Vector2f const& anchor = {0.0f, 0.0f});
     TTFLabel();
+public:
     void setFont(TTFontPtr const& font);
     TTFontPtr const& font() const;
 public:
