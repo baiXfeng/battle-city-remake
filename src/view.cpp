@@ -1135,5 +1135,5 @@ void CheatView::onButtonDown(int key) {
 //=====================================================================================
 
 Widget::Ptr firstScene() {
-    return Widget::New<LogoView>();
+    return Widget::New<BattleView>();
 }
