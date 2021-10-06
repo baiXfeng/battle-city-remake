@@ -14,6 +14,7 @@ namespace Tile {
 #define IC(name, value) static int const name = value
 
     IC(SIZE, 40);
+    IC(MAP_SIZE, SIZE * 13);
 
     enum Type {
         BASE = 0x100,
