@@ -11,6 +11,7 @@
 #include "common/collision.h"
 #include "common/loadres.h"
 #include "common/audio.h"
+#include "const.h"
 
 //=====================================================================================
 
@@ -46,28 +47,6 @@ BattleFieldView::BattleFieldView():
         view->setSize(size());
         addChild(view);
         _root = view.get();
-    }
-
-    if (false) {
-        TankBuilder builder;
-        TankBuilder::TankArray result;
-
-        builder.gen(result, TankView::PLAYER_1, {10.0f * Tile::SIZE, 8 * Tile::SIZE});
-        _player = result[0]->to<TankView>();
-
-        if (false) {
-            auto call = Action::Ptr(
-                    new CallBackT<TankView*>(_player,std::bind(&BattleFieldView::onTankMoveCollision, this, std::placeholders::_1)));
-            auto call1 = Action::Ptr(
-                    new CallBackT<Widget::Ptr>(result[0], std::bind(&BattleFieldView::onTankUpdateQuadTree, this, std::placeholders::_1)));
-            auto seq = Action::Ptr(new Sequence({call1, call}));
-            auto repeat = Action::New<Repeat>(seq);
-            runAction(repeat);
-        }
-
-        for (auto& widget : result) {
-            addElement(widget);
-        }
     }
 
     onLoadLevel();
@@ -161,7 +140,6 @@ void BattleFieldView::onTankMoveCollision(TankView* tank) {
         }
     }
 
-    return;
     for (auto& widget : result) {
         if (widget.get() == tank) {
             continue;
@@ -192,6 +170,7 @@ void BattleFieldView::onButtonDown(int key) {
         pause(!_pause);
     } else if (key == KeyCode::SELECT) {
         //this->onTankUpdateQuadTree(_player->ptr());
+        gameOver();
     } else if (key == KeyCode::L1) {
         if (!_pause) {
             pause(true);
@@ -227,66 +206,14 @@ void BattleFieldView::procTankControl() {
 void BattleFieldView::pause(bool v) {
     _pause = v;
     if (_pause) {
-        auto font = res::load_ttf_font(res::fontName("prstart"), 18);
-        font->setColor({189, 64, 48, 255});
-
-        auto label = TTFLabel::New("PAUSE", font, {0.5f, 0.5f});
-        label->setName("pause_label");
-        label->setPosition(size().x * 0.5f, size().y * 0.5f);
-        parent()->addChild(label);
-
-        auto blink = Action::New<Blink>(label.get(), 1, 0.55f);
-        auto repeat = Action::New<Repeat>(blink);
-        label->runAction(repeat);
-
-        this->pauseAllActions();
-        this->enableUpdate(false);
-
-        auto sound = res::soundName("pause");
-        _game.audio().loadEffect(sound);
-        _game.audio().playEffect(sound);
-
+        _game.event().notify(EasyEvent<Widget*>(EventID::PAUSE_GAME, this));
     } else {
-        parent()->removeChild(parent()->find("pause_label"));
-
-        this->resumeAllActions();
-        this->enableUpdate(true);
-
-        auto sound = res::soundName("pause");
-        _game.audio().releaseEffect(sound);
+        _game.event().notify(EasyEvent<Widget*>(EventID::RESUME_GAME, this));
     }
 }
 
 void BattleFieldView::gameOver() {
-    _game.gamepad().sleep(60.0f);
-
-    auto box = New<WindowWidget>();
-    box->setPosition(size().x * 0.5f, size().y * 1.1f);
-    box->setAnchor(0.5f, 0.5f);
-    addChild(box);
-
-    auto font = res::load_ttf_font(res::fontName("prstart"), 20);
-    font->setColor({181, 49, 32, 255});
-
-    std::string title[2] = {"GAME", "OVER"};
-    for (int i = 0; i < 2; ++i) {
-        auto label = new TTFLabel;
-        label->setFont(font);
-        label->setString(title[i]);
-        label->setPosition(0.0f, i * label->size().y + i * 4);
-        auto widget = Ptr(label);
-        box->addChild(widget);
-        box->setSize(label->size().x, label->size().y * 2 + 4);
-    }
-
-    auto move = Action::Ptr(new MoveTo(box.get(), {size().x * 0.5f, size().y * 0.5f}, 2.5f));
-    auto delay = Action::New<Delay>(2.5f);
-    auto call = Action::New<CallBackVoid>([]{
-        _game.screen().replace<ScoreView>();
-    });
-    auto action = Action::Ptr(new Sequence({move, delay, call}));
-    box->runAction(action);
-    this->performLayout();
+    _game.event().notify(EasyEvent<Widget*>(EventID::GAME_OVER, this));
 }
 
 void BattleFieldView::add_key(int key) {

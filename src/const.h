@@ -9,6 +9,9 @@ namespace EventID {
     enum {
         ENEMY_NUMBER_CHANGED = 0x1001,
         PLAYER1_NUMBER_CHANGED,
+        GAME_OVER,
+        PAUSE_GAME,
+        RESUME_GAME,
     };
 }
 

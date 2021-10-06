@@ -15,6 +15,7 @@ class GamePad;
 class Mouse;
 class AudioSystem;
 class EventCenter;
+class CommandCenter;
 class GameVariable : public Proxy<std::string> {
 public:
     GameVariable();
@@ -26,6 +27,7 @@ public:
     Mouse& mouse();
     AudioSystem& audio();
     EventCenter& event();
+    CommandCenter& command();
 protected:
     void initVariable();
 protected:
@@ -35,6 +37,7 @@ protected:
     std::shared_ptr<Mouse> _mouse;
     std::shared_ptr<AudioSystem> _audio;
     std::shared_ptr<EventCenter> _event;
+    std::shared_ptr<CommandCenter> _command;
 };
 
 #endif //SDL2_UI_VARIABLE_H

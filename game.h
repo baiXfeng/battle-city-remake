@@ -13,12 +13,14 @@
 #include "common/quadtree.h"
 #include "common/collision.h"
 #include "common/event.h"
-#include <list>
+#include "common/command.h"
+#include "common/proxy.h"
 #include "src/view.h"
 #include "src/test_quadtree.h"
-#include "common/proxy.h"
-#include "lutok3.h"
 #include "src/luafunc.h"
+#include "src/command.h"
+#include "src/const.h"
+#include "lutok3.h"
 
 class Label : public TTFLabel {
 public:
@@ -47,8 +49,14 @@ public:
 
         registerLuaFunctions(state);
     }
+    void initCommand() {
+        _game.command().add<GameOverCommand>(EventID::GAME_OVER);
+        _game.command().add<PauseGameCommand>(EventID::PAUSE_GAME);
+        _game.command().add<ResumeGameCommand>(EventID::RESUME_GAME);
+    }
     void init() override {
         this->initData();
+        this->initCommand();
         auto view = firstScene();
         _game.screen().push(view);
     }

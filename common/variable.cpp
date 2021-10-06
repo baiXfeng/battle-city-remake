@@ -8,6 +8,7 @@
 #include "gamepad.h"
 #include "audio.h"
 #include "mouse.h"
+#include "command.h"
 
 GameVariable::GameVariable() {
 
@@ -17,6 +18,7 @@ GameVariable::~GameVariable() {
     _screen = nullptr;
     _gamepad = nullptr;
     _mouse = nullptr;
+    _command = nullptr;
     _event = nullptr;
     _audio = nullptr;
     _fps = nullptr;
@@ -26,6 +28,7 @@ void GameVariable::initVariable() {
     _fps = std::make_shared<Fps>();
     _audio = std::make_shared<AudioSystem>();
     _event = std::make_shared<EventCenter>();
+    _command = std::make_shared<CommandCenter>();
     _mouse = std::make_shared<Mouse>();
     _gamepad = std::make_shared<GamePad>();
     _screen = std::make_shared<ScreenWidget>();
@@ -53,4 +56,8 @@ AudioSystem& GameVariable::audio() {
 
 EventCenter& GameVariable::event() {
     return *_event.get();
+}
+
+CommandCenter& GameVariable::command() {
+    return *_command.get();
 }
