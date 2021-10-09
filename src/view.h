@@ -9,8 +9,6 @@
 #include "common/quadtree.h"
 #include "data.h"
 
-Widget::Ptr firstScene();
-
 class MaskWidget;
 class LogoView : public GamePadWidget {
     typedef std::function<void()> Callback;
@@ -73,99 +71,6 @@ private:
     void onPlayerNumberChanged(int n);
 private:
     ImageWidget* createEnemyIcon();
-};
-
-class TileData;
-class TileView : public ImageWidget {
-public:
-    enum TYPE {
-        NONE = 0x100,
-        BASE,
-        BRICK_0,
-        BRICK_1,
-        BRICK_2,
-        BRICK_3,
-        STEEL_0,
-        STEEL_1,
-        STEEL_2,
-        STEEL_3,
-        WATER,
-        TREES,
-        ICE_FLOOR,
-    };
-    typedef std::shared_ptr<TileData> TileDataPtr;
-public:
-    TileView(TYPE t);
-public:
-    void setType(TYPE t);
-    int type() const;
-private:
-    void update(float delta) override;
-    void draw(SDL_Renderer* renderer) override;
-    void onDirty() override;
-private:
-    TYPE _type;
-    TileDataPtr _data;
-};
-
-class TankView : public FrameAnimationWidget {
-public:
-    enum Direction {
-        UP = 0,
-        RIGHT,
-        DOWN,
-        LEFT,
-        MAX,
-    };
-    enum TYPE {
-        NONE = 0x200,
-        PLAYER_1,
-        PLAYER_2,
-        PLAYER_3,
-        PLAYER_4,
-    };
-    typedef std::vector<TexturePtr> Textures;
-    typedef std::vector<Textures> TexturesArray;
-    typedef std::shared_ptr<TileData> TileDataPtr;
-public:
-    TankView(TYPE t, TexturesArray const& array);
-    void move(Direction dir);
-    void turn(Direction dir);
-    void stop(Direction dir = MAX);
-private:
-    void onUpdate(float delta) override;
-    void onDirty() override;
-    void limitPosition();
-private:
-    TYPE _type;
-    Direction _dir;
-    Vector2f _move;
-    TexturesArray _texArr;
-    TileDataPtr _data;
-};
-
-class TileBuilder {
-public:
-    typedef std::vector<Widget::Ptr> TileArray;
-    typedef TileView::TYPE TileType;
-public:
-    void gen(TileArray& r, AddTileList const& list);
-    void gen(TileArray& r, std::string const& type, Vector2i const& position);
-private:
-    void gen_tile(TileArray& r, TileType t, Vector2i const& position);
-    void get_block(TileArray& r, TileType begin, Vector2i const& position);
-};
-
-class TankBuilder {
-public:
-    typedef std::vector<Widget::Ptr> TankArray;
-    typedef TankView::Direction Direction;
-    typedef TankView::TYPE TankType;
-    typedef TankView::TexturesArray TexturesArray;
-public:
-    void gen(TankArray& r, TankType t, Vector2f const& position);
-private:
-    void gen_textures(TexturesArray& array, TankType t);
 };
 
 class ScoreView : public WindowWidget {

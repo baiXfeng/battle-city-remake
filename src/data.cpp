@@ -4,10 +4,31 @@
 
 #include "data.h"
 #include "common/loadres.h"
+#include "object.h"
 
 TileData::TileData():
 layer(0),
 type(0) {
+
+}
+
+void TileModel::removeFromScreen() {
+    notify_observers(&Widget::removeFromParent);
+}
+
+void TankModel::modifyPosition() {
+    notify_observers(&Widget::setPosition, position.x, position.y);
+}
+
+void TankModel::removeFromScreen() {
+    notify_observers(&Widget::removeFromParent);
+}
+
+WorldModel::WorldModel():
+bounds(0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE),
+tiles(0, {0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE}, [](TileModel* tile){
+    return tile->bounds;
+}), root(nullptr) {
 
 }
 

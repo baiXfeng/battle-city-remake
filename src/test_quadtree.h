@@ -80,7 +80,7 @@ private:
     Vector2f _move;
 };
 
-RectI getRect(std::shared_ptr<Object> const& obj) {
+RectI __getRect(std::shared_ptr<Object> const& obj) {
     return obj->rect();
 }
 
@@ -95,7 +95,8 @@ private:
     DebugQuadTreeT::SquareList _prev_list;
 
 public:
-    MyScene():_player(std::make_shared<Object>()), _quadtree(std::make_shared<DebugQuadTreeT>(0, RectI{0, 0, 960, 544}, getRect)) {
+    MyScene():_player(std::make_shared<Object>()), _quadtree(
+            std::make_shared<DebugQuadTreeT>(0, RectI{0, 0, 960, 544}, __getRect)) {
         _objects.push_back(_player);
         this->reset();
     }

@@ -11,28 +11,23 @@
 #include "common/collision.h"
 #include "common/loadres.h"
 #include "common/audio.h"
+#include "object.h"
 #include "const.h"
 
 //=====================================================================================
 
-static RectI tileRectCatcher(QuadTree<Widget::Ptr>::Square const& square) {
-    return RectI{
-            int(square->position().x - square->size().x * square->anchor().x),
-            int(square->position().y - square->size().y * square->anchor().y),
-            int(square->size().x),
-            int(square->size().y),
-    };
+static RectI tileRectCatcher(QuadTree<TileModel*>::Square const& square) {
+    return square->bounds;
 }
 
 BattleFieldView::BattleFieldView():
-        _root(nullptr),
-        _player(nullptr),
-        _pause(false) {
+_root(nullptr),
+_player(nullptr),
+_pause(false),
+_world(std::make_shared<WorldModel>()) {
 
     auto old_size = this->size();
     this->setSize(Tile::MAP_SIZE, Tile::MAP_SIZE);
-
-    _quadtree = DebugQuadTreeT::Ptr(new DebugQuadTreeT(0, {0, 0, int(size().x), int(size().y)}, tileRectCatcher));
 
     Ptr widget;
 
@@ -50,7 +45,7 @@ BattleFieldView::BattleFieldView():
     }
 
     onLoadLevel();
-    sortElements();
+    //sortElements();
 }
 
 void BattleFieldView::onLoadLevel() {
@@ -63,17 +58,33 @@ void BattleFieldView::onLoadLevel() {
     auto& state = _game.get<lutok3::State>("lua");
     state.doFile(file);
 
-    TileBuilder::TileArray array;
-    TileBuilder builder;
-    builder.gen(array, tile_list);
+    _game.remove("world_model");
+    _game.set<WorldModel*>("world_model", _world.get());
+    _world->root = _root;
 
-    for (auto& widget : array) {
-        addElement(widget);
+    {
+        TileBuilder::Array array;
+        TileBuilder builder(_world.get());
+        builder.gen(array, tile_list);
+
+        for (auto& widget : array) {
+            addElement(widget);
+        }
+    }
+
+    {
+        TankBuilder::Array array;
+        TankBuilder builder(_world.get());
+        builder.gen(array, TankBuilder::TankType::PLAYER_1, {4.5f * Tile::SIZE, 12.0f * Tile::SIZE});
+        for (auto& widget : array) {
+            addElement(widget);
+        }
+        _player = array.front()->to<TankView>();
     }
 }
 
 void BattleFieldView::onUpdate(float delta) {
-    //procTankControl();
+    procTankControl();
 }
 
 void BattleFieldView::draw(SDL_Renderer* renderer) {
@@ -87,89 +98,15 @@ void BattleFieldView::draw(SDL_Renderer* renderer) {
 }
 
 void BattleFieldView::onDraw(SDL_Renderer* renderer) {
-    _quadtree->draw(renderer, _global_position.to<int>());
-}
-
-void BattleFieldView::onTankUpdateQuadTree(Widget::Ptr const& tank) {
-    _quadtree->remove(tank);
-    _quadtree->insert(tank);
-}
-
-void BattleFieldView::onTankMoveCollision(TankView* tank) {
-    return;
-    std::map<Widget*, bool> flags;
-    if (_checklist.size()) {
-        for (auto& widget : _checklist) {
-            flags[widget.get()] = false;
-        }
-    }
-    auto position = tank->position() - tank->size() * tank->anchor();
-    RectI rect{
-            int(position.x),
-            int(position.y),
-            int(tank->size().x),
-            int(tank->size().y),
-    };
-    WidgetQuadTree::SquareList result;
-    _quadtree->retrieve(result, rect);
-    _quadtree->unique(result, [](WidgetQuadTree::Square const& obj){
-        return obj.get();
-    });
-    _checklist = result;
-    printf("对象: %d\n", (int)result.size());
-
-    for (auto& widget : _checklist) {
-        flags[widget.get()] = true;
-    }
-
-    for (auto& iter : flags) {
-        if (iter.first == tank) {
-            continue;
-        }
-        if (iter.second) {
-            if (!iter.first->hasAction("tile-blink")) {
-                auto widget = iter.first;
-                auto blink = Action::Ptr(new Blink(widget, 5, 1.0f));
-                auto repeat = Action::New<Repeat>(blink);
-                repeat->setName("tile-blink");
-                widget->runAction(repeat);
-            }
-        } else {
-            iter.first->stopAction("tile-blink");
-            iter.first->setVisible(true);
-        }
-    }
-
-    for (auto& widget : result) {
-        if (widget.get() == tank) {
-            continue;
-        }
-        RectI r{
-                int(widget->position().x),
-                int(widget->position().y),
-                int(widget->size().x),
-                int(widget->size().y),
-        };
-        if (isCollision(rect, r)) {
-            _quadtree->remove(widget);
-            widget->removeFromParent();
-
-            auto iter = std::find(_checklist.begin(), _checklist.end(), widget);
-            if (iter != _checklist.end()) {
-                _checklist.erase(iter);
-            }
-        }
-    }
+    //_quadtree->draw(renderer, _global_position.to<int>());
 }
 
 void BattleFieldView::onButtonDown(int key) {
     if (key >= KeyCode::UP and key <= KeyCode::RIGHT) {
         add_key(key);
     } else if (key == KeyCode::START) {
-        //gameOver();
         pause(!_pause);
     } else if (key == KeyCode::SELECT) {
-        //this->onTankUpdateQuadTree(_player->ptr());
         gameOver();
     } else if (key == KeyCode::L1) {
         if (!_pause) {
@@ -231,11 +168,11 @@ bool BattleFieldView::remove_key(int key) {
 
 void BattleFieldView::addElement(Widget::Ptr& widget) {
     _root->addChild(widget);
-
+    return;
     auto data = (TileData*)widget->userdata();
     if (data->type != TileView::TREES) {
         // 除了树以外的砖块，都加入四叉树进行碰撞处理
-        _quadtree->insert(widget);
+        //_quadtree->insert(widget);
     }
 }
 

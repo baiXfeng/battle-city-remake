@@ -22,16 +22,6 @@
 #include "src/const.h"
 #include "lutok3.h"
 
-class Label : public TTFLabel {
-public:
-    Label(std::string const& text) {
-        setFont(res::load_ttf_font("assets/fonts/prstart.ttf", 18));
-        font()->setColor({255, 255, 255, 255});
-        setAnchor(0.5f, 0.5f);
-        setString(text);
-    }
-};
-
 class MyGame : public Game::App {
 public:
     void initData() {
@@ -42,7 +32,7 @@ public:
 
         // 记录最大关卡数
         state.getGlobal("LEVEL_MAX");
-        int value = state.get( );
+        int value = state.get();
         state.pop();
         _game.force_get<int>("level_max") = value == 0 ? 1 : value;
         _game.force_get<int>("level") = 1;
@@ -57,8 +47,7 @@ public:
     void init() override {
         this->initData();
         this->initCommand();
-        auto view = firstScene();
-        _game.screen().push(view);
+        _game.screen().push<BattleView>();
     }
     void update(float delta) override {
         _game.screen().update(delta);

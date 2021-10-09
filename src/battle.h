@@ -10,8 +10,10 @@
 #include <list>
 
 class TankView;
+class TileModel;
+class WorldModel;
 class BattleFieldView : public GamePadWidget {
-    typedef DebugQuadTree<Widget::Ptr> DebugQuadTreeT;
+    typedef std::shared_ptr<WorldModel> WorldModelPtr;
 public:
     BattleFieldView();
 private:
@@ -27,20 +29,14 @@ private:
     void gameOver();
     void pause(bool v);
 private:
-    void onTankUpdateQuadTree(Widget::Ptr const& tank);
-    void onTankMoveCollision(TankView* tank);
-private:
     void add_key(int key);
     bool remove_key(int key);
 private:
-    typedef DebugQuadTreeT WidgetQuadTree;
-    typedef std::shared_ptr<WidgetQuadTree> QuadTreePtr;
     bool _pause;
     Widget* _root;
     TankView* _player;
-    QuadTreePtr _quadtree;
     std::list<int> _keylist;
-    WidgetQuadTree::SquareList _checklist;
+    WorldModelPtr _world;
 };
 
 
