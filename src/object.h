@@ -8,10 +8,13 @@
 #include "common/widget.h"
 #include "data.h"
 
+void setViewLayer(Widget* w, int layer);
+int getViewLayer(Widget* w);
+
 class TileView : public ImageWidget {
 public:
     enum TYPE {
-        NONE = 0x100,
+        TYPE_BEGIN = 0x100,
         BASE,
         BRICK_0,
         BRICK_1,
@@ -47,7 +50,7 @@ class TankView : public FrameAnimationWidget {
 public:
     typedef Tank::Direction Direction;
     enum TYPE {
-        NONE = 0x200,
+        TYPE_BEGIN = 0x200,
         PLAYER_1,
         PLAYER_2,
         PLAYER_3,
@@ -69,6 +72,7 @@ private:
     void onDirty() override;
     void onModifyPosition(Vector2f const& position) override;
 private:
+    bool _force_move;
     TYPE _type;
     TexturesArray _texArr;
     TankModel _model;

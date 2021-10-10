@@ -206,7 +206,7 @@ StartView::StartView():_index(0), _canSelect(false) {
     {
         auto title = new TTFLabel;
         title->setFont(font);
-        title->setString("TIP ME");
+        title->setString("README");
         title->setAnchor(0.5f, 0.0f);
         title->setPosition(size().x * 0.5f, size().y * 0.6f);
         widget.reset(title);

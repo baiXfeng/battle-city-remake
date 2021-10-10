@@ -6,6 +6,7 @@
 #include "widget.h"
 #include "game.h"
 #include "action.h"
+#include "log.h"
 
 typedef GamePadListener::KeyCode KeyCode;
 typedef GamePadListener::JOYIDX JOYIDX;
@@ -149,9 +150,7 @@ void GamePad::_onJoyEvent(SDL_Event const& e) {
                 return;
         }
         if (_views.size()) {
-            if (false and abs(e.jaxis.value) > JOYSTICK_DEAD_ZONE) {
-                printf("joy=%d, x=%d, y=%d\n", idx, _joyValue[idx].x, _joyValue[idx].y);
-            }
+            //LOG("joy: %d, x: %d, y: %d\n", idx, _joyValue[idx].x, _joyValue[idx].y);
             _views.back()->onJoyAxisMotion(idx, _joyValue[idx].x, _joyValue[idx].y);
         }
     }

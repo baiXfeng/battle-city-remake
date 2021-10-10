@@ -15,6 +15,7 @@
 #include "common/event.h"
 #include "common/command.h"
 #include "common/proxy.h"
+#include "common/log.h"
 #include "src/view.h"
 #include "src/test_quadtree.h"
 #include "src/luafunc.h"
@@ -45,6 +46,7 @@ public:
         _game.command().add<ResumeGameCommand>(EventID::RESUME_GAME);
     }
     void init() override {
+        LOG_INIT();
         this->initData();
         this->initCommand();
         _game.screen().push<BattleView>();
@@ -58,6 +60,7 @@ public:
     void fini() override {
         _game.screen().popAll();
         _game.remove("lua");
+        LOG_FINI();
     }
 };
 

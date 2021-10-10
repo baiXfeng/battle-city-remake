@@ -24,6 +24,7 @@ private:
     void onDraw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
+    void onJoyAxisMotion(JOYIDX joy_id, int x, int y) override;
     void onEvent(Event const& e) override;
     void addElement(Widget::Ptr& widget);
     void procTankControl();
@@ -34,6 +35,7 @@ private:
     bool remove_key(int key);
 private:
     bool _pause;
+    bool _joyUsed;
     Widget* _floor;
     Widget* _root;
     Widget* _upper;

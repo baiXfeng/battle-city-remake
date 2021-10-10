@@ -11,6 +11,7 @@
 #include "common/collision.h"
 #include "common/loadres.h"
 #include "common/audio.h"
+#include "common/log.h"
 #include "object.h"
 #include "const.h"
 
@@ -30,6 +31,7 @@ _root(nullptr),
 _upper(nullptr),
 _player(nullptr),
 _pause(false),
+_joyUsed(false),
 _world(std::make_shared<WorldModel>()) {
 
     _game.event().add(EventID::BASE_FALL, this);
@@ -155,6 +157,34 @@ void BattleFieldView::onButtonUp(int key) {
     }
 }
 
+void BattleFieldView::onJoyAxisMotion(JOYIDX joy_id, int x, int y) {
+    if (joy_id != JOY1) {
+        return;
+    }
+    if (x < -70) {
+        _joyUsed = true;
+        _keylist.clear();
+        _keylist.push_back(KeyCode::LEFT);
+    } else if (x > 70) {
+        _joyUsed = true;
+        _keylist.clear();
+        _keylist.push_back(KeyCode::RIGHT);
+    } else if (y < -70) {
+        _joyUsed = true;
+        _keylist.clear();
+        _keylist.push_back(KeyCode::UP);
+    } else if (y > 70) {
+        _joyUsed = true;
+        _keylist.clear();
+        _keylist.push_back(KeyCode::DOWN);
+    } else if (abs(x) <= 30 and abs(y) <= 30) {
+        if (_joyUsed) {
+            _keylist.clear();
+            _joyUsed = false;
+        }
+    }
+}
+
 void BattleFieldView::onEvent(Event const& e) {
     if (e.Id() == EventID::BASE_FALL) {
         auto& position = e.data<Vector2f>();
@@ -175,6 +205,9 @@ void BattleFieldView::onEvent(Event const& e) {
 }
 
 void BattleFieldView::procTankControl() {
+    if (!_player->visible()) {
+        return;
+    }
     auto& gamepad = _game.gamepad();
     std::map<int, int> keyMap = {
             {KeyCode::UP, TankView::Direction::UP},
@@ -203,6 +236,9 @@ void BattleFieldView::gameOver() {
 }
 
 void BattleFieldView::add_key(int key) {
+    if (_joyUsed) {
+        return;
+    }
     _keylist.push_back(key);
 }
 
@@ -216,8 +252,7 @@ bool BattleFieldView::remove_key(int key) {
 }
 
 void BattleFieldView::addElement(Widget::Ptr& widget) {
-    auto& layers = _game.get<std::map<void*,int>>("object_layers");
-    auto value = layers[widget.get()];
+    auto value = getViewLayer(widget.get());
     if (value == 0) {
         _floor->addChild(widget);
     } else if (value == 2) {

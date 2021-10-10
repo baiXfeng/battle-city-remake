@@ -172,8 +172,8 @@ Status BulletCollisionBehavior::tileCollision(float delta) {
             if (tile->type == Tile::BASE) {
                 // 基地击破，GameOver
                 _game.event().notify(EasyEvent<Vector2f>(EventID::BASE_FALL, {
-                    tile->bounds.x + (tile->bounds.w >> 1),
-                    tile->bounds.y + (tile->bounds.h >> 1),
+                    float(tile->bounds.x + (tile->bounds.w >> 1)),
+                    float(tile->bounds.y + (tile->bounds.h >> 1)),
                 }));
                 this->hit_base();
                 tiles.remove(tile);

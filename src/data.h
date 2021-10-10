@@ -19,7 +19,6 @@ namespace Tile {
     IC(SIZE, 40);
     IC(MAP_SIZE, SIZE * 13);
     enum Type {
-        NONE = 0,
         BASE = 0x100,
         BRICK,
         STEEL,

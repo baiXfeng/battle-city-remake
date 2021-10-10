@@ -14,6 +14,16 @@ static int _objectCount = 0;
 
 //=====================================================================================
 
+void setViewLayer(Widget* w, int layer) {
+    _game.get<std::map<void*, int>>("object_layers")[w] = layer;
+}
+
+int getViewLayer(Widget* w) {
+    return _game.get<std::map<void*, int>>("object_layers")[w];
+}
+
+//=====================================================================================
+
 class FrameAnimationAction : public Action {
 public:
     typedef std::vector<Texture::Ptr> Frames;
@@ -46,10 +56,10 @@ private:
 
 TileView::TileView(TYPE t):
 ImageWidget(nullptr),
-_type(NONE) {
+_type(TYPE_BEGIN) {
     _model.id = ++_objectCount;
     _model.layer = 0;
-    _model.type = Tile::NONE;
+    _model.type = Tile::TYPE_END;
     _model.add_observer(this);
     setType(t);
 }
@@ -156,7 +166,7 @@ TileModel const& TileView::model() const {
 
 void TileView::insert_to(WorldModel* world) {
     world->tiles.insert(&_model);
-    _game.get<std::map<void*, int>>("object_layers")[this] = _model.layer;
+    setViewLayer(this, _model.layer);
 }
 
 void TileView::update(float delta) {
@@ -190,6 +200,7 @@ void TileView::onModifySize(Vector2f const& size) {
 std::string shot_sound = res::soundName("bullet_shot");
 
 TankView::TankView(TYPE t, TexturesArray const& array):
+_force_move(false),
 _type(t),
 _texArr(array) {
     enableUpdate(true);
@@ -206,8 +217,10 @@ _texArr(array) {
 }
 
 void TankView::move(Direction dir) {
-    if (dir == Direction::MAX) {
-        return;
+    if (!_force_move) {
+        if (dir == Direction::MAX or _model.dir == dir) {
+            return;
+        }
     }
     setFrames(_texArr[dir]);
     play(0.15f);
@@ -217,21 +230,24 @@ void TankView::move(Direction dir) {
             {0.0f, 50.0f},
             {-50.0f, 0.0f},
     };
+    _force_move = false;
     _model.dir = dir;
     _model.move = speed[dir] * 3.5f;
     this->onChangeDir(dir);
 }
 
 void TankView::turn(Direction dir) {
-    if (dir < _texArr.size()) {
-        if (_texArr[dir].size()) {
-            setTexture(_texArr[dir].front());
-        }
+    if (dir < _texArr.size() and _texArr[dir].size()) {
+        setTexture(_texArr[dir].front());
     }
     _model.dir = dir;
+    _force_move = true;
 }
 
 void TankView::stop(Direction dir) {
+    if (_model.move == Vector2f{0.0f, 0.0f}) {
+        return;
+    }
     if (dir == Direction::UP or dir == Direction::DOWN) {
         _model.move.y = 0.0f;
     } else if (dir == Direction::LEFT or dir == Direction::RIGHT) {
@@ -240,6 +256,7 @@ void TankView::stop(Direction dir) {
         _model.move = {0, 0};
     }
     FrameAnimationWidget::stop();
+    _force_move = true;
 }
 
 void TankView::insert_to(WorldModel* world) {
@@ -250,7 +267,7 @@ void TankView::insert_to(WorldModel* world) {
     auto tank_collision = Behavior::New<TankCollisionBehavior>(&_model, &world->tanks);
     _behavior = Behavior::Ptr(new SequenceBehavior({tank_move, tile_collision, tank_collision}));
 
-    _game.get<std::map<void*, int>>("object_layers")[this] = 1;
+    setViewLayer(this, 1);
 }
 
 BulletView* TankView::fire() const {
@@ -418,7 +435,7 @@ ImageWidget(load_texture(get_dir(move))) {
     this->setSize(ImageWidget::size());
     this->enableUpdate(true);
 
-    _game.get<std::map<void*,int>>("object_layers")[this] = 1;
+    setViewLayer(this, 1);
 }
 
 void BulletView::insert_to(WorldModel* world) {
