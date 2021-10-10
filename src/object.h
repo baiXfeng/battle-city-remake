@@ -45,13 +45,7 @@ private:
 class Behavior;
 class TankView : public FrameAnimationWidget {
 public:
-    enum Direction {
-        UP = 0,
-        RIGHT,
-        DOWN,
-        LEFT,
-        MAX,
-    };
+    typedef Tank::Direction Direction;
     enum TYPE {
         NONE = 0x200,
         PLAYER_1,
@@ -66,8 +60,9 @@ public:
     TankView(TYPE t, TexturesArray const& array);
     void move(Direction dir);
     void turn(Direction dir);
-    void stop(Direction dir = MAX);
+    void stop(Direction dir = Direction::MAX);
     void insert_to(WorldModel* world);
+    BulletView* fire() const;
 private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;
@@ -75,7 +70,6 @@ private:
     void onModifyPosition(Vector2f const& position) override;
 private:
     TYPE _type;
-    Direction _dir;
     TexturesArray _texArr;
     TankModel _model;
     BehaviorPtr _behavior;
@@ -109,6 +103,24 @@ private:
     void gen_textures(TexturesArray& array, TankType t);
 private:
     WorldModel* _world;
+};
+
+class BulletView : public ImageWidget {
+public:
+    typedef std::shared_ptr<Behavior> BehaviorPtr;
+public:
+    BulletView(Tank::Camp camp, Vector2f const& position, Vector2f const& move);
+    void insert_to(WorldModel* world);
+    void play_explosion();
+private:
+    Tank::Direction get_dir(Vector2f const& move) const;
+    TexturePtr load_texture(Tank::Direction dir) const;
+    void onUpdate(float delta) override;
+    void onModifyPosition(Vector2f const& position) override;
+    void onModifySize(Vector2f const& size) override;
+private:
+    BulletModel _model;
+    BehaviorPtr _behavior;
 };
 
 #endif //SDL2_UI_OBJECT_H

@@ -11,14 +11,6 @@
 #include <vector>
 #include <string>
 
-class TileData {
-public:
-    TileData();
-public:
-    int layer;
-    int type;
-};
-
 //===================================================================
 // 关卡配置
 
@@ -68,6 +60,9 @@ typedef struct {
 typedef std::vector<AddTile> AddTileList;
 typedef std::vector<AddTank> AddTankList;
 
+//===================================================================
+// 对象数据
+
 class TileView;
 class TileModel: public obs::observable<TileView>  {
 public:
@@ -96,9 +91,18 @@ public:
     void removeFromScreen();
 };
 
-class ButtleModel {
+class BulletView;
+class BulletModel : public obs::observable<BulletView> {
 public:
     int id;
+    Tank::Camp camp;
+    Vector2f move;
+    Vector2f position;
+    RectI bounds;
+public:
+    void modifyPosition();
+    void removeFromScreen();
+    void playExplosion();
 };
 
 class PropModel {
@@ -111,7 +115,7 @@ class WorldModel {
 public:
     typedef DebugQuadTree<TileModel*> TileTree;
     typedef std::list<TankModel*> TankList;
-    typedef std::list<ButtleModel*> BulletList;
+    typedef std::list<BulletModel*> BulletList;
     typedef std::list<PropModel*> PropList;
 public:
     WorldModel();
@@ -121,7 +125,6 @@ public:
     BulletList bullets;
     PropList props;
     RectI bounds;
-    Widget* root;
 };
 
 //===================================================================

@@ -45,10 +45,10 @@ public:
     Vector<T> operator/(Vector<T> const& vec) const {
         return {x/vec.x, y/vec.y};
     }
-    Vector<T> operator*(T const v) const {
+    Vector<T> operator*(T const& v) const {
         return {x*v, y*v};
     }
-    Vector<T> operator/(T const v) const {
+    Vector<T> operator/(T const& v) const {
         return {x/v, y/v};
     }
     Vector<T> self_abs() const {

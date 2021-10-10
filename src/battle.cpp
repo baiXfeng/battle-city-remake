@@ -20,11 +20,19 @@ static RectI tileRectCatcher(QuadTree<TileModel*>::Square const& square) {
     return square->bounds;
 }
 
+BattleFieldView::~BattleFieldView() {
+    _game.event().remove(EventID::BASE_FALL, this);
+}
+
 BattleFieldView::BattleFieldView():
+_floor(nullptr),
 _root(nullptr),
+_upper(nullptr),
 _player(nullptr),
 _pause(false),
 _world(std::make_shared<WorldModel>()) {
+
+    _game.event().add(EventID::BASE_FALL, this);
 
     auto old_size = this->size();
     this->setSize(Tile::MAP_SIZE, Tile::MAP_SIZE);
@@ -41,7 +49,21 @@ _world(std::make_shared<WorldModel>()) {
         auto view = New<WindowWidget>();
         view->setSize(size());
         addChild(view);
+        _floor = view.get();
+    }
+
+    {
+        auto view = New<WindowWidget>();
+        view->setSize(size());
+        addChild(view);
         _root = view.get();
+    }
+
+    {
+        auto view = New<Widget>();
+        view->setSize(size());
+        addChild(view);
+        _upper = view.get();
     }
 
     onLoadLevel();
@@ -58,9 +80,8 @@ void BattleFieldView::onLoadLevel() {
     auto& state = _game.get<lutok3::State>("lua");
     state.doFile(file);
 
-    _game.remove("world_model");
     _game.set<WorldModel*>("world_model", _world.get());
-    _world->root = _root;
+    _game.set<std::map<void*, int>>("object_layers");
 
     {
         TileBuilder::Array array;
@@ -80,6 +101,7 @@ void BattleFieldView::onLoadLevel() {
             addElement(widget);
         }
         _player = array.front()->to<TankView>();
+        _player->turn(Tank::Direction::UP);
     }
 }
 
@@ -107,6 +129,9 @@ void BattleFieldView::onButtonDown(int key) {
     } else if (key == KeyCode::START) {
         pause(!_pause);
     } else if (key == KeyCode::SELECT) {
+        if (_pause) {
+            return;
+        }
         gameOver();
     } else if (key == KeyCode::L1) {
         if (!_pause) {
@@ -116,6 +141,11 @@ void BattleFieldView::onButtonDown(int key) {
             pause(false);
         });
         _game.screen().scene_back()->addChild(widget);
+    } else if (key == KeyCode::A or key == KeyCode::B) {
+        auto bullet = _player->fire();
+        bullet->insert_to(_world.get());
+        Ptr widget(bullet);
+        addElement(widget);
     }
 }
 
@@ -125,13 +155,32 @@ void BattleFieldView::onButtonUp(int key) {
     }
 }
 
+void BattleFieldView::onEvent(Event const& e) {
+    if (e.Id() == EventID::BASE_FALL) {
+        auto& position = e.data<Vector2f>();
+        this->sleep_gamepad(60.0f);
+
+        auto base = New<ImageWidget>(res::load_texture(_game.renderer(), res::imageName("base_destroyed")));
+        base->setPosition(position - base->size() * 0.5f);
+        addElement(base);
+
+        auto widget = New<BigExplosionView>();
+        auto animate = widget->to<BigExplosionView>();
+        animate->setAnchor(0.5f, 0.5f);
+        animate->setPosition(position);
+        animate->play(std::bind(&BattleFieldView::gameOver, this));
+        this->addChild(widget);
+        widget->performLayout();
+    }
+}
+
 void BattleFieldView::procTankControl() {
     auto& gamepad = _game.gamepad();
     std::map<int, int> keyMap = {
-            {KeyCode::UP, TankView::UP},
-            {KeyCode::DOWN, TankView::DOWN},
-            {KeyCode::LEFT, TankView::LEFT},
-            {KeyCode::RIGHT, TankView::RIGHT},
+            {KeyCode::UP, TankView::Direction::UP},
+            {KeyCode::DOWN, TankView::Direction::DOWN},
+            {KeyCode::LEFT, TankView::Direction::LEFT},
+            {KeyCode::RIGHT, TankView::Direction::RIGHT},
     };
     if (_keylist.size()) {
         _player->move(TankView::Direction(keyMap[_keylist.back()]));
@@ -167,22 +216,13 @@ bool BattleFieldView::remove_key(int key) {
 }
 
 void BattleFieldView::addElement(Widget::Ptr& widget) {
-    _root->addChild(widget);
-    return;
-    auto data = (TileData*)widget->userdata();
-    if (data->type != TileView::TREES) {
-        // 除了树以外的砖块，都加入四叉树进行碰撞处理
-        //_quadtree->insert(widget);
+    auto& layers = _game.get<std::map<void*,int>>("object_layers");
+    auto value = layers[widget.get()];
+    if (value == 0) {
+        _floor->addChild(widget);
+    } else if (value == 2) {
+        _upper->addChild(widget);
+    } else {
+        _root->addChild(widget);
     }
-}
-
-bool sortWidget(Widget::Ptr const& first, Widget::Ptr const& second) {
-    auto data_1 = (TileData*)first->userdata();
-    auto data_2 = (TileData*)second->userdata();
-    assert(data_1 != nullptr and data_2 != nullptr and "BattleFieldView::sortElements fail.");
-    return data_1->layer < data_2->layer;
-}
-
-void BattleFieldView::sortElements() {
-    std::sort(_root->children().begin(), _root->children().end(), sortWidget);
 }

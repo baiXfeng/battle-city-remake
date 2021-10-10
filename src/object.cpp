@@ -6,7 +6,11 @@
 #include "common/action.h"
 #include "common/loadres.h"
 #include "common/game.h"
+#include "common/audio.h"
 #include "behavior.h"
+#include "view.h"
+
+static int _objectCount = 0;
 
 //=====================================================================================
 
@@ -40,12 +44,10 @@ private:
     Frames _textures;
 };
 
-static int _tileCount = 0;
-
 TileView::TileView(TYPE t):
 ImageWidget(nullptr),
 _type(NONE) {
-    _model.id = ++_tileCount;
+    _model.id = ++_objectCount;
     _model.layer = 0;
     _model.type = Tile::NONE;
     _model.add_observer(this);
@@ -154,6 +156,7 @@ TileModel const& TileView::model() const {
 
 void TileView::insert_to(WorldModel* world) {
     world->tiles.insert(&_model);
+    _game.get<std::map<void*, int>>("object_layers")[this] = _model.layer;
 }
 
 void TileView::update(float delta) {
@@ -184,24 +187,28 @@ void TileView::onModifySize(Vector2f const& size) {
 
 //=====================================================================================
 
+std::string shot_sound = res::soundName("bullet_shot");
+
 TankView::TankView(TYPE t, TexturesArray const& array):
 _type(t),
-_texArr(array),
-_dir(MAX) {
+_texArr(array) {
     enableUpdate(true);
+    _model.id = ++_objectCount;
     _model.size = {Tile::SIZE, Tile::SIZE};
+    _model.dir = Direction::MAX;
     _model.add_observer(this);
 
     auto mask = Ptr(new MaskWidget({255, 0, 0, 255}));
     mask->setSize(Tile::SIZE, Tile::SIZE);
     addChild(mask);
+
+    _game.audio().loadEffect(shot_sound);
 }
 
 void TankView::move(Direction dir) {
-    if (dir == MAX) {
+    if (dir == Direction::MAX) {
         return;
     }
-    _dir = dir;
     setFrames(_texArr[dir]);
     play(0.15f);
     Vector2f speed[4] = {
@@ -210,22 +217,29 @@ void TankView::move(Direction dir) {
             {0.0f, 50.0f},
             {-50.0f, 0.0f},
     };
+    _model.dir = dir;
     _model.move = speed[dir] * 3.5f;
     this->onChangeDir(dir);
 }
 
 void TankView::turn(Direction dir) {
-    setTexture(_texArr[dir].front());
+    if (dir < _texArr.size()) {
+        if (_texArr[dir].size()) {
+            setTexture(_texArr[dir].front());
+        }
+    }
+    _model.dir = dir;
 }
 
 void TankView::stop(Direction dir) {
-    if (dir == UP or dir == DOWN) {
+    if (dir == Direction::UP or dir == Direction::DOWN) {
         _model.move.y = 0.0f;
-    } else if (dir == LEFT or dir == RIGHT) {
+    } else if (dir == Direction::LEFT or dir == Direction::RIGHT) {
         _model.move.x = 0.0f;
     } else {
         _model.move = {0, 0};
     }
+    FrameAnimationWidget::stop();
 }
 
 void TankView::insert_to(WorldModel* world) {
@@ -235,19 +249,38 @@ void TankView::insert_to(WorldModel* world) {
     auto tile_collision = Behavior::New<TankTileCollisionBehavior>(&_model, &world->tiles);
     auto tank_collision = Behavior::New<TankCollisionBehavior>(&_model, &world->tanks);
     _behavior = Behavior::Ptr(new SequenceBehavior({tank_move, tile_collision, tank_collision}));
+
+    _game.get<std::map<void*, int>>("object_layers")[this] = 1;
+}
+
+BulletView* TankView::fire() const {
+    _game.audio().playEffect(shot_sound);
+    Vector2f offset[4] = {
+            {size().x * 0.5f, 0.0f},
+            {size().x * 1.0f, size().y * 0.5f},
+            {size().x * 0.5f, size().y * 1.0f},
+            {0.0f, size().y * 0.5f},
+    };
+    Vector2f speed[4] = {
+            {0.0f, -50.0f},
+            {50.0f, 0.0f},
+            {0.0f, 50.0f},
+            {-50.0f, 0.0f},
+    };
+    return new BulletView(_model.camp, position() + offset[_model.dir], speed[_model.dir] * 4.0f);
 }
 
 void TankView::onChangeDir(Direction dir) {
     int half_size = Tile::SIZE >> 1;
     //坦克的坐标要卡在1/2大小的图块位置
-    if (dir == LEFT or dir == RIGHT) {
+    if (dir == Direction::LEFT or dir == Direction::RIGHT) {
         auto y = position().y / half_size;
         if ((y-int(y))*10 <= 5) {
             setPositionY(int(y) * half_size);
         } else {
             setPositionY(int(y+1) * half_size);
         }
-    } else if (dir == UP or dir == DOWN) {
+    } else if (dir == Direction::UP or dir == Direction::DOWN) {
         auto x = position().x / half_size;
         if ((x-int(x))*10 <= 5) {
             setPositionX(int(x) * half_size);
@@ -370,4 +403,76 @@ void TankBuilder::gen_textures(TexturesArray& array, TankType t) {
         default:
             break;
     }
+}
+
+//=====================================================================================
+
+BulletView::BulletView(Tank::Camp camp, Vector2f const& position, Vector2f const& move):
+ImageWidget(load_texture(get_dir(move))) {
+    _model.id = ++_objectCount;
+    _model.position = position - size() * 0.5f;
+    _model.move = move;
+    _model.camp = camp;
+    _model.add_observer(this);
+    this->setPosition(_model.position);
+    this->setSize(ImageWidget::size());
+    this->enableUpdate(true);
+
+    _game.get<std::map<void*,int>>("object_layers")[this] = 1;
+}
+
+void BulletView::insert_to(WorldModel* world) {
+    world->bullets.push_back(&_model);
+    auto move_behavior = Behavior::Ptr(new BulletMoveBehavior(&_model, world->bounds));
+    auto collision_behavior = Behavior::Ptr(new BulletCollisionBehavior(&_model, world));
+    _behavior = Behavior::Ptr(new SequenceBehavior({move_behavior, collision_behavior}));
+}
+
+void BulletView::play_explosion() {
+    auto view = Widget::New<BulletExplosionView>();
+    view->setAnchor(0.5f, 0.5f);
+    view->setPosition(_model.bounds.x + (_model.bounds.w >> 1), _model.bounds.y + (_model.bounds.h >> 1));
+    view->to<BulletExplosionView>()->play();
+    parent()->addChild(view);
+    view->performLayout();
+}
+
+Tank::Direction BulletView::get_dir(Vector2f const& move) const {
+    if (move.y > 0) {
+        return Tank::Direction::DOWN;
+    } else if (move.y < 0) {
+        return Tank::Direction::UP;
+    } else if (move.x > 0) {
+        return Tank::Direction::RIGHT;
+    } else if (move.x < 0) {
+        return Tank::Direction::LEFT;
+    }
+    return Tank::Direction::MAX;
+}
+
+BulletView::TexturePtr BulletView::load_texture(Tank::Direction dir) const {
+    if (dir == Tank::Direction::MAX) {
+        return nullptr;
+    }
+    std::string file[4] = {
+            "bullet_up",
+            "bullet_right",
+            "bullet_down",
+            "bullet_left",
+    };
+    return res::load_texture(_game.renderer(), res::imageName(file[dir]));
+}
+
+void BulletView::onUpdate(float delta) {
+    _behavior->tick(delta);
+}
+
+void  BulletView::onModifyPosition(Vector2f const& position) {
+    _model.bounds.x = position.x;
+    _model.bounds.y = position.y;
+}
+
+void  BulletView::onModifySize(Vector2f const& size) {
+    _model.bounds.w = size.x;
+    _model.bounds.h = size.y;
 }

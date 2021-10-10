@@ -5,10 +5,10 @@
 #include "command.h"
 #include "game.h"
 
-void CommandCenterBase::registerEvent(int eventId, CommandCenter* center) {
+void BaseCommandCenter::registerEvent(int eventId, CommandCenter* center) {
     _game.event().add(eventId, center);
 }
 
-void CommandCenterBase::unregisterEvent(int eventId, CommandCenter* center) {
+void BaseCommandCenter::unregisterEvent(int eventId, CommandCenter* center) {
     _game.event().remove(eventId, center);
 }

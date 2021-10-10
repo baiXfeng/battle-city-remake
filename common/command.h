@@ -6,6 +6,7 @@
 #define SDL2_UI_COMMAND_H
 
 #include "event.h"
+#include "assert.h"
 #include <memory>
 
 class Command {
@@ -30,13 +31,13 @@ public:
 };
 
 class CommandCenter;
-class CommandCenterBase : public Event::Listener {
+class BaseCommandCenter : public Event::Listener {
 public:
     void registerEvent(int eventId, CommandCenter* center);
     void unregisterEvent(int eventId, CommandCenter* center);
 };
 
-class CommandCenter : public CommandCenterBase {
+class CommandCenter : public BaseCommandCenter {
 public:
     typedef std::shared_ptr<Command::Creater> Creater;
 public:

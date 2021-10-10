@@ -12,6 +12,7 @@ namespace EventID {
         GAME_OVER,
         PAUSE_GAME,
         RESUME_GAME,
+        BASE_FALL,      // 基地击破
     };
 }
 

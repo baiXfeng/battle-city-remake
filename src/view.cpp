@@ -819,3 +819,48 @@ void CheatView::onButtonDown(int key) {
         }
     }
 }
+
+//=====================================================================================
+
+BigExplosionView::BigExplosionView() {
+    std::vector<Texture::Ptr> frames;
+    for (int i = 0; i < 5; ++i) {
+        frames.push_back(res::load_texture(_game.renderer(), res::imageName("big_explosion_" + std::to_string(i+1))));
+    }
+    for (int i = 0; i < 5; ++i) {
+        frames.push_back(frames[5-i-1]);
+    }
+    setFrames(frames);
+}
+
+void BigExplosionView::play(FinishCall const& fc) {
+    float const duration = 0.5f;
+    FrameAnimationWidget::play(duration, false);
+    this->defer(this, [](Widget* sender) {
+        sender->setVisible(false);
+    }, duration * 0.8f);
+    auto delay = Action::New<Delay>(duration);
+    auto finish_call = Action::New<CallBackVoid>(fc == nullptr ? []{} : fc);
+    auto remove_self = Action::New<CallBackVoid>(std::bind(&Widget::removeFromParent, this));
+    auto action = Action::Ptr(new Sequence({delay, finish_call, remove_self}));
+    this->runAction(action);
+}
+
+//=====================================================================================
+
+BulletExplosionView::BulletExplosionView() {
+    std::vector<Texture::Ptr> frames;
+    for (int i = 0; i < 3; ++i) {
+        frames.push_back(res::load_texture(_game.renderer(), res::imageName("bullet_explosion_" + std::to_string(i+1))));
+    }
+    setFrames(frames);
+}
+
+void BulletExplosionView::play() {
+    float const duration = 0.15f;
+    this->defer(this, [](Widget* sender) {
+        sender->setVisible(false);
+    }, duration * 0.8f);
+    FrameAnimationWidget::play(duration, false);
+    defer(std::bind(&Widget::removeFromParent, this), duration);
+}

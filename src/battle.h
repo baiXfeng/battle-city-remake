@@ -16,6 +16,7 @@ class BattleFieldView : public GamePadWidget {
     typedef std::shared_ptr<WorldModel> WorldModelPtr;
 public:
     BattleFieldView();
+    ~BattleFieldView();
 private:
     void onLoadLevel();
     void onUpdate(float delta) override;
@@ -23,8 +24,8 @@ private:
     void onDraw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
+    void onEvent(Event const& e) override;
     void addElement(Widget::Ptr& widget);
-    void sortElements();
     void procTankControl();
     void gameOver();
     void pause(bool v);
@@ -33,7 +34,9 @@ private:
     bool remove_key(int key);
 private:
     bool _pause;
+    Widget* _floor;
     Widget* _root;
+    Widget* _upper;
     TankView* _player;
     std::list<int> _keylist;
     WorldModelPtr _world;

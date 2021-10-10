@@ -112,4 +112,18 @@ private:
     CallBack _callback;
 };
 
+class BigExplosionView : public FrameAnimationWidget {
+public:
+    typedef std::function<void()> FinishCall;
+public:
+    BigExplosionView();
+    void play(FinishCall const& fc);
+};
+
+class BulletExplosionView : public FrameAnimationWidget {
+public:
+    BulletExplosionView();
+    void play();
+};
+
 #endif //SDL2_UI_VIEW_H

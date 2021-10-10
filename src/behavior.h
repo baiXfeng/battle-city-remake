@@ -68,4 +68,32 @@ private:
     WorldModel::TankList* _tanks;
 };
 
+class BulletMoveBehavior : public Behavior {
+public:
+    BulletMoveBehavior(BulletModel* model, RectI const& bounds);
+private:
+    Status tick(float delta) override;
+private:
+    BulletModel* _model;
+    RectI _world_bounds;
+};
+
+class BulletCollisionBehavior : public Behavior {
+public:
+    BulletCollisionBehavior(BulletModel* model, WorldModel* world);
+private:
+    Status tick(float delta) override;
+    Status tileCollision(float delta);
+    Status worldCollision(float delta);
+    void remove_bullet();
+    void bullet_explosion();
+    void hit_wall();
+    void hit_brick();
+    void hit_base();
+private:
+    BulletModel* _model;
+    WorldModel* _world;
+    std::vector<std::function<Status(float delta)>> _calls;
+};
+
 #endif //SDL2_UI_BEHAVIOR_H
