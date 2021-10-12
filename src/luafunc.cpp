@@ -38,6 +38,21 @@ static void registerValue(lutok3::State& state, std::string const& tableName, st
     state.pop();
 }
 
+static std::map<std::string, bool> _importSets;
+
+int import(lutok3::State& state) {
+    if (state.getTop() == 0) {
+        return 0;
+    }
+    std::string file = state.get();
+    if (_importSets[file] == true) {
+        return 0;
+    }
+    _importSets[file] = true;
+    state.doFile(res::assetsName(file));
+    return 0;
+}
+
 int add_tile(lutok3::State& state) {
     auto& list = _game.force_get<AddTileList>("add_tile_list");
     int type = state.get(1);
@@ -49,8 +64,18 @@ int add_tile(lutok3::State& state) {
 
 int add_tank(lutok3::State& state) {
     auto& list = _game.force_get<AddTankList>("add_tank_list");
-    int type = state.get(1);
-    list.push_back({Tank::Type(type)});
+    int top = state.getTop();
+    if (top == 0) {
+        return 0;
+    }
+    bool has_drop = false;
+    int tier = state.get(1);
+    if (state.type(2) == lutok3::Type::Boolean) {
+        has_drop = state.get(2);
+    }
+    list.push_back({
+        has_drop, Tank::Tier(tier),
+    });
     return 0;
 }
 
@@ -64,6 +89,9 @@ void registerLuaFunctions(lutok3::State& state) {
     registerValue(state, "tile", "size", Tile::SIZE);
 
     //std::string tankName[] = {};
+
+    state.pushFunction(&import);
+    state.setGlobal("import");
 
     state.pushFunction(&add_tile);
     state.setGlobal("add_tile");

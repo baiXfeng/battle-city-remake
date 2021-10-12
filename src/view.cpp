@@ -75,12 +75,58 @@ private:
 //=====================================================================================
 
 LogoView::LogoView():_canClick(false) {
-    auto bg = res::load_texture(_game.renderer(), "assets/images/logo.png");
-    auto image = New<ImageWidget>(bg);
-    auto mask = New<MaskWidget>(SDL_Color{0, 0, 0, 255});
-    addChild(image);
-    addChild(mask);
-    _mask = mask->to<MaskWidget>();
+
+    {
+        auto mask = Ptr(new MaskWidget({255, 255, 255, 255}));
+        addChild(mask);
+    }
+
+    auto root = New<Widget>();
+    root->setAnchor(0.0f, 0.5f);
+    root->setPositionY(size().y * 0.5f);
+    addChild(root);
+
+    {
+        auto mask = New<MaskWidget>(SDL_Color{0, 0, 0, 255});
+        addChild(mask);
+        _mask = mask->to<MaskWidget>();
+    }
+
+    auto& state = _game.force_get<lutok3::State>("lua");
+    std::string key[5] = {
+            "AVATAR", "INDIENOVA", "GITHUB", "QQ_GROUP", "DISCORD",
+    };
+    std::vector<std::string> value;
+    for (int i = 0; i < 5; ++i) {
+        if (state.getGlobal(key[i]) == lutok3::Type::String) {
+            value.push_back(state.get());
+        } else {
+            value.push_back("");
+        }
+        state.pop();
+    }
+
+    if (value[0].size()) {
+        auto view = New<ImageWidget>(res::load_texture(_game.renderer(), res::imageName(value[0])));
+        view->setAnchor(0.5f, 0.0f);
+        view->setPosition(size().x * 0.5f, 0.0f);
+        root->addChild(view);
+        root->setSize(Vector2f{size().x, view->size().y + 15});
+    }
+
+    auto font = res::load_ttf_font(res::fontName("prstart"), 26);
+    font->setColor({0, 0, 0, 255});
+
+    for (int i = 0; i < 4; ++i) {
+        int idx = i + 1;
+        if (value[idx].empty()) {
+            continue;
+        }
+        auto label = TTFLabel::New(value[idx], font, {0.5f, 0.0f});
+        label->setPosition(size().x * 0.5f, root->size().y + 10.0f);
+        root->addChild(label);
+        root->setSize(root->size() + Vector2f{0.0f, label->size().y + 20});
+    }
 
     setFinishCall([]{
         _game.screen().replace<StartView>();

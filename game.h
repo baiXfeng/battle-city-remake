@@ -26,10 +26,11 @@
 class MyGame : public Game::App {
 public:
     void initData() {
+        // 初始化LUA虚拟机
         auto& state = _game.force_get<lutok3::State>("lua");
         state.openLibs();
-
-        state.doFile(res::levelName("level_info"));
+        registerLuaFunctions(state);
+        state.doFile(res::scriptName("startup"));
 
         // 记录最大关卡数
         state.getGlobal("LEVEL_MAX");
@@ -37,8 +38,6 @@ public:
         state.pop();
         _game.force_get<int>("level_max") = value == 0 ? 1 : value;
         _game.force_get<int>("level") = 1;
-
-        registerLuaFunctions(state);
     }
     void initCommand() {
         _game.command().add<GameOverCommand>(EventID::GAME_OVER);

@@ -56,4 +56,12 @@ namespace res {
     std::string levelName(int level) {
         return getAssetsPath() + "assets/levels/level_" + std::to_string(level) + ".lua";
     }
+
+    std::string scriptName(std::string const& key) {
+        return getAssetsPath() + "assets/scripts/" + key + ".lua";
+    }
+
+    std::string assetsName(std::string const& fileName) {
+        return getAssetsPath() + "assets/" + fileName;
+    }
 }

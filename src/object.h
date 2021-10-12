@@ -113,7 +113,7 @@ class BulletView : public ImageWidget {
 public:
     typedef std::shared_ptr<Behavior> BehaviorPtr;
 public:
-    BulletView(Tank::Camp camp, Vector2f const& position, Vector2f const& move);
+    BulletView(Tank::Group camp, Vector2f const& position, Vector2f const& move);
     void insert_to(WorldModel* world);
     void play_explosion();
 private:

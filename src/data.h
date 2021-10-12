@@ -30,8 +30,15 @@ namespace Tile {
 }
 
 namespace Tank {
-    enum Type {
-
+    enum Group {
+        PLAYER = 0x20,
+        ENEMY
+    };
+    enum Tier {
+        A = 0,
+        B,
+        C,
+        D,
     };
     enum Direction {
         UP = 0,
@@ -39,10 +46,6 @@ namespace Tank {
         DOWN,
         LEFT,
         MAX,
-    };
-    enum Camp {
-        FRIENDLY = 0x20,
-        ENEMY
     };
 }
 
@@ -53,7 +56,8 @@ typedef struct {
 } AddTile;
 
 typedef struct {
-    Tank::Type type;
+    bool has_drop;
+    Tank::Tier tier;
 } AddTank;
 
 typedef std::vector<AddTile> AddTileList;
@@ -78,8 +82,9 @@ class TankModel : public obs::observable<TankView> {
 public:
     int id;
     int hp;
-    Tank::Type type;
-    Tank::Camp camp;
+    bool has_drop;
+    Tank::Group group;
+    Tank::Tier tier;
     Tank::Direction dir;
     Vector2f move;
     Vector2f position;
@@ -94,7 +99,7 @@ class BulletView;
 class BulletModel : public obs::observable<BulletView> {
 public:
     int id;
-    Tank::Camp camp;
+    Tank::Group camp;
     Vector2f move;
     Vector2f position;
     RectI bounds;
@@ -135,6 +140,8 @@ namespace res {
     std::string fontName(std::string const& key);
     std::string levelName(std::string const& key);
     std::string levelName(int level);
+    std::string scriptName(std::string const& key);
+    std::string assetsName(std::string const& fileName);
 }
 
 #endif //SDL2_UI_DATA_H

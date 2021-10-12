@@ -453,6 +453,7 @@ ImageWidget::ImageWidget(TexturePtr const& texture, SDL_Rect const& srcrect):_ta
 
 void ImageWidget::setTexture(TexturePtr const& texture) {
     if (texture == nullptr) {
+        setSize(0.0f, 0.0f);
         return;
     }
     _target->setTexture(texture->data());

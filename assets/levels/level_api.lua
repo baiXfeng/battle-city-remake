@@ -1,7 +1,4 @@
 
--- 最大关卡数
-LEVEL_MAX = 25
-
 -- 添加砖块: tile.type
 local function _add_tile(tile_type, position)
     add_tile(tile_type, position.x * tile.size, position.y * tile.size)
@@ -77,9 +74,9 @@ function trees(position)
     _add_tile(tile.trees, position)
 end
 
--- 添加敌人坦克: tank.type
-function add_enemy(enemy_type)
-    add_tank(enemy_type)
+-- 添加敌人坦克: tier: tank.a, tank.d, tank.c, tank.d
+function add_enemy(tier, has_drop)
+    add_tank(tier, has_drop)
 end
 
 --===============================================================

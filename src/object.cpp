@@ -284,7 +284,7 @@ BulletView* TankView::fire() const {
             {0.0f, 50.0f},
             {-50.0f, 0.0f},
     };
-    return new BulletView(_model.camp, position() + offset[_model.dir], speed[_model.dir] * 4.0f);
+    return new BulletView(_model.group, position() + offset[_model.dir], speed[_model.dir] * 4.0f);
 }
 
 void TankView::onChangeDir(Direction dir) {
@@ -424,7 +424,7 @@ void TankBuilder::gen_textures(TexturesArray& array, TankType t) {
 
 //=====================================================================================
 
-BulletView::BulletView(Tank::Camp camp, Vector2f const& position, Vector2f const& move):
+BulletView::BulletView(Tank::Group camp, Vector2f const& position, Vector2f const& move):
 ImageWidget(load_texture(get_dir(move))) {
     _model.id = ++_objectCount;
     _model.position = position - size() * 0.5f;
