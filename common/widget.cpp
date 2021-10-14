@@ -772,6 +772,9 @@ void FrameAnimationWidget::stop() {
 }
 
 void FrameAnimationWidget::startAnimate() {
+    if (hasAction("animate")) {
+        return;
+    }
     auto call = Action::Ptr(new CallBackDelta(std::bind(&FrameAnimationWidget::onAnimate, this, std::placeholders::_1)));
     auto action = Action::New<Repeat>(call);
     action->setName("animate");

@@ -94,10 +94,10 @@ LogoView::LogoView():_canClick(false) {
 
     auto& state = _game.force_get<lutok3::State>("lua");
     std::string key[5] = {
-            "AVATAR", "INDIENOVA", "GITHUB", "QQ_GROUP", "DISCORD",
+            "AVATAR", "INDIENOVA", "QQ_GROUP", "DISCORD",
     };
     std::vector<std::string> value;
-    for (int i = 0; i < 5; ++i) {
+    for (int i = 0; i < 4; ++i) {
         if (state.getGlobal(key[i]) == lutok3::Type::String) {
             value.push_back(state.get());
         } else {
@@ -117,7 +117,7 @@ LogoView::LogoView():_canClick(false) {
     auto font = res::load_ttf_font(res::fontName("prstart"), 26);
     font->setColor({0, 0, 0, 255});
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < value.size()-1; ++i) {
         int idx = i + 1;
         if (value[idx].empty()) {
             continue;
@@ -203,9 +203,16 @@ StartView::StartView():_index(0), _canSelect(false) {
     }
 
     {
+        auto& state = _game.force_get<lutok3::State>("lua");
+        std::string github;
+        if (state.getGlobal("GITHUB") == lutok3::Type::String) {
+            github = (std::string)state.get();
+        }
+        state.pop();
+
         auto title = new TTFLabel;
         title->setFont(font);
-        title->setString("github.com/baiXfeng");
+        title->setString(github);
         title->setAnchor(1.0f, 0.0f);
         title->setPosition(size().x-15, 15);
         widget.reset(title);
@@ -450,6 +457,12 @@ BattleView::BattleView() {
         root->addChild(widget);
         root_size.x += view->size().x;
         root_size.y = view->size().y;
+
+        // 幕帘完全打开再开始运作战场
+        view->enableUpdate(false);
+        this->defer(view, [](Widget* sender) {
+            sender->enableUpdate(true);
+        }, 0.28f);
     }
 
     {
@@ -492,14 +505,14 @@ static int const _enemy_icon_size = 20;
 
 BattleInfoView::~BattleInfoView() {
     _game.event().remove(EventID::ENEMY_NUMBER_CHANGED, this);
-    _game.event().remove(EventID::PLAYER1_NUMBER_CHANGED, this);
+    _game.event().remove(EventID::PLAYER_LIFE_CHANGED, this);
 }
 
 void BattleInfoView::onEvent(Event const& e) {
     if (e.Id() == EventID::ENEMY_NUMBER_CHANGED) {
         auto value = e.data<int>();
         onEnemyNumberChanged(value);
-    } else if (e.Id() == EventID::PLAYER1_NUMBER_CHANGED) {
+    } else if (e.Id() == EventID::PLAYER_LIFE_CHANGED) {
         auto value = e.data<int>();
         onPlayerNumberChanged(value);
     }
@@ -510,13 +523,14 @@ void BattleInfoView::onEnemyNumberChanged(int n) {
 }
 
 void BattleInfoView::onPlayerNumberChanged(int n) {
-
+    _playerLife->setString(std::to_string(n));
 }
 
-BattleInfoView::BattleInfoView() {
+BattleInfoView::BattleInfoView():
+_playerLife(nullptr) {
 
     _game.event().add(EventID::ENEMY_NUMBER_CHANGED, this);
-    _game.event().add(EventID::PLAYER1_NUMBER_CHANGED, this);
+    _game.event().add(EventID::PLAYER_LIFE_CHANGED, this);
 
     Ptr widget;
     int const padding = 18;
@@ -570,6 +584,7 @@ BattleInfoView::BattleInfoView() {
         label->setPosition(size().x * 0.5f, size().y * 0.6f);
         widget.reset(label);
         addChild(widget);
+        _playerLife = label;
     }
 
     {

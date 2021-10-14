@@ -29,6 +29,15 @@ public:
         auto dp = static_cast<DataPack<DataType>*>(_data[key].get());
         return dp->data();
     }
+    template<typename DataType>
+    DataType const& get(T const& key) const {
+        auto iter = _data.find(key);
+        if (iter == _data.end()) {
+            return nullptr;
+        }
+        auto dp = static_cast<DataPack<DataType>*>(iter->second.get());
+        return dp->data();
+    }
     template<typename DataType, typename... Args>
     DataType& force_get(T const& key, Args const&... args) {
         if (!has(key)) {

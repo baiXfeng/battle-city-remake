@@ -71,6 +71,7 @@ private:
     void onPlayerNumberChanged(int n);
 private:
     ImageWidget* createEnemyIcon();
+    TTFLabel* _playerLife;
 };
 
 class ScoreView : public WindowWidget {

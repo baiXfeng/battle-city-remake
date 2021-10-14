@@ -30,12 +30,54 @@ class SequenceBehavior : public Behavior {
 public:
     typedef std::vector<Ptr> Behaviors;
 public:
+    SequenceBehavior();
     SequenceBehavior(Behaviors const& sequence);
 protected:
     Status tick(float delta) override;
     void add(Behavior::Ptr const& behavior);
 protected:
     Behaviors _sequence;
+};
+
+class TankSpawnBehavior : public SequenceBehavior {
+public:
+    TankSpawnBehavior(WorldModel::TankList* tanks);
+protected:
+    Status tick(float delta) override;
+};
+
+class EnemySpawnBehavior : public Behavior {
+public:
+    EnemySpawnBehavior(WorldModel::TankList* tanks);
+protected:
+    Status tick(float delta) override;
+protected:
+    int _index;
+    WorldModel::TankList* _tanks;
+};
+
+class PlayerSpawnBehavior : public Behavior {
+public:
+    PlayerSpawnBehavior(WorldModel::TankList* tanks);
+protected:
+    Status tick(float delta) override;
+protected:
+    WorldModel::TankList* _tanks;
+};
+
+class TankAI_None : public Behavior {
+    Status tick(float delta) override {
+        return success;
+    }
+};
+
+class TankAI_Behavior : public Behavior {
+public:
+    TankAI_Behavior(TankModel* model);
+private:
+    Status tick(float delta) override;
+private:
+    TankModel* _model;
 };
 
 class TankMoveBehavior : public Behavior {
@@ -68,32 +110,58 @@ private:
     WorldModel::TankList* _tanks;
 };
 
+class TankFireBehavior : public Behavior {
+public:
+    TankFireBehavior(TankModel* model, WorldModel::BulletList* bullets);
+private:
+    Status tick(float delta) override;
+private:
+    TankModel* _model;
+    WorldModel::BulletList* _bullets;
+};
+
 class BulletMoveBehavior : public Behavior {
 public:
-    BulletMoveBehavior(BulletModel* model, RectI const& bounds);
+    BulletMoveBehavior(BulletModel* model);
 private:
     Status tick(float delta) override;
 private:
     BulletModel* _model;
-    RectI _world_bounds;
 };
 
-class BulletCollisionBehavior : public Behavior {
+class BaseBulletCollisionBehavior : public Behavior {
 public:
-    BulletCollisionBehavior(BulletModel* model, WorldModel* world);
-private:
-    Status tick(float delta) override;
-    Status tileCollision(float delta);
-    Status worldCollision(float delta);
+    BaseBulletCollisionBehavior(BulletModel* model, WorldModel* world);
+protected:
     void remove_bullet();
     void bullet_explosion();
     void hit_wall();
     void hit_brick();
     void hit_base();
-private:
+protected:
     BulletModel* _model;
     WorldModel* _world;
-    std::vector<std::function<Status(float delta)>> _calls;
+};
+
+class BulletWorldCollisionBehavior : public BaseBulletCollisionBehavior {
+public:
+    BulletWorldCollisionBehavior(BulletModel* model, WorldModel* world);
+private:
+    Status tick(float delta) override;
+};
+
+class BulletTileCollisionBehavior : public BaseBulletCollisionBehavior {
+public:
+    BulletTileCollisionBehavior(BulletModel* model, WorldModel* world);
+private:
+    Status tick(float delta) override;
+};
+
+class BulletTankCollisionBehavior : public BaseBulletCollisionBehavior {
+public:
+    BulletTankCollisionBehavior(BulletModel* model, WorldModel* world);
+private:
+    Status tick(float delta) override;
 };
 
 #endif //SDL2_UI_BEHAVIOR_H

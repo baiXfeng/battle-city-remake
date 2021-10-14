@@ -13,6 +13,8 @@ typedef Behavior::Status Status;
 
 //=====================================================================================
 
+SequenceBehavior::SequenceBehavior() {}
+
 SequenceBehavior::SequenceBehavior(Behaviors const& sequence):_sequence(sequence) {
 
 }
@@ -29,6 +31,69 @@ Status SequenceBehavior::tick(float delta) {
 
 void SequenceBehavior::add(Behavior::Ptr const& behavior) {
     _sequence.push_back(behavior);
+}
+
+//=====================================================================================
+
+TankSpawnBehavior::TankSpawnBehavior(WorldModel::TankList* tanks) {
+    add(Behavior::Ptr(new PlayerSpawnBehavior(tanks)));
+    add(Behavior::Ptr(new EnemySpawnBehavior(tanks)));
+}
+
+Status TankSpawnBehavior::tick(float delta) {
+    return SequenceBehavior::tick(delta);
+}
+
+//=====================================================================================
+
+PlayerSpawnBehavior::PlayerSpawnBehavior(WorldModel::TankList* tanks):_tanks(tanks) {
+
+}
+
+Status PlayerSpawnBehavior::tick(float delta) {
+    for (auto& tank : *_tanks) {
+        if (tank->party == Tank::PLAYER and tank->controller == Tank::P1) {
+            // 玩家坦克已经存在，不再创建
+            return running;
+        }
+    }
+    auto player_model = _game.get<PlayerModel*>("player_model");
+    if (player_model->life <= 0) {
+        return running;
+    }
+    // 减少生命
+    _game.event().notify(EasyEvent<int>(EventID::PLAYER_LIFE_CHANGED, --player_model->life));
+    // 创建坦克
+    auto& spawns = Tank::getSpawns(Tank::PLAYER);
+    TankBuildInfo info;
+    info.position = spawns[Tank::P1];
+    info.direction = Tank::Direction::UP;
+    info.party = Tank::PLAYER;
+    info.tier = Tank::A;
+    info.controller = Tank::P1;
+    info.has_drop = false;
+    _game.event().notify(EasyEvent<TankBuildInfo>(EventID::TANK_GEN, info));
+    return success;
+}
+
+//=====================================================================================
+
+EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks) {
+
+}
+
+Status EnemySpawnBehavior::tick(float delta) {
+    return success;
+}
+
+//=====================================================================================
+
+TankAI_Behavior::TankAI_Behavior(TankModel* model):_model(model) {
+
+}
+
+Status TankAI_Behavior::tick(float delta) {
+    return success;
 }
 
 //=====================================================================================
@@ -117,12 +182,74 @@ _tanks(tanks) {
 }
 
 Status TankCollisionBehavior::tick(float delta) {
+    for (auto& tank : *_tanks) {
+        if (tank->id == _model->id) {
+            continue;
+        }
+        if (isCollision({
+            tank->bounds.x + 5,
+            tank->bounds.y + 5,
+            tank->bounds.w - 10,
+            tank->bounds.h - 10,
+            }, _model->bounds)) {
+            if (_model->move.y < 0.0f and _model->bounds.y > tank->bounds.y) {
+                _model->position.y = tank->bounds.y + tank->bounds.h;
+                _model->move.y = 0.0f;
+                _model->modifyPosition();
+                break;
+            } else if (_model->move.y > 0.0f and _model->bounds.y < tank->bounds.y) {
+                _model->position.y = tank->bounds.y - _model->bounds.h;
+                _model->move.y = 0.0f;
+                _model->modifyPosition();
+                break;
+            }
+            if (_model->move.x < 0.0f and _model->bounds.x > tank->bounds.x) {
+                _model->position.x = tank->bounds.x + tank->bounds.w;
+                _model->move.x = 0.0f;
+                _model->modifyPosition();
+                break;
+            } else if (_model->move.x > 0.0f and _model->bounds.x < tank->bounds.x) {
+                _model->position.x = tank->bounds.x - _model->bounds.w;
+                _model->move.x = 0.0f;
+                _model->modifyPosition();
+                break;
+            }
+        }
+    }
     return success;
 }
 
 //=====================================================================================
 
-BulletMoveBehavior::BulletMoveBehavior(BulletModel* model, RectI const& bounds):_model(model), _world_bounds(bounds) {
+TankFireBehavior::TankFireBehavior(TankModel* model, WorldModel::BulletList* bullets):
+_model(model),
+_bullets(bullets) {
+
+}
+
+Status TankFireBehavior::tick(float delta) {
+    if (not _model->fire) {
+        return running;
+    }
+    _model->fire = false;
+    int bulletCount = 0;
+    for (auto& bullet : *_bullets) {
+        if (bullet->sender_id == _model->id) {
+            // 如果发射过子弹，计数+1
+            ++bulletCount;
+        }
+    }
+    auto& attr = Tank::getAttribute(_model->party, _model->tier);
+    if (bulletCount >= attr.bulletMaxCount) {
+        return running;
+    }
+    _model->createBullet();
+    return success;
+}
+
+//=====================================================================================
+
+BulletMoveBehavior::BulletMoveBehavior(BulletModel* model):_model(model) {
 
 }
 
@@ -138,24 +265,85 @@ std::string hit_wall = res::soundName("bullet_hit_1");
 std::string hit_brick = res::soundName("bullet_hit_2");
 std::string base_explosion = res::soundName("explosion_2");
 
-BulletCollisionBehavior::BulletCollisionBehavior(BulletModel* model, WorldModel* world):_model(model), _world(world) {
-    _calls.push_back(std::bind(&BulletCollisionBehavior::worldCollision, this, std::placeholders::_1));
-    _calls.push_back(std::bind(&BulletCollisionBehavior::tileCollision, this, std::placeholders::_1));
+BaseBulletCollisionBehavior::BaseBulletCollisionBehavior(BulletModel* model, WorldModel* world):
+_model(model),
+_world(world) {
     _game.audio().loadEffect(::hit_wall);
     _game.audio().loadEffect(::hit_brick);
     _game.audio().loadEffect(base_explosion);
 }
 
-Status BulletCollisionBehavior::tick(float delta) {
-    for (auto& call : _calls) {
-        if (call(delta) == fail) {
-            return fail;
-        }
+void BaseBulletCollisionBehavior::remove_bullet() {
+    _model->removeFromScreen();
+    auto iter = std::find(_world->bullets.begin(), _world->bullets.end(), _model);
+    if (iter != _world->bullets.end()) {
+        _world->bullets.erase(iter);
+    }
+}
+
+void BaseBulletCollisionBehavior::bullet_explosion() {
+    _model->playExplosion();
+}
+
+void BaseBulletCollisionBehavior::hit_wall() {
+    if (_model->party == Tank::ENEMY) {
+        return;
+    }
+    _game.audio().playEffect(::hit_wall);
+}
+
+void BaseBulletCollisionBehavior::hit_brick() {
+    if (_model->party == Tank::ENEMY) {
+        return;
+    }
+    _game.audio().playEffect(::hit_brick);
+}
+
+void BaseBulletCollisionBehavior::hit_base() {
+    _game.audio().playEffect(base_explosion);
+}
+
+//=====================================================================================
+
+BulletWorldCollisionBehavior::BulletWorldCollisionBehavior(BulletModel* model, WorldModel* world):
+BaseBulletCollisionBehavior(model, world) {
+
+}
+
+Status BulletWorldCollisionBehavior::tick(float delta) {
+    if (_model->move.x < 0.0f and _model->position.x <= _world->bounds.x) {
+        bullet_explosion();
+        remove_bullet();
+        hit_wall();
+        return fail;
+    } else if (_model->move.x > 0.0f and _model->position.x + _model->bounds.w >= _world->bounds.x + _world->bounds.w) {
+        bullet_explosion();
+        remove_bullet();
+        hit_wall();
+        return fail;
+    }
+    if (_model->move.y < 0.0f and _model->position.y <= _world->bounds.y) {
+        bullet_explosion();
+        remove_bullet();
+        hit_wall();
+        return fail;
+    } else if (_model->move.y > 0.0f and _model->position.y + _model->bounds.h >= _world->bounds.y + _world->bounds.h) {
+        bullet_explosion();
+        remove_bullet();
+        hit_wall();
+        return fail;
     }
     return success;
 }
 
-Status BulletCollisionBehavior::tileCollision(float delta) {
+//=====================================================================================
+
+BulletTileCollisionBehavior::BulletTileCollisionBehavior(BulletModel* model, WorldModel* world):
+BaseBulletCollisionBehavior(model, world) {
+
+}
+
+Status BulletTileCollisionBehavior::tick(float delta) {
     WorldModel::TileTree::SquareList list;
     auto& tiles = _world->tiles;
     tiles.retrieve(list, _model->bounds);
@@ -172,8 +360,8 @@ Status BulletCollisionBehavior::tileCollision(float delta) {
             if (tile->type == Tile::BASE) {
                 // 基地击破，GameOver
                 _game.event().notify(EasyEvent<Vector2f>(EventID::BASE_FALL, {
-                    float(tile->bounds.x + (tile->bounds.w >> 1)),
-                    float(tile->bounds.y + (tile->bounds.h >> 1)),
+                        float(tile->bounds.x + (tile->bounds.w >> 1)),
+                        float(tile->bounds.y + (tile->bounds.h >> 1)),
                 }));
                 this->hit_base();
                 tiles.remove(tile);
@@ -201,58 +389,28 @@ Status BulletCollisionBehavior::tileCollision(float delta) {
     return status;
 }
 
-Status BulletCollisionBehavior::worldCollision(float delta) {
-    if (_model->move.x < 0.0f and _model->position.x <= _world->bounds.x) {
-        bullet_explosion();
-        remove_bullet();
-        hit_wall();
-        return fail;
-    } else if (_model->move.x > 0.0f and _model->position.x + _model->bounds.w >= _world->bounds.x + _world->bounds.w) {
-        bullet_explosion();
-        remove_bullet();
-        hit_wall();
-        return fail;
-    }
-    if (_model->move.y < 0.0f and _model->position.y <= _world->bounds.y) {
-        bullet_explosion();
-        remove_bullet();
-        hit_wall();
-        return fail;
-    } else if (_model->move.y > 0.0f and _model->position.y + _model->bounds.h >= _world->bounds.y + _world->bounds.h) {
-        bullet_explosion();
-        remove_bullet();
-        hit_wall();
-        return fail;
+//=====================================================================================
+
+BulletTankCollisionBehavior::BulletTankCollisionBehavior(BulletModel* model, WorldModel* world):
+BaseBulletCollisionBehavior(model, world) {
+
+}
+
+Status BulletTankCollisionBehavior::tick(float delta) {
+    auto& tanks = _world->tanks;
+    for (auto& tank : tanks) {
+        if (_model->sender_id == tank->id) {
+            continue;
+        }
+        if (_model->party == tank->party and _model->party == Tank::ENEMY) {
+            // 敌方子弹不对敌方坦克碰撞
+            continue;
+        }
+        if (isCollision(_model->bounds, tank->bounds)) {
+            bullet_explosion();
+            remove_bullet();
+            return fail;
+        }
     }
     return success;
-}
-
-void BulletCollisionBehavior::remove_bullet() {
-    _model->removeFromScreen();
-    auto iter = std::find(_world->bullets.begin(), _world->bullets.end(), _model);
-    if (iter != _world->bullets.end()) {
-        _world->bullets.erase(iter);
-    }
-}
-
-void BulletCollisionBehavior::bullet_explosion() {
-    _model->playExplosion();
-}
-
-void BulletCollisionBehavior::hit_wall() {
-    if (_model->camp == Tank::ENEMY) {
-        return;
-    }
-    _game.audio().playEffect(::hit_wall);
-}
-
-void BulletCollisionBehavior::hit_brick() {
-    if (_model->camp == Tank::ENEMY) {
-        return;
-    }
-    _game.audio().playEffect(::hit_brick);
-}
-
-void BulletCollisionBehavior::hit_base() {
-    _game.audio().playEffect(base_explosion);
 }

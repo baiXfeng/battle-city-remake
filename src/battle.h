@@ -8,12 +8,14 @@
 #include "common/widget.h"
 #include "common/quadtree.h"
 #include <list>
+#include "behavior.h"
 
 class TankView;
 class TileModel;
 class WorldModel;
 class BattleFieldView : public GamePadWidget {
     typedef std::shared_ptr<WorldModel> WorldModelPtr;
+    typedef std::shared_ptr<PlayerModel> PlayerModelPtr;
 public:
     BattleFieldView();
     ~BattleFieldView();
@@ -42,6 +44,8 @@ private:
     TankView* _player;
     std::list<int> _keylist;
     WorldModelPtr _world;
+    PlayerModelPtr _playerModel;
+    Behavior::Ptr _behavior;
 };
 
 

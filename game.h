@@ -24,20 +24,31 @@
 #include "lutok3.h"
 
 class MyGame : public Game::App {
+private:
+    lutok3::State* _state;
 public:
-    void initData() {
+    MyGame():_state(&_game.force_get<lutok3::State>("lua")) {}
+    void initLuaState() {
         // 初始化LUA虚拟机
-        auto& state = _game.force_get<lutok3::State>("lua");
+        auto& state = *_state;
         state.openLibs();
         registerLuaFunctions(state);
         state.doFile(res::scriptName("startup"));
-
+    }
+    void initLevelMax() {
         // 记录最大关卡数
+        auto& state = *_state;
         state.getGlobal("LEVEL_MAX");
         int value = state.get();
         state.pop();
         _game.force_get<int>("level_max") = value == 0 ? 1 : value;
         _game.force_get<int>("level") = 1;
+    }
+    void initData() {
+        initLuaState();
+        initLevelMax();
+        Tank::loadTankSpawns();
+        Tank::loadAttributes();
     }
     void initCommand() {
         _game.command().add<GameOverCommand>(EventID::GAME_OVER);

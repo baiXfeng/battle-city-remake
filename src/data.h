@@ -8,6 +8,7 @@
 #include "common/types.h"
 #include "common/quadtree.h"
 #include "obs.h"
+#include "lutok3.h"
 #include <vector>
 #include <string>
 
@@ -30,8 +31,8 @@ namespace Tile {
 }
 
 namespace Tank {
-    enum Group {
-        PLAYER = 0x20,
+    enum Party {
+        PLAYER = 0,
         ENEMY
     };
     enum Tier {
@@ -39,6 +40,7 @@ namespace Tank {
         B,
         C,
         D,
+        TIER_MAX,
     };
     enum Direction {
         UP = 0,
@@ -47,6 +49,36 @@ namespace Tank {
         LEFT,
         MAX,
     };
+    enum Controller {
+        P1 = 0,
+        P2,
+        AI,
+    };
+    class Attribute {
+    public:
+        int health;
+        int bulletMaxCount;
+        int bulletTankDamage;
+        int bulletWallDamage;
+        float moveSpeed;
+        float bulletRapidFireDelay;
+        float bulletSpeed;
+    public:
+        Attribute();
+        Attribute(lutok3::State& table);
+    };
+
+    typedef std::vector<Vector2f> Spawns;
+    typedef std::vector<Attribute> Attributes;
+    typedef std::vector<Attributes> Config;
+
+    void loadTankSpawns();
+    Spawns const& getSpawns(Party group);
+
+    void loadAttributes();
+    Attribute const& getAttribute(Party group, Tier tier);
+
+    int getDefaultLifeMax();
 }
 
 typedef struct {
@@ -82,24 +114,40 @@ class TankModel : public obs::observable<TankView> {
 public:
     int id;
     int hp;
+    bool fire;
+    bool shield;
     bool has_drop;
-    Tank::Group group;
+    Tank::Party party;
     Tank::Tier tier;
     Tank::Direction dir;
+    Tank::Controller controller;
     Vector2f move;
     Vector2f position;
     Vector2i size;
     RectI bounds;
 public:
+    TankModel();
     void modifyPosition();
     void removeFromScreen();
+    void createBullet();
+};
+
+class TankBuildInfo {
+public:
+    bool has_drop;
+    Tank::Party party;
+    Tank::Tier tier;
+    Tank::Controller controller;
+    Tank::Direction direction;
+    Vector2f position;
 };
 
 class BulletView;
 class BulletModel : public obs::observable<BulletView> {
 public:
     int id;
-    Tank::Group camp;
+    int sender_id;
+    Tank::Party party;
     Vector2f move;
     Vector2f position;
     RectI bounds;
@@ -130,6 +178,15 @@ public:
     PropList props;
     RectI bounds;
 };
+
+class PlayerModel {
+public:
+    int life;
+    int killCount[Tank::TIER_MAX];   // 击落数
+};
+
+typedef Tank::Spawns PlayerSpawns;
+typedef Tank::Spawns EnemySpawns;
 
 //===================================================================
 // 资源路径

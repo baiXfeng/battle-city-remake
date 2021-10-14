@@ -49,31 +49,31 @@ class Behavior;
 class TankView : public FrameAnimationWidget {
 public:
     typedef Tank::Direction Direction;
-    enum TYPE {
-        TYPE_BEGIN = 0x200,
-        PLAYER_1,
-        PLAYER_2,
-        PLAYER_3,
-        PLAYER_4,
-    };
+    typedef Tank::Controller Controller;
     typedef std::vector<TexturePtr> Textures;
     typedef std::vector<Textures> TexturesArray;
     typedef std::shared_ptr<Behavior> BehaviorPtr;
 public:
-    TankView(TYPE t, TexturesArray const& array);
+    TankView(Tank::Party party, Tank::Tier tier, bool has_drop = false, Controller c = Tank::AI);
+    void setSkin(Controller c, Tank::Tier tier);
+    void setSkin(Tank::Tier tier, bool has_drop);
+    void setTopEnemySkin();
     void move(Direction dir);
     void turn(Direction dir);
     void stop(Direction dir = Direction::MAX);
     void insert_to(WorldModel* world);
-    BulletView* fire() const;
+    void fire();
+    void onFire();
+    bool moving() const;
 private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;
     void onDirty() override;
     void onModifyPosition(Vector2f const& position) override;
+    void updateMoveSpeed();
+    BulletView* createBullet() const;
 private:
     bool _force_move;
-    TYPE _type;
     TexturesArray _texArr;
     TankModel _model;
     BehaviorPtr _behavior;
@@ -94,26 +94,11 @@ private:
     WorldModel* _world;
 };
 
-class TankBuilder {
-public:
-    typedef std::vector<Widget::Ptr> Array;
-    typedef TankView::Direction Direction;
-    typedef TankView::TYPE TankType;
-    typedef TankView::TexturesArray TexturesArray;
-public:
-    TankBuilder(WorldModel* world);
-    void gen(Array& r, TankType t, Vector2f const& position);
-private:
-    void gen_textures(TexturesArray& array, TankType t);
-private:
-    WorldModel* _world;
-};
-
 class BulletView : public ImageWidget {
 public:
     typedef std::shared_ptr<Behavior> BehaviorPtr;
 public:
-    BulletView(Tank::Group camp, Vector2f const& position, Vector2f const& move);
+    BulletView(TankModel const* tank, Vector2f const& position, Vector2f const& move);
     void insert_to(WorldModel* world);
     void play_explosion();
 private:

@@ -9,6 +9,8 @@
 #include "common/audio.h"
 #include "behavior.h"
 #include "view.h"
+#include "skin.h"
+#include "const.h"
 
 static int _objectCount = 0;
 
@@ -199,21 +201,62 @@ void TileView::onModifySize(Vector2f const& size) {
 
 std::string shot_sound = res::soundName("bullet_shot");
 
-TankView::TankView(TYPE t, TexturesArray const& array):
-_force_move(false),
-_type(t),
-_texArr(array) {
+TankView::TankView(Tank::Party party, Tank::Tier tier, bool has_drop, Controller c) {
     enableUpdate(true);
+    if (party == Tank::ENEMY) {
+        setSkin(tier, has_drop);
+    } else if (party == Tank::PLAYER) {
+        setSkin(c, tier);
+    }
     _model.id = ++_objectCount;
+    _model.fire = false;
+    _model.shield = true;
+    _model.party = party;
+    _model.controller = c;
     _model.size = {Tile::SIZE, Tile::SIZE};
     _model.dir = Direction::MAX;
     _model.add_observer(this);
-
-    auto mask = Ptr(new MaskWidget({255, 0, 0, 255}));
-    mask->setSize(Tile::SIZE, Tile::SIZE);
-    addChild(mask);
-
     _game.audio().loadEffect(shot_sound);
+}
+
+void TankView::setSkin(Controller c, Tank::Tier tier) {
+    _texArr = skin::getPlayerSkin(tier, c);
+    _model.has_drop = false;
+    _model.party = Tank::PLAYER;
+    _model.tier = tier;
+    if (_model.dir != Tank::MAX) {
+        updateMoveSpeed();
+        setFrames(_texArr[_model.dir]);
+        if (moving()) {
+            play(0.12f);
+        } else {
+            turn(_model.dir);
+        }
+    }
+}
+
+void TankView::setSkin(Tank::Tier tier, bool has_drop) {
+    _texArr = skin::getEnemySkin(tier, has_drop);
+    _model.has_drop = has_drop;
+    _model.party = Tank::ENEMY;
+    _model.tier = tier;
+    if (_model.dir != Tank::MAX) {
+        updateMoveSpeed();
+        setFrames(_texArr[_model.dir]);
+        play(0.12f);
+    }
+}
+
+void TankView::setTopEnemySkin() {
+    _texArr = skin::getTopEnemySkin();
+    _model.has_drop = false;
+    _model.party = Tank::ENEMY;
+    _model.tier = Tank::D;
+    if (_model.dir != Tank::MAX) {
+        updateMoveSpeed();
+        setFrames(_texArr[_model.dir]);
+        play(0.12f);
+    }
 }
 
 void TankView::move(Direction dir) {
@@ -222,17 +265,13 @@ void TankView::move(Direction dir) {
             return;
         }
     }
-    setFrames(_texArr[dir]);
-    play(0.15f);
-    Vector2f speed[4] = {
-            {0.0f, -50.0f},
-            {50.0f, 0.0f},
-            {0.0f, 50.0f},
-            {-50.0f, 0.0f},
-    };
+    if (_model.dir != dir) {
+        setFrames(_texArr[dir]);
+    }
+    play(0.12f);
     _force_move = false;
     _model.dir = dir;
-    _model.move = speed[dir] * 3.5f;
+    this->updateMoveSpeed();
     this->onChangeDir(dir);
 }
 
@@ -245,7 +284,11 @@ void TankView::turn(Direction dir) {
 }
 
 void TankView::stop(Direction dir) {
+    _force_move = true;
     if (_model.move == Vector2f{0.0f, 0.0f}) {
+        if (_model.party == Tank::PLAYER) {
+            FrameAnimationWidget::stop();
+        }
         return;
     }
     if (dir == Direction::UP or dir == Direction::DOWN) {
@@ -255,22 +298,35 @@ void TankView::stop(Direction dir) {
     } else {
         _model.move = {0, 0};
     }
-    FrameAnimationWidget::stop();
-    _force_move = true;
 }
 
 void TankView::insert_to(WorldModel* world) {
     _model.position = position();
     world->tanks.push_back(&_model);
+    auto tank_ai = Behavior::Ptr(new TankAI_Behavior(&_model));
     auto tank_move = Behavior::Ptr(new TankMoveBehavior(&_model, world->bounds));
+    auto tank_fire = Behavior::Ptr(new TankFireBehavior(&_model, &world->bullets));
     auto tile_collision = Behavior::New<TankTileCollisionBehavior>(&_model, &world->tiles);
     auto tank_collision = Behavior::New<TankCollisionBehavior>(&_model, &world->tanks);
-    _behavior = Behavior::Ptr(new SequenceBehavior({tank_move, tile_collision, tank_collision}));
+    if (_model.controller != Tank::AI) {
+        // 不启用AI
+        tank_ai.reset(new TankAI_None);
+    }
+    _behavior = Behavior::Ptr(new SequenceBehavior({tank_ai, tank_move, tank_fire, tile_collision, tank_collision}));
 
     setViewLayer(this, 1);
 }
 
-BulletView* TankView::fire() const {
+void TankView::fire() {
+    _model.fire = true;
+}
+
+void TankView::onFire() {
+    Widget::Ptr bullet(createBullet());
+    _game.event().notify(EasyEvent<Widget::Ptr>(EventID::TANK_FIRE, bullet));
+}
+
+BulletView* TankView::createBullet() const {
     _game.audio().playEffect(shot_sound);
     Vector2f offset[4] = {
             {size().x * 0.5f, 0.0f},
@@ -278,13 +334,19 @@ BulletView* TankView::fire() const {
             {size().x * 0.5f, size().y * 1.0f},
             {0.0f, size().y * 0.5f},
     };
+    auto& attr = Tank::getAttribute(_model.party, _model.tier);
+    auto bulletSpeed = attr.bulletSpeed;
     Vector2f speed[4] = {
-            {0.0f, -50.0f},
-            {50.0f, 0.0f},
-            {0.0f, 50.0f},
-            {-50.0f, 0.0f},
+            {0.0f, -bulletSpeed},
+            {bulletSpeed, 0.0f},
+            {0.0f, bulletSpeed},
+            {-bulletSpeed, 0.0f},
     };
-    return new BulletView(_model.group, position() + offset[_model.dir], speed[_model.dir] * 4.0f);
+    return new BulletView(&_model, position() + offset[_model.dir], speed[_model.dir]);
+}
+
+bool TankView::moving() const {
+    return _model.move.x > 0 or _model.move.y > 0;
 }
 
 void TankView::onChangeDir(Direction dir) {
@@ -317,6 +379,21 @@ void TankView::onDirty() {
 
 void TankView::onModifyPosition(Vector2f const& position) {
     _model.position = position;
+}
+
+void TankView::updateMoveSpeed() {
+    if (_model.dir == Tank::Direction::MAX) {
+        return;
+    }
+    auto& attr = Tank::getAttribute(_model.party, _model.tier);
+    float moveSpeed = attr.moveSpeed;
+    Vector2f speed[4] = {
+            {0.0f, -moveSpeed},
+            {moveSpeed, 0.0f},
+            {0.0f, moveSpeed},
+            {-moveSpeed, 0.0f},
+    };
+    _model.move = speed[_model.dir];
 }
 
 //=====================================================================================
@@ -391,45 +468,13 @@ void TileBuilder::get_block(Array& r, TileType begin, Vector2i const& position) 
 
 //=====================================================================================
 
-TankBuilder::TankBuilder(WorldModel* world):_world(world) {
-
-}
-
-void TankBuilder::gen(Array& r, TankType t, Vector2f const& position) {
-    TankView::TexturesArray texArray;
-    gen_textures(texArray, t);
-    auto view = new TankView(t, texArray);
-    view->setPosition(position);
-    view->insert_to(_world);
-    r.push_back(Widget::Ptr(view));
-}
-
-void TankBuilder::gen_textures(TexturesArray& array, TankType t) {
-    array.clear();
-    array.resize(Direction::MAX);
-    auto& up = array[Direction::UP];
-    auto& right = array[Direction::RIGHT];
-    auto& down = array[Direction::DOWN];
-    auto& left = array[Direction::LEFT];
-    switch (t) {
-        case TankType::PLAYER_1:
-        {
-
-        }
-            break;
-        default:
-            break;
-    }
-}
-
-//=====================================================================================
-
-BulletView::BulletView(Tank::Group camp, Vector2f const& position, Vector2f const& move):
+BulletView::BulletView(TankModel const* tank, Vector2f const& position, Vector2f const& move):
 ImageWidget(load_texture(get_dir(move))) {
     _model.id = ++_objectCount;
+    _model.sender_id = tank->id;
     _model.position = position - size() * 0.5f;
     _model.move = move;
-    _model.camp = camp;
+    _model.party = tank->party;
     _model.add_observer(this);
     this->setPosition(_model.position);
     this->setSize(ImageWidget::size());
@@ -440,9 +485,11 @@ ImageWidget(load_texture(get_dir(move))) {
 
 void BulletView::insert_to(WorldModel* world) {
     world->bullets.push_back(&_model);
-    auto move_behavior = Behavior::Ptr(new BulletMoveBehavior(&_model, world->bounds));
-    auto collision_behavior = Behavior::Ptr(new BulletCollisionBehavior(&_model, world));
-    _behavior = Behavior::Ptr(new SequenceBehavior({move_behavior, collision_behavior}));
+    auto move_behavior = Behavior::Ptr(new BulletMoveBehavior(&_model));
+    auto world_collision = Behavior::Ptr(new BulletWorldCollisionBehavior(&_model, world));
+    auto tile_collision = Behavior::Ptr(new BulletTileCollisionBehavior(&_model, world));
+    auto tank_collision = Behavior::Ptr(new BulletTankCollisionBehavior(&_model, world));
+    _behavior = Behavior::Ptr(new SequenceBehavior({move_behavior, world_collision, tile_collision, tank_collision}));
 }
 
 void BulletView::play_explosion() {

@@ -23,6 +23,8 @@ static RectI tileRectCatcher(QuadTree<TileModel*>::Square const& square) {
 
 BattleFieldView::~BattleFieldView() {
     _game.event().remove(EventID::BASE_FALL, this);
+    _game.event().remove(EventID::TANK_FIRE, this);
+    _game.event().remove(EventID::TANK_GEN, this);
 }
 
 BattleFieldView::BattleFieldView():
@@ -32,9 +34,12 @@ _upper(nullptr),
 _player(nullptr),
 _pause(false),
 _joyUsed(false),
-_world(std::make_shared<WorldModel>()) {
+_world(std::make_shared<WorldModel>()),
+_playerModel(std::make_shared<PlayerModel>()) {
 
     _game.event().add(EventID::BASE_FALL, this);
+    _game.event().add(EventID::TANK_FIRE, this);
+    _game.event().add(EventID::TANK_GEN, this);
 
     auto old_size = this->size();
     this->setSize(Tile::MAP_SIZE, Tile::MAP_SIZE);
@@ -70,6 +75,8 @@ _world(std::make_shared<WorldModel>()) {
 
     onLoadLevel();
     //sortElements();
+
+    _behavior = Behavior::Ptr(new TankSpawnBehavior(&_world->tanks));
 }
 
 void BattleFieldView::onLoadLevel() {
@@ -83,6 +90,7 @@ void BattleFieldView::onLoadLevel() {
     state.doFile(file);
 
     _game.set<WorldModel*>("world_model", _world.get());
+    _game.set<PlayerModel*>("player_model", _playerModel.get());
     _game.set<std::map<void*, int>>("object_layers");
 
     {
@@ -95,20 +103,13 @@ void BattleFieldView::onLoadLevel() {
         }
     }
 
-    {
-        TankBuilder::Array array;
-        TankBuilder builder(_world.get());
-        builder.gen(array, TankBuilder::TankType::PLAYER_1, {4.5f * Tile::SIZE, 12.0f * Tile::SIZE});
-        for (auto& widget : array) {
-            addElement(widget);
-        }
-        _player = array.front()->to<TankView>();
-        _player->turn(Tank::Direction::UP);
-    }
+    _playerModel->life = Tank::getDefaultLifeMax();
+    memset(_playerModel->killCount, 0, sizeof(_playerModel->killCount));
 }
 
 void BattleFieldView::onUpdate(float delta) {
     procTankControl();
+    _behavior->tick(delta);
 }
 
 void BattleFieldView::draw(SDL_Renderer* renderer) {
@@ -144,10 +145,21 @@ void BattleFieldView::onButtonDown(int key) {
         });
         _game.screen().scene_back()->addChild(widget);
     } else if (key == KeyCode::A or key == KeyCode::B) {
-        auto bullet = _player->fire();
-        bullet->insert_to(_world.get());
-        Ptr widget(bullet);
-        addElement(widget);
+        _player->fire();
+    } else if (key == KeyCode::X) {
+        static Tank::Tier tier = Tank::A;
+        static bool has_drop = false;
+        //_player->setSkin(tier, has_drop);
+        int lv = tier + 1;
+        if (lv > Tank::Tier::D) {
+            lv = tier = Tank::A;
+            has_drop = !has_drop;
+        }
+        tier = Tank::Tier(lv);
+        //_player->setSkin(Tank::P1, tier);
+        _player->setSkin(tier, has_drop);
+    } else if (key == KeyCode::Y) {
+        _player->setTopEnemySkin();
     }
 }
 
@@ -201,11 +213,32 @@ void BattleFieldView::onEvent(Event const& e) {
         animate->play(std::bind(&BattleFieldView::gameOver, this));
         this->addChild(widget);
         widget->performLayout();
+
+    } else if (e.Id() == EventID::TANK_FIRE) {
+        // 添加子弹
+        auto bullet = e.data<Widget::Ptr>();
+        bullet->to<BulletView>()->insert_to(_world.get());
+        addElement(bullet);
+        bullet->performLayout();
+
+    } else if (e.Id() == EventID::TANK_GEN) {
+        // 添加坦克
+        auto& info = e.data<TankBuildInfo>();
+        auto tank = Widget::Ptr(new TankView(info.party, info.tier, info.has_drop, info.controller));
+        auto view = tank->to<TankView>();
+        view->setPosition(info.position);
+        view->turn(info.direction);
+        view->insert_to(_world.get());
+        addElement(tank);
+        if (info.controller == Tank::P1) {
+            _player = view;
+        }
+
     }
 }
 
 void BattleFieldView::procTankControl() {
-    if (!_player->visible()) {
+    if (!_player or !_player->visible()) {
         return;
     }
     auto& gamepad = _game.gamepad();
