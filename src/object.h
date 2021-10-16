@@ -33,6 +33,7 @@ public:
     int type() const;
     TileModel const& model() const;
     void insert_to(WorldModel* world);
+    int layer() const;
 private:
     void update(float delta) override;
     void draw(SDL_Renderer* renderer) override;

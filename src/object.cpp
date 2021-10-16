@@ -160,6 +160,10 @@ void TileView::insert_to(WorldModel* world) {
     world->tiles.insert(&_model);
 }
 
+int TileView::layer() const {
+    return _model.layer;
+}
+
 void TileView::update(float delta) {
     if (not _action->empty()) {
         _action->update(delta);

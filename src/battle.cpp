@@ -104,7 +104,14 @@ void BattleFieldView::onLoadLevel() {
         builder.gen(array, tile_list);
 
         for (auto& widget : array) {
-            addToBottom(widget);
+            auto tile = widget->to<TileView>();
+            if (tile->layer() == 0) {
+                addToBottom(widget);
+            } else if (tile->layer() == 2) {
+                addToTop(widget);
+            } else {
+                addToMiddle(widget);
+            }
         }
     }
 

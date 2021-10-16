@@ -220,18 +220,6 @@ private:
     float _ticks;
 };
 
-class IPushSceneAction : public Action {
-public:
-    typedef std::shared_ptr<Widget> WidgetPtr;
-public:
-    IPushSceneAction(bool replace = false);
-protected:
-    virtual WidgetPtr create() = 0;
-    State Step(float delta) override;
-protected:
-    bool _replace;
-};
-
 template <class T>
 class KeepAlive : public Action {
 public:
