@@ -519,7 +519,9 @@ void BattleInfoView::onEvent(Event const& e) {
 }
 
 void BattleInfoView::onEnemyNumberChanged(int n) {
-
+    for (int i = 0; i < 20; ++i) {
+        _enemy[i]->setVisible(i < n);
+    }
 }
 
 void BattleInfoView::onPlayerNumberChanged(int n) {
@@ -551,6 +553,7 @@ _playerLife(nullptr) {
             view->setPosition(padding+x+view->size().x*(i%2), padding+2+y+view->size().y*(i/2));
             widget.reset(view);
             addChild(widget);
+            _enemy[i] = widget;
         }
     }
 

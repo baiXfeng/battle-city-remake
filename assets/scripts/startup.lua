@@ -22,17 +22,19 @@ ENEMY_DEFAULT_SPAWN_POSITIONS = {
 }
 
 --==============================================================================
+local speedScale = 0.6
+
 -- 子弹速度
 local BulletSpeed = {
-    Slow = 600,
-    Fast = 900,
+    Slow = 600 * speedScale,
+    Fast = 900 * speedScale,
 }
 
 -- 移动速度
 local MoveSpeed = {
-    Slow = 120,
-    Medium = 180,
-    Fast = 240,
+    Slow = 120 * speedScale,
+    Medium = 180 * speedScale,
+    Fast = 240 * speedScale,
 }
 
 -- 射击延迟

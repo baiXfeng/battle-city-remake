@@ -46,16 +46,6 @@ protected:
     Status tick(float delta) override;
 };
 
-class EnemySpawnBehavior : public Behavior {
-public:
-    EnemySpawnBehavior(WorldModel::TankList* tanks);
-protected:
-    Status tick(float delta) override;
-protected:
-    int _index;
-    WorldModel::TankList* _tanks;
-};
-
 class PlayerSpawnBehavior : public Behavior {
 public:
     PlayerSpawnBehavior(WorldModel::TankList* tanks);
@@ -65,10 +55,20 @@ protected:
     WorldModel::TankList* _tanks;
 };
 
-class TankAI_None : public Behavior {
-    Status tick(float delta) override {
-        return success;
-    }
+class EnemySpawnBehavior : public Behavior {
+public:
+    EnemySpawnBehavior(WorldModel::TankList* tanks);
+protected:
+    Status tick(float delta) override;
+    int enemyCount() const;
+    int enemyRemainCount() const;
+    bool is_overlap(RectI const& r) const;
+    void checkOverlap(int& index, int& overlapCount) const;
+protected:
+    bool _player_win;
+    int _index;
+    WorldModel::TankList* _tanks;
+    AddTankList* _addtanks;
 };
 
 class TankAI_Behavior : public Behavior {

@@ -81,7 +81,10 @@ _playerModel(std::make_shared<PlayerModel>()) {
 
 void BattleFieldView::onLoadLevel() {
     auto& tile_list = _game.force_get<AddTileList>("add_tile_list");
+    auto& tank_list = _game.force_get<AddTankList>("add_tank_list");
+
     tile_list.clear();
+    tank_list.clear();
 
     auto level = _game.get<int>("level");
     auto file = res::levelName(level);
@@ -91,7 +94,6 @@ void BattleFieldView::onLoadLevel() {
 
     _game.set<WorldModel*>("world_model", _world.get());
     _game.set<PlayerModel*>("player_model", _playerModel.get());
-    _game.set<std::map<void*, int>>("object_layers");
 
     {
         TileBuilder::Array array;
@@ -99,7 +101,7 @@ void BattleFieldView::onLoadLevel() {
         builder.gen(array, tile_list);
 
         for (auto& widget : array) {
-            addElement(widget);
+            addToBottom(widget);
         }
     }
 
@@ -204,7 +206,7 @@ void BattleFieldView::onEvent(Event const& e) {
 
         auto base = New<ImageWidget>(res::load_texture(_game.renderer(), res::imageName("base_destroyed")));
         base->setPosition(position - base->size() * 0.5f);
-        addElement(base);
+        addToMiddle(base);
 
         auto widget = New<BigExplosionView>();
         auto animate = widget->to<BigExplosionView>();
@@ -218,18 +220,19 @@ void BattleFieldView::onEvent(Event const& e) {
         // 添加子弹
         auto bullet = e.data<Widget::Ptr>();
         bullet->to<BulletView>()->insert_to(_world.get());
-        addElement(bullet);
+        addToMiddle(bullet);
         bullet->performLayout();
 
     } else if (e.Id() == EventID::TANK_GEN) {
         // 添加坦克
         auto& info = e.data<TankBuildInfo>();
-        auto tank = Widget::Ptr(new TankView(info.party, info.tier, info.has_drop, info.controller));
+        auto tank = Widget::Ptr(new TankView(info.party, info.tier, info.direction, info.has_drop, info.controller));
         auto view = tank->to<TankView>();
+        view->setBattleField(this);
         view->setPosition(info.position);
         view->turn(info.direction);
         view->insert_to(_world.get());
-        addElement(tank);
+        addToMiddle(tank);
         if (info.controller == Tank::P1) {
             _player = view;
         }
@@ -268,6 +271,18 @@ void BattleFieldView::gameOver() {
     _game.event().notify(EasyEvent<Widget*>(EventID::GAME_OVER, this));
 }
 
+void BattleFieldView::addToBottom(Widget::Ptr& widget) {
+    _floor->addChild(widget);
+}
+
+void BattleFieldView::addToMiddle(Widget::Ptr& widget) {
+    _root->addChild(widget);
+}
+
+void BattleFieldView::addToTop(Widget::Ptr& widget) {
+    _upper->addChild(widget);
+}
+
 void BattleFieldView::add_key(int key) {
     if (_joyUsed) {
         return;
@@ -282,15 +297,4 @@ bool BattleFieldView::remove_key(int key) {
         return true;
     }
     return false;
-}
-
-void BattleFieldView::addElement(Widget::Ptr& widget) {
-    auto value = getViewLayer(widget.get());
-    if (value == 0) {
-        _floor->addChild(widget);
-    } else if (value == 2) {
-        _upper->addChild(widget);
-    } else {
-        _root->addChild(widget);
-    }
 }

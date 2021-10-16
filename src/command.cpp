@@ -75,3 +75,20 @@ void ResumeGameCommand::onEvent(Event const& e) {
     auto sound = res::soundName("pause");
     _game.audio().releaseEffect(sound);
 }
+
+void BulletHitTankCommand::onEvent(Event const& e) {
+
+    auto& info = e.data<BulletHitTankInfo>();
+    auto bullet = info.bullet;
+    auto tank = info.tank;
+    auto world = info.world;
+
+    --tank->hp;
+    if (tank->hp <= 0) {
+        auto iter = std::find(world->tanks.begin(), world->tanks.end(), tank);
+        world->tanks.erase(iter);
+    }
+    tank->createScore();
+    tank->createExplosion();
+    tank->removeFromScreen();
+}

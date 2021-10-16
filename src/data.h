@@ -53,6 +53,7 @@ namespace Tank {
         P1 = 0,
         P2,
         AI,
+        STANDBY,
     };
     class Attribute {
     public:
@@ -130,16 +131,8 @@ public:
     void modifyPosition();
     void removeFromScreen();
     void createBullet();
-};
-
-class TankBuildInfo {
-public:
-    bool has_drop;
-    Tank::Party party;
-    Tank::Tier tier;
-    Tank::Controller controller;
-    Tank::Direction direction;
-    Vector2f position;
+    void createExplosion();
+    void createScore();
 };
 
 class BulletView;
@@ -200,5 +193,25 @@ namespace res {
     std::string scriptName(std::string const& key);
     std::string assetsName(std::string const& fileName);
 }
+
+//===================================================================
+// 事件参数
+
+class TankBuildInfo {
+public:
+    bool has_drop;
+    Tank::Party party;
+    Tank::Tier tier;
+    Tank::Controller controller;
+    Tank::Direction direction;
+    Vector2f position;
+};
+
+class BulletHitTankInfo {
+public:
+    BulletModel* bullet;
+    TankModel* tank;
+    WorldModel* world;
+};
 
 #endif //SDL2_UI_DATA_H

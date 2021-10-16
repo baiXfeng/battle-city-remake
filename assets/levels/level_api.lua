@@ -134,3 +134,15 @@ function auto_base()
     end
     brick_right({x = 6, y = 11.5})
 end
+
+-- 自动添加敌人
+function auto_enemy(enemies)
+    for i=1, #enemies do
+        local enemy = enemies[i]
+        if #enemy == 1 then
+            add_enemy(enemy[1], false)
+        else
+            add_enemy(enemy[1], enemy[2])
+        end
+    end
+end

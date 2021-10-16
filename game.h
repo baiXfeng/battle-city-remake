@@ -54,9 +54,11 @@ public:
         _game.command().add<GameOverCommand>(EventID::GAME_OVER);
         _game.command().add<PauseGameCommand>(EventID::PAUSE_GAME);
         _game.command().add<ResumeGameCommand>(EventID::RESUME_GAME);
+        _game.command().add<BulletHitTankCommand>(EventID::BULLET_HIT_TANK);
     }
     void init() override {
         LOG_INIT();
+        srand(time(nullptr));
         this->initData();
         this->initCommand();
         _game.screen().push<BattleView>();

@@ -124,6 +124,14 @@ void TankModel::createBullet() {
     notify_observers(&TankView::onFire);
 }
 
+void TankModel::createExplosion() {
+    notify_observers(&TankView::explosion);
+}
+
+void TankModel::createScore() {
+    notify_observers(&TankView::show_score);
+}
+
 void BulletModel::modifyPosition() {
     notify_observers(&Widget::setPosition, position.x, position.y);
 }

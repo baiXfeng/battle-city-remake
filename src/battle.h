@@ -7,13 +7,14 @@
 
 #include "common/widget.h"
 #include "common/quadtree.h"
-#include <list>
 #include "behavior.h"
+#include "view.h"
+#include <list>
 
 class TankView;
 class TileModel;
 class WorldModel;
-class BattleFieldView : public GamePadWidget {
+class BattleFieldView : public GamePadWidget, public BattleFieldInterface {
     typedef std::shared_ptr<WorldModel> WorldModelPtr;
     typedef std::shared_ptr<PlayerModel> PlayerModelPtr;
 public:
@@ -28,10 +29,13 @@ private:
     void onButtonUp(int key) override;
     void onJoyAxisMotion(JOYIDX joy_id, int x, int y) override;
     void onEvent(Event const& e) override;
-    void addElement(Widget::Ptr& widget);
     void procTankControl();
     void gameOver();
     void pause(bool v);
+private:
+    void addToBottom(Widget::Ptr& widget) override;
+    void addToMiddle(Widget::Ptr& widget) override;
+    void addToTop(Widget::Ptr& widget) override;
 private:
     void add_key(int key);
     bool remove_key(int key);

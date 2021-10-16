@@ -72,6 +72,7 @@ private:
 private:
     ImageWidget* createEnemyIcon();
     TTFLabel* _playerLife;
+    Widget::Ptr _enemy[20];
 };
 
 class ScoreView : public WindowWidget {
@@ -125,6 +126,15 @@ class BulletExplosionView : public FrameAnimationWidget {
 public:
     BulletExplosionView();
     void play();
+};
+
+class BattleFieldInterface {
+public:
+    virtual ~BattleFieldInterface() {}
+public:
+    virtual void addToBottom(Widget::Ptr& widget) {}
+    virtual void addToMiddle(Widget::Ptr& widget) {}
+    virtual void addToTop(Widget::Ptr& widget) {}
 };
 
 #endif //SDL2_UI_VIEW_H

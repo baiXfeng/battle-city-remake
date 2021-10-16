@@ -78,11 +78,96 @@ Status PlayerSpawnBehavior::tick(float delta) {
 
 //=====================================================================================
 
-EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks) {
-
+EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks), _player_win(false) {
+    _addtanks = &_game.force_get<AddTankList>("add_tank_list");
 }
 
+int EnemySpawnBehavior::enemyCount() const {
+    int enemyCount = 0;
+    for (auto& tank : *_tanks) {
+        tank->party == Tank::ENEMY ? ++enemyCount : 0;
+    }
+    return enemyCount;
+}
+
+int EnemySpawnBehavior::enemyRemainCount() const {
+    return _addtanks->size() - _index;
+}
+
+bool EnemySpawnBehavior::is_overlap(RectI const& r) const {
+    for (auto& tank : *_tanks) {
+        if (isCollision(r, tank->bounds)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void EnemySpawnBehavior::checkOverlap(int& index, int& overlapCount) const {
+    auto& spawns = Tank::getSpawns(Tank::ENEMY);
+    for (int i = 0; i < spawns.size(); ++i) {
+        auto& position = spawns[ index ];
+        if (is_overlap({
+            int(position.x),
+            int(position.y),
+            Tile::SIZE,
+            Tile::SIZE,
+        })) {
+            ++overlapCount;
+            index = ++index % spawns.size();
+            continue;
+        }
+        break;
+    }
+}
+
+int const ENEMY_MAX_COUNT = 4;
+
 Status EnemySpawnBehavior::tick(float delta) {
+    if (_player_win) {
+        return success;
+    }
+    int enemy_count = enemyCount();
+    if (enemy_count >= ENEMY_MAX_COUNT) {
+        // 同屏敌军坦克数量超过限制，不再生产
+        return running;
+    }
+    int enemy_remain_count = enemyRemainCount();
+    if (enemy_count == 0 and enemy_remain_count == 0) {
+        // 屏幕没有敌人，并且不再生产敌人，玩家胜利
+        _player_win = true;
+        _game.event().notify(Event(EventID::PLAYER_WIN));
+        return success;
+    }
+    if (enemy_remain_count == 0) {
+        // 所有坦克生产完毕，不再生产
+        return running;
+    }
+
+    // 检查出生点是否有坦克占据
+    auto& spawns = Tank::getSpawns(Tank::ENEMY);
+    int index = rand() % spawns.size();
+    int overlapCount = 0;
+    this->checkOverlap(index, overlapCount);
+
+    if (overlapCount >= spawns.size()) {
+        // 所有出生点均有坦克占据
+        return running;
+    }
+
+    // 生产一个坦克，同时更新剩余敌军坦克数量
+    auto& addtank = (*_addtanks)[_index++];
+    _game.event().notify(EasyEvent<int>(EventID::ENEMY_NUMBER_CHANGED, enemyRemainCount()));
+
+    // 创建坦克
+    TankBuildInfo info;
+    info.position = spawns[ index ];
+    info.direction = Tank::Direction::DOWN;
+    info.party = Tank::ENEMY;
+    info.tier = addtank.tier;
+    info.controller = Tank::AI;
+    info.has_drop = addtank.has_drop;
+    _game.event().notify(EasyEvent<TankBuildInfo>(EventID::TANK_GEN, info));
     return success;
 }
 
@@ -93,6 +178,9 @@ TankAI_Behavior::TankAI_Behavior(TankModel* model):_model(model) {
 }
 
 Status TankAI_Behavior::tick(float delta) {
+    if (_model->controller != Tank::AI) {
+        return running;
+    }
     return success;
 }
 
@@ -407,6 +495,11 @@ Status BulletTankCollisionBehavior::tick(float delta) {
             continue;
         }
         if (isCollision(_model->bounds, tank->bounds)) {
+            BulletHitTankInfo info;
+            info.bullet = _model;
+            info.tank = tank;
+            info.world = _world;
+            _game.event().notify(EasyEvent<BulletHitTankInfo>(EventID::BULLET_HIT_TANK, info));
             bullet_explosion();
             remove_bullet();
             return fail;

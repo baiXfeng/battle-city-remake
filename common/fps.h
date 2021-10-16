@@ -27,6 +27,9 @@ public:
     float delta() const {
         return _frameDelay > _frameTime ? _delta : _frameTime / 1000.0f;
     }
+    unsigned int ticks() const {
+        return SDL_GetTicks();
+    }
 private:
     int _frameStart, _frameTime;
     float _frameDelay, _delta;

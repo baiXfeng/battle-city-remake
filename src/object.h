@@ -7,9 +7,7 @@
 
 #include "common/widget.h"
 #include "data.h"
-
-void setViewLayer(Widget* w, int layer);
-int getViewLayer(Widget* w);
+#include "view.h"
 
 class TileView : public ImageWidget {
 public:
@@ -54,7 +52,7 @@ public:
     typedef std::vector<Textures> TexturesArray;
     typedef std::shared_ptr<Behavior> BehaviorPtr;
 public:
-    TankView(Tank::Party party, Tank::Tier tier, bool has_drop = false, Controller c = Tank::AI);
+    TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop = false, Controller c = Tank::AI);
     void setSkin(Controller c, Tank::Tier tier);
     void setSkin(Tank::Tier tier, bool has_drop);
     void setTopEnemySkin();
@@ -65,15 +63,19 @@ public:
     void fire();
     void onFire();
     bool moving() const;
+    void explosion();
+    void show_score();
+    void setBattleField(BattleFieldInterface* battlefield);
 private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;
-    void onDirty() override;
     void onModifyPosition(Vector2f const& position) override;
+    void onModifySize(Vector2f const& size) override;
     void updateMoveSpeed();
     BulletView* createBullet() const;
 private:
     bool _force_move;
+    BattleFieldInterface* _battlefield;
     TexturesArray _texArr;
     TankModel _model;
     BehaviorPtr _behavior;

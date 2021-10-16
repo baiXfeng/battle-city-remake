@@ -16,16 +16,6 @@ static int _objectCount = 0;
 
 //=====================================================================================
 
-void setViewLayer(Widget* w, int layer) {
-    _game.get<std::map<void*, int>>("object_layers")[w] = layer;
-}
-
-int getViewLayer(Widget* w) {
-    return _game.get<std::map<void*, int>>("object_layers")[w];
-}
-
-//=====================================================================================
-
 class FrameAnimationAction : public Action {
 public:
     typedef std::vector<Texture::Ptr> Frames;
@@ -168,7 +158,6 @@ TileModel const& TileView::model() const {
 
 void TileView::insert_to(WorldModel* world) {
     world->tiles.insert(&_model);
-    setViewLayer(this, _model.layer);
 }
 
 void TileView::update(float delta) {
@@ -201,8 +190,8 @@ void TileView::onModifySize(Vector2f const& size) {
 
 std::string shot_sound = res::soundName("bullet_shot");
 
-TankView::TankView(Tank::Party party, Tank::Tier tier, bool has_drop, Controller c) {
-    enableUpdate(true);
+TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop, Controller c):_battlefield(nullptr) {
+    _model.dir = dir;
     if (party == Tank::ENEMY) {
         setSkin(tier, has_drop);
     } else if (party == Tank::PLAYER) {
@@ -216,6 +205,7 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, bool has_drop, Controller
     _model.size = {Tile::SIZE, Tile::SIZE};
     _model.dir = Direction::MAX;
     _model.add_observer(this);
+    enableUpdate(true);
     _game.audio().loadEffect(shot_sound);
 }
 
@@ -308,13 +298,7 @@ void TankView::insert_to(WorldModel* world) {
     auto tank_fire = Behavior::Ptr(new TankFireBehavior(&_model, &world->bullets));
     auto tile_collision = Behavior::New<TankTileCollisionBehavior>(&_model, &world->tiles);
     auto tank_collision = Behavior::New<TankCollisionBehavior>(&_model, &world->tanks);
-    if (_model.controller != Tank::AI) {
-        // 不启用AI
-        tank_ai.reset(new TankAI_None);
-    }
     _behavior = Behavior::Ptr(new SequenceBehavior({tank_ai, tank_move, tank_fire, tile_collision, tank_collision}));
-
-    setViewLayer(this, 1);
 }
 
 void TankView::fire() {
@@ -349,6 +333,41 @@ bool TankView::moving() const {
     return _model.move.x > 0 or _model.move.y > 0;
 }
 
+void TankView::explosion() {
+    auto widget = New<BigExplosionView>();
+    auto animate = widget->to<BigExplosionView>();
+    animate->setAnchor(0.5f, 0.5f);
+    animate->setPosition(position() + size() * 0.5f);
+    animate->play(std::bind(&Widget::removeFromParent, animate));
+    parent()->addChild(widget);
+    widget->performLayout();
+
+    auto sound = res::soundName("explosion_1");
+    _game.audio().loadEffect(sound);
+    _game.audio().playEffect(sound);
+}
+
+void TankView::show_score() {
+    std::string score[5] = {
+            "points_100",
+            "points_200",
+            "points_300",
+            "points_400",
+            "points_500",
+    };
+    auto widget = New<ImageWidget>(res::load_texture(_game.renderer(), res::imageName(score[_model.tier])));
+    widget->setSize(this->size());
+    widget->setPosition(this->position());
+    widget->defer(widget.get(), [](Widget* sender){
+        sender->removeFromParent();
+    }, 1.0f);
+    _battlefield->addToBottom(widget);
+}
+
+void TankView::setBattleField(BattleFieldInterface* battlefield) {
+    _battlefield = battlefield;
+}
+
 void TankView::onChangeDir(Direction dir) {
     int half_size = Tile::SIZE >> 1;
     //坦克的坐标要卡在1/2大小的图块位置
@@ -373,12 +392,13 @@ void TankView::onUpdate(float delta) {
     _behavior->tick(delta);
 }
 
-void TankView::onDirty() {
-    setSize(Tile::SIZE, Tile::SIZE);
-}
-
 void TankView::onModifyPosition(Vector2f const& position) {
     _model.position = position;
+}
+
+void TankView::onModifySize(Vector2f const& size) {
+    _model.bounds.w = Tile::SIZE;
+    _model.bounds.h = Tile::SIZE;
 }
 
 void TankView::updateMoveSpeed() {
@@ -479,8 +499,6 @@ ImageWidget(load_texture(get_dir(move))) {
     this->setPosition(_model.position);
     this->setSize(ImageWidget::size());
     this->enableUpdate(true);
-
-    setViewLayer(this, 1);
 }
 
 void BulletView::insert_to(WorldModel* world) {
