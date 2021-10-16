@@ -65,10 +65,10 @@ protected:
     bool is_overlap(RectI const& r) const;
     void checkOverlap(int& index, int& overlapCount) const;
 protected:
-    bool _player_win;
     int _index;
     WorldModel::TankList* _tanks;
     AddTankList* _addtanks;
+    PlayerModel* _player;
 };
 
 class TankAI_Behavior : public Behavior {

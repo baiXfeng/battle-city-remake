@@ -11,6 +11,10 @@ class GameOverCommand : public Command {
     void onEvent(Event const& e) override;
 };
 
+class PlayerWinCommand : public Command {
+    void onEvent(Event const& e) override;
+};
+
 class PauseGameCommand : public Command {
     void onEvent(Event const& e) override;
 };

@@ -78,8 +78,10 @@ Status PlayerSpawnBehavior::tick(float delta) {
 
 //=====================================================================================
 
-EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks), _player_win(false) {
+EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks) {
     _addtanks = &_game.force_get<AddTankList>("add_tank_list");
+    _player = &_game.force_get<PlayerModel>("player_model");
+    _game.event().notify(EasyEvent<int>(EventID::ENEMY_NUMBER_CHANGED, enemyRemainCount()));
 }
 
 int EnemySpawnBehavior::enemyCount() const {
@@ -124,7 +126,7 @@ void EnemySpawnBehavior::checkOverlap(int& index, int& overlapCount) const {
 int const ENEMY_MAX_COUNT = 4;
 
 Status EnemySpawnBehavior::tick(float delta) {
-    if (_player_win) {
+    if (_player->win) {
         return success;
     }
     int enemy_count = enemyCount();
@@ -135,7 +137,7 @@ Status EnemySpawnBehavior::tick(float delta) {
     int enemy_remain_count = enemyRemainCount();
     if (enemy_count == 0 and enemy_remain_count == 0) {
         // 屏幕没有敌人，并且不再生产敌人，玩家胜利
-        _player_win = true;
+        _player->win = true;
         _game.event().notify(Event(EventID::PLAYER_WIN));
         return success;
     }
@@ -495,6 +497,13 @@ Status BulletTankCollisionBehavior::tick(float delta) {
             continue;
         }
         if (isCollision(_model->bounds, tank->bounds)) {
+
+            if (_model->party == Tank::PLAYER and tank->party == Tank::ENEMY) {
+                // 记录击败的敌人
+                auto& model = _game.get<PlayerModel>("player_model");
+                model.killCount[tank->tier] += 1;
+            }
+
             BulletHitTankInfo info;
             info.bullet = _model;
             info.tank = tank;
@@ -502,6 +511,7 @@ Status BulletTankCollisionBehavior::tick(float delta) {
             _game.event().notify(EasyEvent<BulletHitTankInfo>(EventID::BULLET_HIT_TANK, info));
             bullet_explosion();
             remove_bullet();
+
             return fail;
         }
     }

@@ -10,6 +10,7 @@ namespace EventID {
         ENEMY_NUMBER_CHANGED = 0x1001,
         PLAYER_LIFE_CHANGED,
         GAME_OVER,
+        GAME_OVER_ANIMATION,
         PLAYER_WIN,
         PAUSE_GAME,
         RESUME_GAME,

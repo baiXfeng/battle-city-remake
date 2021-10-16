@@ -81,14 +81,23 @@ int add_tank(lutok3::State& state) {
 
 void registerLuaFunctions(lutok3::State& state) {
 
-    std::string tileName[6] = {"base", "brick", "steel", "waters", "trees", "ice_floors"};
+    std::string const tileName[6] = {"base", "brick", "steel", "waters", "trees", "ice_floors"};
     for (int i = Tile::BASE; i < Tile::TYPE_END; ++i) {
         int index = i - Tile::BASE;
         registerValue(state, "tile", tileName[index], i);
     }
     registerValue(state, "tile", "size", Tile::SIZE);
 
-    //std::string tankName[] = {};
+    std::string const tankName[Tank::TIER_MAX] = {"a", "b", "c", "d"};
+    Tank::Tier const tier[Tank::TIER_MAX] = {
+            Tank::A,
+            Tank::B,
+            Tank::C,
+            Tank::D,
+    };
+    for (int i = 0; i < Tank::TIER_MAX; ++i) {
+        registerValue(state, "tank", tankName[i], (int)tier[i]);
+    }
 
     state.pushFunction(&import);
     state.setGlobal("import");

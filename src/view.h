@@ -86,6 +86,7 @@ public:
 private:
     void playAnimate();
     TTFLabel* createLabel(std::string const& text, SDL_Color const& c, Alignment const& align);
+    void onNextScene();
 private:
     int _index;
     TTFLabel* _total;

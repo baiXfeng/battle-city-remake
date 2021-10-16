@@ -339,7 +339,7 @@ void TankView::explosion() {
     animate->setAnchor(0.5f, 0.5f);
     animate->setPosition(position() + size() * 0.5f);
     animate->play(std::bind(&Widget::removeFromParent, animate));
-    parent()->addChild(widget);
+    _battlefield->addToBottom(widget);
     widget->performLayout();
 
     auto sound = res::soundName("explosion_1");
@@ -362,6 +362,7 @@ void TankView::show_score() {
         sender->removeFromParent();
     }, 1.0f);
     _battlefield->addToBottom(widget);
+    widget->performLayout();
 }
 
 void TankView::setBattleField(BattleFieldInterface* battlefield) {

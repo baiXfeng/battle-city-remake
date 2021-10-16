@@ -670,12 +670,12 @@ ScoreView::ScoreView():_total(nullptr), _index(0) {
     }
 
     Texture::Ptr texture[4] = {
-            res::load_texture(_game.renderer(), "assets/images/tank_basic_up_c0_t1.png"),
-            res::load_texture(_game.renderer(), "assets/images/tank_fast_up_c0_t1.png"),
-            res::load_texture(_game.renderer(), "assets/images/tank_power_up_c0_t1.png"),
-            res::load_texture(_game.renderer(), "assets/images/tank_armor_up_c0_t1.png"),
+            res::load_texture(_game.renderer(), res::imageName("tank_basic_up_c0_t1")),
+            res::load_texture(_game.renderer(), res::imageName("tank_fast_up_c0_t1")),
+            res::load_texture(_game.renderer(), res::imageName("tank_power_up_c0_t1")),
+            res::load_texture(_game.renderer(), res::imageName("tank_armor_up_c0_t1")),
     };
-    Texture::Ptr arrow = res::load_texture(_game.renderer(), "assets/images/arrow.png");
+    Texture::Ptr arrow = res::load_texture(_game.renderer(), res::imageName("arrow"));
 
     int const heightLine = 54;
     for (int i = 0; i < 4; ++i) {
@@ -760,9 +760,7 @@ void ScoreView::playAnimate() {
         _total->setVisible(true);
     });
     auto delay2 = Action::New<Delay>(1.9f);
-    auto call2 = Action::New<CallBackVoid>([&]{
-        _game.screen().replace<GameOverView>();
-    });
+    auto call2 = Action::New<CallBackVoid>(std::bind(&ScoreView::onNextScene, this));
     auto action = Action::Ptr(new Sequence({repeat, delay1, call1, delay2, call2}));
     runAction(action);
 }
@@ -780,6 +778,18 @@ TTFLabel* ScoreView::createLabel(std::string const& text, SDL_Color const& c, Al
     };
     label->setAnchor(anchor[align]);
     return label;
+}
+
+void ScoreView::onNextScene() {
+    auto& player = _game.get<PlayerModel>("player_model");
+    if (player.win) {
+        int& level = _game.force_get<int>("level");
+        int const& max_level = _game.force_get<int>("level_max");
+        level = ++level > max_level ? 1 : level;
+        _game.screen().replace<BattleView>();
+    } else {
+        _game.screen().replace<GameOverView>();
+    }
 }
 
 //=====================================================================================

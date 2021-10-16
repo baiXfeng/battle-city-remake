@@ -34,3 +34,32 @@ auto_tile({
 })
 
 auto_base()
+
+local a = tank.a
+local b = tank.b
+local c = tank.c
+local d = tank.d
+local drop = true
+
+auto_enemy({
+    {a},
+    {a},
+    {a},
+    {a, drop},
+    {a},
+    {a},
+    {a},
+    {a},
+    {a},
+    {a},
+    {a, drop},
+    {a},
+    {a},
+    {a},
+    {a},
+    {a},
+    {a},
+    {a, drop},
+    {b},
+    {b},
+})

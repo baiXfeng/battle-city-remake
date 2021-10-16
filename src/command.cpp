@@ -42,6 +42,16 @@ void GameOverCommand::onEvent(Event const& e) {
     target->performLayout();
 }
 
+void PlayerWinCommand::onEvent(Event const& e) {
+    auto scene = _game.screen().scene_back();
+    scene->defer([](){
+        _game.gamepad().sleep(60.0f);
+    }, 1.5f);
+    scene->defer([]{
+        _game.screen().replace<ScoreView>();
+    }, 3.0f);
+}
+
 void PauseGameCommand::onEvent(Event const& e) {
 
     auto& target = e.data<Widget*>();

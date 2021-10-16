@@ -174,6 +174,7 @@ public:
 
 class PlayerModel {
 public:
+    bool win;
     int life;
     int killCount[Tank::TIER_MAX];   // 击落数
 };

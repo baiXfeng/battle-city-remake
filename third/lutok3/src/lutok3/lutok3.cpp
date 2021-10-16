@@ -5,22 +5,23 @@
 
 namespace lutok3 {
 
-    State::State()
+    State::State():stateOwner(true)
     {
         state = luaL_newstate();
     }
 
     State::State(lua_State * luaState)
-        : state(luaState)
+        : state(luaState), stateOwner(false)
     {
-        stateOwner = false;
+
     }
 
     State::~State()
     {
-        if (stateOwner)
+        if (stateOwner and state)
         {
             lua_close(state);
+            state = nullptr;
         }
     }
 

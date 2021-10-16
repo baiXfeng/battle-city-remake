@@ -25,6 +25,7 @@ BattleFieldView::~BattleFieldView() {
     _game.event().remove(EventID::BASE_FALL, this);
     _game.event().remove(EventID::TANK_FIRE, this);
     _game.event().remove(EventID::TANK_GEN, this);
+    _game.event().remove(EventID::GAME_OVER, this);
 }
 
 BattleFieldView::BattleFieldView():
@@ -40,6 +41,8 @@ _playerModel(std::make_shared<PlayerModel>()) {
     _game.event().add(EventID::BASE_FALL, this);
     _game.event().add(EventID::TANK_FIRE, this);
     _game.event().add(EventID::TANK_GEN, this);
+    _game.event().add(EventID::GAME_OVER, this);
+    _game.gamepad().sleep(0.0f);
 
     auto old_size = this->size();
     this->setSize(Tile::MAP_SIZE, Tile::MAP_SIZE);
@@ -105,6 +108,7 @@ void BattleFieldView::onLoadLevel() {
         }
     }
 
+    _playerModel->win = false;
     _playerModel->life = Tank::getDefaultLifeMax();
     memset(_playerModel->killCount, 0, sizeof(_playerModel->killCount));
 }
@@ -133,11 +137,6 @@ void BattleFieldView::onButtonDown(int key) {
         add_key(key);
     } else if (key == KeyCode::START) {
         pause(!_pause);
-    } else if (key == KeyCode::SELECT) {
-        if (_pause) {
-            return;
-        }
-        gameOver();
     } else if (key == KeyCode::L1) {
         if (!_pause) {
             pause(true);
@@ -237,6 +236,9 @@ void BattleFieldView::onEvent(Event const& e) {
             _player = view;
         }
 
+    } else if (e.Id() == EventID::GAME_OVER) {
+
+        this->gameOver();
     }
 }
 
@@ -268,7 +270,7 @@ void BattleFieldView::pause(bool v) {
 }
 
 void BattleFieldView::gameOver() {
-    _game.event().notify(EasyEvent<Widget*>(EventID::GAME_OVER, this));
+    _game.event().notify(EasyEvent<Widget*>(EventID::GAME_OVER_ANIMATION, this));
 }
 
 void BattleFieldView::addToBottom(Widget::Ptr& widget) {
