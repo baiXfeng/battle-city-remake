@@ -189,7 +189,7 @@ void Widget::update(float delta) {
     }
     this->onUpdate(delta);
     auto list = _children;
-    for (auto& child : list) {
+    for (auto child : list) {
         child->update(delta);
     }
 }
@@ -583,6 +583,25 @@ CurtainWidget::CurtainWidget(SDL_Color const& c) {
     }
     enableUpdate(true);
 }
+
+void CurtainWidget::setState(State s) {
+    if (s == ON) {
+        for (int i = 0; i < 2; ++i) {
+            _mask[i]->setPosition(size().x * 0.5f, size().y * 0.5f);
+            _mask[i]->setVisible(true);
+        }
+    } else {
+        Vector2f position[2] = {
+                {size().x * 0.5f, 0.0f},
+                {size().x * 0.5f, size().y},
+        };
+        for (int i = 0; i < 2; ++i) {
+            _mask[i]->setPosition(position[i]);
+            _mask[i]->setVisible(false);
+        }
+    }
+}
+
 void CurtainWidget::fadeIn(float duration) {
     Vector2f position[2] = {
             {size().x * 0.5f, 0.0f},

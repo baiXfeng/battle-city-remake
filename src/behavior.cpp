@@ -57,7 +57,7 @@ Status PlayerSpawnBehavior::tick(float delta) {
             return running;
         }
     }
-    auto player_model = _game.get<PlayerModel*>("player_model");
+    auto player_model = &_game.get<PlayerModel>("player_model");
     if (player_model->life <= 0) {
         return running;
     }
@@ -364,11 +364,11 @@ _world(world) {
 }
 
 void BaseBulletCollisionBehavior::remove_bullet() {
-    _model->removeFromScreen();
     auto iter = std::find(_world->bullets.begin(), _world->bullets.end(), _model);
     if (iter != _world->bullets.end()) {
         _world->bullets.erase(iter);
     }
+    _model->removeFromScreen();
 }
 
 void BaseBulletCollisionBehavior::bullet_explosion() {
@@ -502,6 +502,10 @@ Status BulletTankCollisionBehavior::tick(float delta) {
                 // 记录击败的敌人
                 auto& model = _game.get<PlayerModel>("player_model");
                 model.killCount[tank->tier] += 1;
+
+                // 记录得分
+                int& score = _game.force_get<int>("player_score");
+                score += (tank->tier+1) * 100;
             }
 
             BulletHitTankInfo info;

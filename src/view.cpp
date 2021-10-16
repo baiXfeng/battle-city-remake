@@ -343,6 +343,8 @@ void StartView::onStart(int index) {
 
 SelectLevelView::SelectLevelView():_level(1), _duration(0.3f) {
 
+    _game.get<int>("level") = _level;
+
     Ptr widget;
 
     {
@@ -354,24 +356,20 @@ SelectLevelView::SelectLevelView():_level(1), _duration(0.3f) {
     }
 
     {
+        std::string stage = std::string("STAGE ") + std::to_string(_game.force_get<int>("level"));
         auto font = res::load_ttf_font(fontName, 16);
         font->setColor({0, 0, 0, 255});
-        auto label = new TTFLabel;
-        label->setFont(font);
+        auto label = TTFLabel::New(stage, font, {0.5f, 0.5f});
         label->setAnchor(0.5f, 0.5f);
         label->setPosition(size().x * 0.5f, size().y * 0.5f);
-        label->setString("STAGE 1");
         label->setVisible(false);
-        widget.reset(label);
-        addChild(widget);
-        _label = label;
+        addChild(label);
+        _label = label->to<TTFLabel>();
     }
 
     defer([&]{
         _label->setVisible(true);
     }, _duration);
-
-    _game.get<int>("level") = _level;
 }
 
 void SelectLevelView::onButtonDown(int key) {
@@ -394,15 +392,9 @@ void SelectLevelView::onButtonDown(int key) {
         }, duration);
         sleep_gamepad(duration);
     } else if (key == KeyCode::START) {
-        auto sound = "assets/sounds/stage_start.ogg";
-        _game.audio().loadEffect(sound);
-        _game.audio().playEffect(sound);
-        sleep_gamepad(10.0f);
-        defer([&]{
-            sleep_gamepad(0.0f);
-            _game.screen().replace<BattleView>();
-        }, 1.8f);
+        _game.set<int>("player_score", 0);
         _game.get<int>("level") = _level;
+        _game.screen().replace<BattleView>();
     }
 }
 
@@ -477,26 +469,48 @@ BattleView::BattleView() {
     root->setPosition((size().x - root_size.x) * 0.5f, (size().y - root_size.y) * 0.5f);
 
     {
+        auto font = res::load_ttf_font(res::fontName("prstart"), 18);
+        font->setColor({0, 0, 0, 255});
+        auto label = TTFLabel::New("L-CHEAT", font);
+        label->setPosition(15, 15);
+        addChild(label);
+    }
+
+    {
         auto view = new CurtainWidget({115, 115, 115, 255});
-        view->fadeOut(0.3f);
+        view->setState(CurtainWidget::ON);
+        //view->fadeOut(0.3f);
+        view->defer(view, [](Widget* sender){
+            sender->to<CurtainWidget>()->fadeOut(0.3f);
+            sender->find("stage:label")->setVisible(false);
+        }, 1.8f);
+        view->defer(view, [](Widget* sender){
+            sender->removeFromParent();
+        }, 1.8 + 0.3f);
         widget.reset(view);
         addChild(widget);
 
-        auto delay = Action::New<Delay>(0.3f);
-        auto call = Action::Ptr(new CallBackSender(view, [&](Widget* sender) {
-            sender->removeFromParent();
-        }));
-        view->runAction(Action::Ptr(new Sequence({delay, call})));
+        {
+            std::string stage = std::string("STAGE ") + std::to_string(_game.force_get<int>("level"));
+            auto font = res::load_ttf_font(fontName, 16);
+            font->setColor({0, 0, 0, 255});
+            auto label = TTFLabel::New(stage, font, {0.5f, 0.5f});
+            label->setPosition(size().x * 0.5f, size().y * 0.5f);
+            label->setName("stage:label");
+            view->addChild(label);
+        }
     }
-
-    auto font = res::load_ttf_font(res::fontName("prstart"), 18);
-    font->setColor({0, 0, 0, 255});
-    auto label = TTFLabel::New("L-CHEAT", font);
-    label->setPosition(15, 15);
-    addChild(label);
 
     _game.setRenderColor({115, 115, 115, 255});
     this->performLayout();
+
+    auto sound = res::soundName("stage_start");
+    _game.audio().loadEffect(sound);
+    _game.audio().playEffect(sound);
+    _game.gamepad().sleep(10.0f);
+    defer([&]{
+        _game.gamepad().sleep(0.0f);
+    }, 1.8f);
 }
 
 //=====================================================================================
@@ -621,7 +635,117 @@ ImageWidget* BattleInfoView::createEnemyIcon() {
 
 //=====================================================================================
 
-ScoreView::ScoreView():_total(nullptr), _index(0) {
+TTFLabel* createLabel(std::string const& text, SDL_Color const& c, ScoreView::Alignment const& align) {
+    auto font = res::load_ttf_font(fontName, 18);
+    font->setColor(c);
+    auto label = new TTFLabel;
+    label->setFont(font);
+    label->setString(text);
+    Vector2f anchor[3] = {
+            {0.0f, 0.5f},
+            {1.0f, 0.5f},
+            {0.5f, 0.5f},
+    };
+    label->setAnchor(anchor[align]);
+    return label;
+}
+
+class ScoreItemView : public WindowWidget {
+public:
+    typedef std::function<void()> Callback;
+    ScoreItemView(Texture::Ptr const& texture, Texture::Ptr const& arrow):_killCount(0), _oneScore(0), _currCount(0) {
+
+        SDL_Color white = {255, 255, 255, 255};
+        Ptr widget;
+
+        {
+            auto view = New<ImageWidget>(texture);
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition(size().x * 0.5f, 0.0f);
+            this->addChild(view);
+        }
+
+        {
+            auto view = New<ImageWidget>(arrow);
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition(size().x * 0.47f, 0.0f);
+            this->addChild(view);
+        }
+
+        {
+            auto label = createLabel("0", white, ScoreView::RIGHT);
+            label->setPosition(size().x * 0.46f, 0.0f);
+            label->setVisible(false);
+            widget.reset(label);
+            this->addChild(widget);
+            _number = label;
+        }
+
+        {
+            auto label = createLabel("PTS", white, ScoreView::RIGHT);
+            label->setPosition(size().x * 0.4f, 0.0f);
+            widget.reset(label);
+            this->addChild(widget);
+        }
+
+        {
+            auto label = createLabel("0", white, ScoreView::RIGHT);
+            label->setPosition(size().x * 0.31f, 0.0f);
+            label->setVisible(false);
+            widget.reset(label);
+            this->addChild(widget);
+           _ops = label;
+        }
+    }
+    void setScore(int kill_count, int one_score) {
+        _killCount = kill_count;
+        _oneScore = one_score;
+    }
+    void setFinishCall(Callback const& cb) {
+        _callback = cb;
+    }
+    void play() {
+        if (_killCount == 0) {
+            auto delay = Action::New<Delay>(0.5f);
+            auto call = Action::New<CallBackVoid>([&]{
+                _number->setVisible(true);
+                _ops->setVisible(true);
+            });
+            auto finish_call = Action::New<CallBackVoid>(_callback);
+            runAction(Action::Ptr(new Sequence({delay, call, finish_call})));
+        } else {
+            defer(std::bind(&ScoreItemView::nextScore, this), 0.5f);
+        }
+    }
+private:
+    void nextScore() {
+        _number->setVisible(true);
+        _ops->setVisible(true);
+        _number->setString(std::to_string(++_currCount));
+        _ops->setString(std::to_string(_currCount * _oneScore));
+
+        auto sound = res::soundName("score");
+        _game.audio().loadEffect(sound);
+        _game.audio().playEffect(sound);
+
+        if (_currCount >= _killCount) {
+            _callback();
+            return;
+        }
+        auto delay = Action::New<Delay>(0.12f);
+        auto call = Action::New<CallBackVoid>(std::bind(&ScoreItemView::nextScore, this));
+        runAction(Action::Ptr(new Sequence({delay, call})));
+    }
+private:
+    int _killCount;
+    int _oneScore;
+    int _currCount;
+    TTFLabel* _number;
+    TTFLabel* _ops;
+    Callback _callback;
+};
+
+ScoreView::ScoreView():_total(nullptr) {
     _game.setRenderColor({0, 0, 0, 255});
 
     Ptr widget;
@@ -663,7 +787,8 @@ ScoreView::ScoreView():_total(nullptr), _index(0) {
     }
 
     {
-        auto label = createLabel("0", yellow, RIGHT);
+        int score = _game.force_get<int>("player_score");
+        auto label = createLabel(std::to_string(score), yellow, RIGHT);
         label->setPosition(size().x * 0.4f, size().y * 0.33f);
         widget.reset(label);
         root->addChild(widget);
@@ -677,47 +802,33 @@ ScoreView::ScoreView():_total(nullptr), _index(0) {
     };
     Texture::Ptr arrow = res::load_texture(_game.renderer(), res::imageName("arrow"));
 
+    auto& player = _game.force_get<PlayerModel>("player_model");
+    /*player.killCount[0] = 5;
+    player.killCount[1] = 7;
+    player.killCount[2] = 3;
+    player.killCount[3] = 5;
+    player.win = true;*/
+
     int const heightLine = 54;
-    for (int i = 0; i < 4; ++i) {
-        {
-            auto view = New<ImageWidget>(texture[i]);
-            view->setAnchor(0.5f, 0.5f);
-            view->setPosition(size().x * 0.5f, i * heightLine + size().y * 0.44f);
-            root->addChild(view);
-        }
-
-        {
-            auto view = New<ImageWidget>(arrow);
-            view->setAnchor(0.5f, 0.5f);
-            view->setPosition(size().x * 0.47f, i * heightLine + size().y * 0.44f);
-            root->addChild(view);
-        }
-
-        {
-            auto label = createLabel("0", white, RIGHT);
-            label->setPosition(size().x * 0.46f, i * heightLine + size().y * 0.44f);
-            label->setVisible(false);
-            widget.reset(label);
-            root->addChild(widget);
-            _number.push_back(label);
-        }
-
-        {
-            auto label = createLabel("PTS", white, RIGHT);
-            label->setPosition(size().x * 0.4f, i * heightLine + size().y * 0.44f);
-            widget.reset(label);
-            root->addChild(widget);
-        }
-
-        {
-            auto label = createLabel("0", white, RIGHT);
-            label->setPosition(size().x * 0.31f, i * heightLine + size().y * 0.44f);
-            label->setVisible(false);
-            widget.reset(label);
-            root->addChild(widget);
-            _ops.push_back(label);
+    std::vector<Ptr> widgets;
+    for (int i = 0; i < Tank::TIER_MAX; ++i) {
+        auto widget = New<ScoreItemView>(texture[i], arrow);
+        auto item = widget->to<ScoreItemView>();
+        widget->setPosition(0.0f, i * heightLine + size().y * 0.44f);
+        item->setScore(player.killCount[i], (i+1) * 100);
+        root->addChild(widget);
+        widgets.push_back(widget);
+    }
+    for (int i = 0; i < widgets.size(); ++i) {
+        auto widget = widgets[i];
+        auto item = widget->to<ScoreItemView>();
+        if (i + 1 < widgets.size()) {
+            item->setFinishCall(std::bind(&ScoreItemView::play, widgets[i+1]->to<ScoreItemView>()));
+        } else {
+            item->setFinishCall(std::bind(&ScoreView::showTotal, this));
         }
     }
+    widgets.front()->to<ScoreItemView>()->play();
 
     auto mask = New<MaskWidget>(white);
     mask->setSize(size().x * 0.2f, 5.0f);
@@ -726,7 +837,11 @@ ScoreView::ScoreView():_total(nullptr), _index(0) {
     root->addChild(mask);
 
     {
-        auto label = createLabel("0", white, RIGHT);
+        int total = 0;
+        for (int i = 0; i < Tank::TIER_MAX; ++i) {
+            total += player.killCount[i];
+        }
+        auto label = createLabel(std::to_string(total), white, RIGHT);
         label->setPosition(size().x * 0.46f, size().y * 0.83f);
         label->setVisible(false);
         widget.reset(label);
@@ -742,42 +857,17 @@ ScoreView::ScoreView():_total(nullptr), _index(0) {
     }
 
     this->performLayout();
-    this->playAnimate();
 }
 
-void ScoreView::playAnimate() {
-    _index = 0;
-    auto delay = Action::New<Delay>(0.5f);
-    auto call = Action::New<CallBackVoid>([&]{
-        _number[_index]->setVisible(true);
-        _ops[_index]->setVisible(true);
-        ++_index;
-    });
-    auto seq = Action::Ptr(new Sequence({delay, call}));
-    auto repeat = Action::New<Repeat>(seq, 4);
+void ScoreView::showTotal() {
     auto delay1 = Action::New<Delay>(0.8f);
     auto call1 = Action::New<CallBackVoid>([&]{
         _total->setVisible(true);
     });
     auto delay2 = Action::New<Delay>(1.9f);
     auto call2 = Action::New<CallBackVoid>(std::bind(&ScoreView::onNextScene, this));
-    auto action = Action::Ptr(new Sequence({repeat, delay1, call1, delay2, call2}));
+    auto action = Action::Ptr(new Sequence({delay1, call1, delay2, call2}));
     runAction(action);
-}
-
-TTFLabel* ScoreView::createLabel(std::string const& text, SDL_Color const& c, Alignment const& align) {
-    auto font = res::load_ttf_font(fontName, 18);
-    font->setColor(c);
-    auto label = new TTFLabel;
-    label->setFont(font);
-    label->setString(text);
-    Vector2f anchor[3] = {
-            {0.0f, 0.5f},
-            {1.0f, 0.5f},
-            {0.5f, 0.5f},
-    };
-    label->setAnchor(anchor[align]);
-    return label;
 }
 
 void ScoreView::onNextScene() {

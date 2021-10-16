@@ -16,7 +16,6 @@ class TileModel;
 class WorldModel;
 class BattleFieldView : public GamePadWidget, public BattleFieldInterface {
     typedef std::shared_ptr<WorldModel> WorldModelPtr;
-    typedef std::shared_ptr<PlayerModel> PlayerModelPtr;
 public:
     BattleFieldView();
     ~BattleFieldView();
@@ -47,8 +46,7 @@ private:
     Widget* _upper;
     TankView* _player;
     std::list<int> _keylist;
-    WorldModelPtr _world;
-    PlayerModelPtr _playerModel;
+    WorldModel* _world;
     Behavior::Ptr _behavior;
 };
 

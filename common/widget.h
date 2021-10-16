@@ -237,9 +237,14 @@ class CurtainWidget : public Widget {
 public:
     typedef std::shared_ptr<Action> ActionPtr;
     typedef std::function<void(Widget*)> CallFunc;
+    enum State {
+        ON = 0,
+        OFF,
+    };
 public:
     CurtainWidget(SDL_Color const& c = {0, 0, 0, 255});
 public:
+    void setState(State s);
     void fadeIn(float duration);
     void fadeOut(float duration);
 private:

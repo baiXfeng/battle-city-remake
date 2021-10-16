@@ -35,8 +35,7 @@ _upper(nullptr),
 _player(nullptr),
 _pause(false),
 _joyUsed(false),
-_world(std::make_shared<WorldModel>()),
-_playerModel(std::make_shared<PlayerModel>()) {
+_world(nullptr) {
 
     _game.event().add(EventID::BASE_FALL, this);
     _game.event().add(EventID::TANK_FIRE, this);
@@ -95,12 +94,13 @@ void BattleFieldView::onLoadLevel() {
     auto& state = _game.get<lutok3::State>("lua");
     state.doFile(file);
 
-    _game.set<WorldModel*>("world_model", _world.get());
-    _game.set<PlayerModel*>("player_model", _playerModel.get());
+    _game.set<WorldModel>("world_model");
+    _game.set<PlayerModel>("player_model");
+    _world = &_game.get<WorldModel>("world_model");
 
     {
         TileBuilder::Array array;
-        TileBuilder builder(_world.get());
+        TileBuilder builder(_world);
         builder.gen(array, tile_list);
 
         for (auto& widget : array) {
@@ -115,9 +115,10 @@ void BattleFieldView::onLoadLevel() {
         }
     }
 
-    _playerModel->win = false;
-    _playerModel->life = Tank::getDefaultLifeMax();
-    memset(_playerModel->killCount, 0, sizeof(_playerModel->killCount));
+    auto& player = _game.get<PlayerModel>("player_model");
+    player.win = false;
+    player.life = Tank::getDefaultLifeMax();
+    memset(player.killCount, 0, sizeof(player.killCount));
 }
 
 void BattleFieldView::onUpdate(float delta) {
@@ -225,7 +226,7 @@ void BattleFieldView::onEvent(Event const& e) {
     } else if (e.Id() == EventID::TANK_FIRE) {
         // 添加子弹
         auto bullet = e.data<Widget::Ptr>();
-        bullet->to<BulletView>()->insert_to(_world.get());
+        bullet->to<BulletView>()->insert_to(_world);
         addToMiddle(bullet);
         bullet->performLayout();
 
@@ -237,7 +238,7 @@ void BattleFieldView::onEvent(Event const& e) {
         view->setBattleField(this);
         view->setPosition(info.position);
         view->turn(info.direction);
-        view->insert_to(_world.get());
+        view->insert_to(_world);
         addToMiddle(tank);
         if (info.controller == Tank::P1) {
             _player = view;

@@ -96,7 +96,9 @@ void BulletHitTankCommand::onEvent(Event const& e) {
     --tank->hp;
     if (tank->hp <= 0) {
         auto iter = std::find(world->tanks.begin(), world->tanks.end(), tank);
-        world->tanks.erase(iter);
+        if (iter != world->tanks.end()) {
+            world->tanks.erase(iter);
+        }
     }
     tank->createScore();
     tank->createExplosion();
