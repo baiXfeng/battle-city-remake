@@ -144,6 +144,14 @@ void BulletModel::playExplosion() {
     notify_observers(&BulletView::play_explosion);
 }
 
+void PropModel::createScore() {
+
+}
+
+void PropModel::removeFromScreen() {
+    
+}
+
 WorldModel::WorldModel():
 bounds(0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE),
 tiles(0, {0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE}, [](TileModel* tile){
@@ -173,6 +181,19 @@ namespace res {
 
     std::string scriptName(std::string const& key) {
         return getAssetsPath() + "assets/scripts/" + key + ".lua";
+    }
+
+    std::string powerupName(Tank::PowerUp e) {
+        assert(e != Tank::POWER_MAX and "res::powerupName error.");
+        std::string name[Tank::POWER_MAX] = {
+                "powerup_grenade",
+                "powerup_helmet",
+                "powerup_shovel",
+                "powerup_star",
+                "powerup_tank",
+                "powerup_timer",
+        };
+        return imageName(name[e]);
     }
 
     std::string assetsName(std::string const& fileName) {

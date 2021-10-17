@@ -55,6 +55,15 @@ namespace Tank {
         AI,
         STANDBY,
     };
+    enum PowerUp {
+        GRENADE = 0,
+        HELMET,
+        SHOVEL,
+        STAR,
+        TANK,
+        TIMER,
+        POWER_MAX,
+    };
     class Attribute {
     public:
         int health;
@@ -153,6 +162,11 @@ public:
 class PropModel {
 public:
     int id;
+    Tank::PowerUp type;
+    RectI bounds;
+public:
+    void createScore();
+    void removeFromScreen();
 };
 
 class Widget;
@@ -192,6 +206,7 @@ namespace res {
     std::string levelName(std::string const& key);
     std::string levelName(int level);
     std::string scriptName(std::string const& key);
+    std::string powerupName(Tank::PowerUp e);
     std::string assetsName(std::string const& fileName);
 }
 

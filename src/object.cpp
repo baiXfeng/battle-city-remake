@@ -194,7 +194,7 @@ void TileView::onModifySize(Vector2f const& size) {
 
 std::string shot_sound = res::soundName("bullet_shot");
 
-TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop, Controller c):_battlefield(nullptr) {
+TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop, Controller c) {
     _model.dir = dir;
     if (party == Tank::ENEMY) {
         setSkin(tier, has_drop);
@@ -367,10 +367,6 @@ void TankView::show_score() {
     }, 1.0f);
     _battlefield->addToBottom(widget);
     widget->performLayout();
-}
-
-void TankView::setBattleField(BattleFieldInterface* battlefield) {
-    _battlefield = battlefield;
 }
 
 void TankView::onChangeDir(Direction dir) {

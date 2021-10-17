@@ -9,6 +9,23 @@
 #include "data.h"
 #include "view.h"
 
+class BattleFieldHolder {
+public:
+    typedef BattleFieldInterface BattleField;
+public:
+    BattleFieldHolder():_battlefield(nullptr) {}
+    virtual ~BattleFieldHolder() {}
+public:
+    void setBattleField(BattleField* battlefield) {
+        _battlefield = battlefield;
+    }
+    BattleField* battleField() const {
+        return _battlefield;
+    }
+protected:
+    BattleField* _battlefield;
+};
+
 class TileView : public ImageWidget {
 public:
     enum TYPE {
@@ -45,7 +62,7 @@ private:
 };
 
 class Behavior;
-class TankView : public FrameAnimationWidget {
+class TankView : public FrameAnimationWidget, public BattleFieldHolder {
 public:
     typedef Tank::Direction Direction;
     typedef Tank::Controller Controller;
@@ -66,7 +83,6 @@ public:
     bool moving() const;
     void explosion();
     void show_score();
-    void setBattleField(BattleFieldInterface* battlefield);
 private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;
@@ -76,7 +92,6 @@ private:
     BulletView* createBullet() const;
 private:
     bool _force_move;
-    BattleFieldInterface* _battlefield;
     TexturesArray _texArr;
     TankModel _model;
     BehaviorPtr _behavior;
@@ -97,7 +112,7 @@ private:
     WorldModel* _world;
 };
 
-class BulletView : public ImageWidget {
+class BulletView : public ImageWidget, public BattleFieldHolder {
 public:
     typedef std::shared_ptr<Behavior> BehaviorPtr;
 public:
