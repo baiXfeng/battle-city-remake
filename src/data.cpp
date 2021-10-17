@@ -145,11 +145,11 @@ void BulletModel::playExplosion() {
 }
 
 void PropModel::createScore() {
-
+    notify_observers(&PropView::show_score);
 }
 
 void PropModel::removeFromScreen() {
-    
+    notify_observers(&Widget::removeFromParent);
 }
 
 WorldModel::WorldModel():

@@ -197,7 +197,11 @@ std::string shot_sound = res::soundName("bullet_shot");
 TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop, Controller c) {
     _model.dir = dir;
     if (party == Tank::ENEMY) {
-        setSkin(tier, has_drop);
+        if (tier == Tank::D and not has_drop) {
+            setTopEnemySkin();
+        } else {
+            setSkin(tier, has_drop);
+        }
     } else if (party == Tank::PLAYER) {
         setSkin(c, tier);
     }
@@ -330,7 +334,9 @@ BulletView* TankView::createBullet() const {
             {0.0f, bulletSpeed},
             {-bulletSpeed, 0.0f},
     };
-    return new BulletView(&_model, position() + offset[_model.dir], speed[_model.dir]);
+    auto bullet = new BulletView(&_model, position() + offset[_model.dir], speed[_model.dir]);
+    bullet->setBattleField(battleField());
+    return bullet;
 }
 
 bool TankView::moving() const {
@@ -343,7 +349,7 @@ void TankView::explosion() {
     animate->setAnchor(0.5f, 0.5f);
     animate->setPosition(position() + size() * 0.5f);
     animate->play(std::bind(&Widget::removeFromParent, animate));
-    _battlefield->addToBottom(widget);
+    _battlefield->addToMiddle(widget);
     widget->performLayout();
 
     auto sound = res::soundName("explosion_1");
@@ -558,4 +564,48 @@ void  BulletView::onModifyPosition(Vector2f const& position) {
 void  BulletView::onModifySize(Vector2f const& size) {
     _model.bounds.w = size.x;
     _model.bounds.h = size.y;
+}
+
+//=====================================================================================
+
+PropView::PropView(Tank::PowerUp type):ImageWidget(
+        res::load_texture(_game.renderer(), res::powerupName(type))
+) {
+    _model.id = ++_objectCount;
+    _model.type = type;
+    _model.bounds = {
+            0, 0, Tile::SIZE, Tile::SIZE,
+    };
+    _model.add_observer(this);
+    enableUpdate(true);
+}
+
+void PropView::insert_to(WorldModel* world) {
+    world->props.push_back(&_model);
+    _behavior = Behavior::New<PropCollisionBehavior>(&world->tanks, &world->props);
+}
+
+void PropView::show_score() {
+    auto widget = New<ImageWidget>(res::load_texture(_game.renderer(), res::imageName("points_500")));
+    widget->setSize(this->size());
+    widget->setPosition(this->position());
+    widget->defer(widget.get(), [](Widget* sender){
+        sender->removeFromParent();
+    }, 1.0f);
+    _battlefield->addToBottom(widget);
+    widget->performLayout();
+}
+
+void PropView::onModifyPosition(Vector2f const& position) {
+    _model.bounds.x = position.x;
+    _model.bounds.y = position.y;
+}
+
+void PropView::onModifySize(Vector2f const& size) {
+    _model.bounds.w = size.x;
+    _model.bounds.h = size.y;
+}
+
+void PropView::onUpdate(float delta) {
+    _behavior->tick(delta);
 }

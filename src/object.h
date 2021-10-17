@@ -130,4 +130,21 @@ private:
     BehaviorPtr _behavior;
 };
 
+class PropView : public ImageWidget, public BattleFieldHolder {
+public:
+    typedef std::shared_ptr<Behavior> BehaviorPtr;
+public:
+    PropView(Tank::PowerUp type);
+public:
+    void insert_to(WorldModel* world);
+    void show_score();
+private:
+    void onModifyPosition(Vector2f const& position) override;
+    void onModifySize(Vector2f const& size) override;
+    void onUpdate(float delta) override;
+private:
+    PropModel _model;
+    BehaviorPtr _behavior;
+};
+
 #endif //SDL2_UI_OBJECT_H

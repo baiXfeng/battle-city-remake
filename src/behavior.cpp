@@ -7,7 +7,10 @@
 #include "common/game.h"
 #include "common/event.h"
 #include "common/audio.h"
+#include "common/action.h"
 #include "const.h"
+#include "view.h"
+#include "object.h"
 
 typedef Behavior::Status Status;
 
@@ -171,6 +174,57 @@ Status EnemySpawnBehavior::tick(float delta) {
     info.has_drop = addtank.has_drop;
     _game.event().notify(EasyEvent<TankBuildInfo>(EventID::TANK_GEN, info));
     return success;
+}
+
+//=====================================================================================
+
+PropCreateBehavior::PropCreateBehavior(BattleFieldInterface* battlefield, WorldModel* world):
+_battlefield(battlefield),
+_world(world) {
+    _game.event().add(EventID::PROP_GEN, this);
+}
+
+PropCreateBehavior::~PropCreateBehavior() {
+    _game.event().remove(EventID::PROP_GEN, this);
+}
+
+Status PropCreateBehavior::tick(float delta) {
+    return success;
+}
+
+void PropCreateBehavior::onEvent(Event const& e) {
+    if (e.Id() == EventID::PROP_GEN) {
+
+        // 保证同屏最多只有一个奖励
+        while (_world->props.size()) {
+            auto& prop = _world->props.front();
+            _world->props.pop_front();
+            prop->removeFromScreen();
+        }
+
+        // 创建奖励
+        auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
+        auto view = Widget::New<PropView>(type);
+        auto prop = view->to<PropView>();
+        prop->setBattleField(_battlefield);
+        prop->insert_to(_world);
+        _battlefield->addToTop(view);
+
+        // 设置坐标
+        int x = rand() % (Tile::MAP_SIZE - Tile::SIZE * 2) + Tile::SIZE;
+        int y = rand() % (Tile::MAP_SIZE - Tile::SIZE * 2) + Tile::SIZE;
+        Vector2f position = {
+                x - (x % (Tile::SIZE >> 1)),
+                y - (y % (Tile::SIZE >> 1)),
+        };
+        view->setPosition(position);
+        view->performLayout();
+
+        // 闪烁动画
+        auto blink = Action::Ptr(new Blink(prop, 4, 1.2f));
+        auto repeat = Action::New<Repeat>(blink);
+        view->runAction(repeat);
+    }
 }
 
 //=====================================================================================
@@ -519,5 +573,17 @@ Status BulletTankCollisionBehavior::tick(float delta) {
             return fail;
         }
     }
+    return success;
+}
+
+//=====================================================================================
+
+PropCollisionBehavior::PropCollisionBehavior(WorldModel::TankList* tanks, WorldModel::PropList* props):
+_tanks(tanks),
+_props(props) {
+
+}
+
+Status PropCollisionBehavior::tick(float delta) {
     return success;
 }

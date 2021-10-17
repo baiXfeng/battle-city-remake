@@ -18,6 +18,7 @@ namespace EventID {
         TANK_FIRE,
         TANK_GEN,       // 生成坦克
         BULLET_HIT_TANK,
+        PROP_GEN,       // 生成奖励
     };
 }
 

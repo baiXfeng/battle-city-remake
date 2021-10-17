@@ -159,7 +159,8 @@ public:
     void playExplosion();
 };
 
-class PropModel {
+class PropView;
+class PropModel : public obs::observable<PropView> {
 public:
     int id;
     Tank::PowerUp type;

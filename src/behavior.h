@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include "data.h"
+#include "common/event.h"
 
 class Behavior {
 public:
@@ -42,33 +43,46 @@ protected:
 class TankSpawnBehavior : public SequenceBehavior {
 public:
     TankSpawnBehavior(WorldModel::TankList* tanks);
-protected:
+private:
     Status tick(float delta) override;
 };
 
 class PlayerSpawnBehavior : public Behavior {
 public:
     PlayerSpawnBehavior(WorldModel::TankList* tanks);
-protected:
+private:
     Status tick(float delta) override;
-protected:
+private:
     WorldModel::TankList* _tanks;
 };
 
 class EnemySpawnBehavior : public Behavior {
 public:
     EnemySpawnBehavior(WorldModel::TankList* tanks);
-protected:
+private:
     Status tick(float delta) override;
     int enemyCount() const;
     int enemyRemainCount() const;
     bool is_overlap(RectI const& r) const;
     void checkOverlap(int& index, int& overlapCount) const;
-protected:
+private:
     int _index;
     WorldModel::TankList* _tanks;
     AddTankList* _addtanks;
     PlayerModel* _player;
+};
+
+class BattleFieldInterface;
+class PropCreateBehavior : public Behavior, public Event::Listener {
+public:
+    PropCreateBehavior(BattleFieldInterface* battlefield, WorldModel* world);
+    ~PropCreateBehavior();
+private:
+    Status tick(float delta) override;
+    void onEvent(Event const& e) override;
+private:
+    BattleFieldInterface* _battlefield;
+    WorldModel* _world;
 };
 
 class TankAI_Behavior : public Behavior {
@@ -162,6 +176,16 @@ public:
     BulletTankCollisionBehavior(BulletModel* model, WorldModel* world);
 private:
     Status tick(float delta) override;
+};
+
+class PropCollisionBehavior : public Behavior {
+public:
+    PropCollisionBehavior(WorldModel::TankList* tanks, WorldModel::PropList* props);
+private:
+    Status tick(float delta) override;
+private:
+    WorldModel::TankList* _tanks;
+    WorldModel::PropList* _props;
 };
 
 #endif //SDL2_UI_BEHAVIOR_H

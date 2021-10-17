@@ -69,7 +69,7 @@ _world(nullptr) {
     }
 
     {
-        auto view = New<Widget>();
+        auto view = New<WindowWidget>();
         view->setSize(size());
         addChild(view);
         _upper = view.get();
@@ -78,7 +78,9 @@ _world(nullptr) {
     onLoadLevel();
     //sortElements();
 
-    _behavior = Behavior::Ptr(new TankSpawnBehavior(&_world->tanks));
+    auto prop_create = Behavior::Ptr(new PropCreateBehavior(this, _world));
+    auto tank_spawn = Behavior::Ptr(new TankSpawnBehavior(&_world->tanks));
+    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_spawn}));
 }
 
 void BattleFieldView::onLoadLevel() {

@@ -10,6 +10,7 @@
 #include "common/audio.h"
 #include "view.h"
 #include "data.h"
+#include "const.h"
 
 void GameOverCommand::onEvent(Event const& e) {
 
@@ -92,6 +93,11 @@ void BulletHitTankCommand::onEvent(Event const& e) {
     auto bullet = info.bullet;
     auto tank = info.tank;
     auto world = info.world;
+
+    if (tank->party == Tank::ENEMY and tank->has_drop) {
+        // 生成奖励
+        _game.event().notify(Event(EventID::PROP_GEN));
+    }
 
     --tank->hp;
     if (tank->hp <= 0) {
