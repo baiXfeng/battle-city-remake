@@ -94,19 +94,46 @@ void BulletHitTankCommand::onEvent(Event const& e) {
     auto tank = info.tank;
     auto world = info.world;
 
-    if (tank->party == Tank::ENEMY and tank->has_drop) {
+    if (tank->party == Tank::ENEMY and tank->has_drop or true) {
         // 生成奖励
         _game.event().notify(Event(EventID::PROP_GEN));
     }
 
-    --tank->hp;
-    if (tank->hp <= 0) {
-        auto iter = std::find(world->tanks.begin(), world->tanks.end(), tank);
-        if (iter != world->tanks.end()) {
-            world->tanks.erase(iter);
-        }
+    if (not tank->shield) {
+        --tank->hp;
     }
-    tank->createScore();
-    tank->createExplosion();
-    tank->removeFromScreen();
+
+    if (tank->hp <= 0) {
+        auto& tanks = world->tanks;
+        auto iter = std::find(tanks.begin(), tanks.end(), tank);
+        if (iter != tanks.end()) {
+            tanks.erase(iter);
+        }
+        tank->createScore();
+        tank->createExplosion();
+        tank->removeFromScreen();
+
+        auto sound = res::soundName("explosion_1");
+        _game.audio().loadEffect(sound);
+        _game.audio().playEffect(sound);
+    }
+}
+
+void TankShieldCommand::onEvent(Event const& e) {
+
+    auto& info = e.data<TankShieldInfo>();
+    auto tank = info.tank;
+    float duration = info.duration * 100;
+    auto delay = Action::New<Delay>(duration);
+    auto call = Action::New<CallBackT<TankModel*>>(tank, [](TankModel* tank){
+        tank->shield = false;
+        tank->modifyShield();
+    });
+    auto action = Action::Ptr(new Sequence({delay, call}));
+    auto scene = _game.screen().scene_back();
+    action->setName("player:shield");
+    scene->stopAction("player:shield");
+    scene->runAction(action);
+    tank->shield = true;
+    tank->modifyShield();
 }

@@ -44,6 +44,7 @@ public:
     typedef T Type;
 public:
     EasyEvent(int id, Type const& data):Event(id), _data(data) {}
+    template<typename... Args> EasyEvent(int id, Args const&... args):Event(id), _data(args...) {}
 protected:
     Data const* getData() const override {
         return &_data;

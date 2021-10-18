@@ -93,6 +93,18 @@ namespace Tank {
         state.pop();
         return ret;
     }
+    float getPowerUpDuration(std::string const& name) {
+        auto& state = _game.force_get<lutok3::State>("lua");
+        float ret = 0.0f;
+        if (state.getGlobal("POWERUP_DURATION") == lutok3::Type::Table) {
+            if (state.getField(-1, name) == lutok3::Type::Number) {
+                ret = state.get();
+            }
+            state.pop();
+        }
+        state.pop();
+        return ret;
+    }
 }
 
 TankModel::TankModel():
@@ -116,8 +128,16 @@ void TankModel::modifyPosition() {
     notify_observers(&Widget::setPosition, position.x, position.y);
 }
 
+void TankModel::modifyShield() {
+    notify_observers(&TankView::modify_shield);
+}
+
 void TankModel::removeFromScreen() {
     notify_observers(&Widget::removeFromParent);
+}
+
+void TankModel::modifyTier() {
+    notify_observers(&TankView::setSkin, controller, tier);
 }
 
 void TankModel::createBullet() {
@@ -153,8 +173,9 @@ void PropModel::removeFromScreen() {
 }
 
 WorldModel::WorldModel():
+sleep(false),
 bounds(0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE),
-tiles(0, {0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE}, [](TileModel* tile){
+tiles(0, {0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE}, [](TileModel* tile) {
     return tile->bounds;
 }) {}
 

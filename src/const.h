@@ -17,6 +17,8 @@ namespace EventID {
         BASE_FALL,      // 基地击破
         TANK_FIRE,
         TANK_GEN,       // 生成坦克
+        TANK_POWERUP,   // 升级坦克
+        TANK_SHIELD,    // 坦克护罩
         BULLET_HIT_TANK,
         PROP_GEN,       // 生成奖励
     };

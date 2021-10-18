@@ -89,6 +89,7 @@ namespace Tank {
     Attribute const& getAttribute(Party group, Tier tier);
 
     int getDefaultLifeMax();
+    float getPowerUpDuration(std::string const& name);
 }
 
 typedef struct {
@@ -137,8 +138,10 @@ public:
     RectI bounds;
 public:
     TankModel();
+    void modifyShield();
     void modifyPosition();
     void removeFromScreen();
+    void modifyTier();
     void createBullet();
     void createExplosion();
     void createScore();
@@ -180,6 +183,7 @@ public:
 public:
     WorldModel();
 public:
+    bool sleep;
     TileTree tiles;
     TankList tanks;
     BulletList bullets;
@@ -229,6 +233,22 @@ public:
     BulletModel* bullet;
     TankModel* tank;
     WorldModel* world;
+    BulletHitTankInfo(BulletModel* bullet, TankModel* tank, WorldModel* world):
+    bullet(bullet), tank(tank), world(world) {}
+};
+
+class TankPowerUpInfo {
+public:
+    TankModel* tank;
+    PropModel* prop;
+    TankPowerUpInfo(TankModel* tank, PropModel* prop):tank(tank), prop(prop) {}
+};
+
+class TankShieldInfo {
+public:
+    TankModel* tank;
+    float duration;
+    TankShieldInfo(TankModel* tank, float duration):tank(tank), duration(duration) {}
 };
 
 #endif //SDL2_UI_DATA_H

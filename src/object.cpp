@@ -207,12 +207,16 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool
     }
     _model.id = ++_objectCount;
     _model.fire = false;
-    _model.shield = true;
+    _model.shield = false;
     _model.party = party;
     _model.controller = c;
     _model.size = {Tile::SIZE, Tile::SIZE};
     _model.dir = Direction::MAX;
     _model.add_observer(this);
+
+    auto& attr = Tank::getAttribute(party, tier);
+    _model.hp = attr.health;
+
     enableUpdate(true);
     _game.audio().loadEffect(shot_sound);
 }
@@ -351,10 +355,6 @@ void TankView::explosion() {
     animate->play(std::bind(&Widget::removeFromParent, animate));
     _battlefield->addToMiddle(widget);
     widget->performLayout();
-
-    auto sound = res::soundName("explosion_1");
-    _game.audio().loadEffect(sound);
-    _game.audio().playEffect(sound);
 }
 
 void TankView::show_score() {
@@ -373,6 +373,25 @@ void TankView::show_score() {
     }, 1.0f);
     _battlefield->addToBottom(widget);
     widget->performLayout();
+}
+
+void TankView::modify_shield() {
+    if (_model.shield) {
+        if (find("shield:animate")) {
+            return;
+        }
+        auto widget = New<FrameAnimationWidget>();
+        auto animate = widget->to<FrameAnimationWidget>();
+        animate->setFrames(skin::getShieldSkin());
+        animate->setName("shield:animate");
+        animate->play(0.1f);
+        addChild(widget);
+    } else {
+        auto view = find("shield:animate");
+        if (view) {
+            view->removeFromParent();
+        }
+    }
 }
 
 void TankView::onChangeDir(Direction dir) {
@@ -582,7 +601,7 @@ PropView::PropView(Tank::PowerUp type):ImageWidget(
 
 void PropView::insert_to(WorldModel* world) {
     world->props.push_back(&_model);
-    _behavior = Behavior::New<PropCollisionBehavior>(&world->tanks, &world->props);
+    _behavior = Behavior::New<PropCollisionBehavior>(&_model, &world->tanks, &world->props);
 }
 
 void PropView::show_score() {
@@ -592,7 +611,7 @@ void PropView::show_score() {
     widget->defer(widget.get(), [](Widget* sender){
         sender->removeFromParent();
     }, 1.0f);
-    _battlefield->addToBottom(widget);
+    _battlefield->addToTop(widget);
     widget->performLayout();
 }
 

@@ -79,8 +79,9 @@ _world(nullptr) {
     //sortElements();
 
     auto prop_create = Behavior::Ptr(new PropCreateBehavior(this, _world));
+    auto tank_powerup = Behavior::Ptr(new TankPowerUpBehavior);
     auto tank_spawn = Behavior::Ptr(new TankSpawnBehavior(&_world->tanks));
-    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_spawn}));
+    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_powerup, tank_spawn}));
 }
 
 void BattleFieldView::onLoadLevel() {

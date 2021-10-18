@@ -83,6 +83,7 @@ public:
     bool moving() const;
     void explosion();
     void show_score();
+    void modify_shield();
 private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;

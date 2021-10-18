@@ -85,12 +85,22 @@ private:
     WorldModel* _world;
 };
 
+class TankPowerUpBehavior : public Behavior, public Event::Listener {
+public:
+    TankPowerUpBehavior();
+    ~TankPowerUpBehavior();
+private:
+    Status tick(float delta) override;
+    void onEvent(Event const& e) override;
+};
+
 class TankAI_Behavior : public Behavior {
 public:
     TankAI_Behavior(TankModel* model);
 private:
     Status tick(float delta) override;
 private:
+    WorldModel* _world;
     TankModel* _model;
 };
 
@@ -100,6 +110,7 @@ public:
 private:
     Status tick(float delta) override;
 private:
+    WorldModel* _world;
     TankModel* _model;
     RectI _world_bounds;
 };
@@ -180,10 +191,12 @@ private:
 
 class PropCollisionBehavior : public Behavior {
 public:
-    PropCollisionBehavior(WorldModel::TankList* tanks, WorldModel::PropList* props);
+    PropCollisionBehavior(PropModel* prop, WorldModel::TankList* tanks, WorldModel::PropList* props);
 private:
     Status tick(float delta) override;
+    void playEffect(Tank::PowerUp type);
 private:
+    PropModel* _model;
     WorldModel::TankList* _tanks;
     WorldModel::PropList* _props;
 };

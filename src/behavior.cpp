@@ -203,7 +203,8 @@ void PropCreateBehavior::onEvent(Event const& e) {
         }
 
         // 创建奖励
-        auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
+        //auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
+        auto type = Tank::HELMET;
         auto view = Widget::New<PropView>(type);
         auto prop = view->to<PropView>();
         prop->setBattleField(_battlefield);
@@ -211,8 +212,8 @@ void PropCreateBehavior::onEvent(Event const& e) {
         _battlefield->addToTop(view);
 
         // 设置坐标
-        int x = rand() % (Tile::MAP_SIZE - Tile::SIZE * 2) + Tile::SIZE;
-        int y = rand() % (Tile::MAP_SIZE - Tile::SIZE * 2) + Tile::SIZE;
+        int x = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
+        int y = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
         Vector2f position = {
                 x - (x % (Tile::SIZE >> 1)),
                 y - (y % (Tile::SIZE >> 1)),
@@ -224,17 +225,110 @@ void PropCreateBehavior::onEvent(Event const& e) {
         auto blink = Action::Ptr(new Blink(prop, 4, 1.2f));
         auto repeat = Action::New<Repeat>(blink);
         view->runAction(repeat);
+
+        // 播放音效
+        auto sound = res::soundName("powerup_appear");
+        _game.audio().loadEffect(sound);
+        _game.audio().playEffect(sound);
+    }
+}
+
+//=====================================================================================
+
+TankPowerUpBehavior::TankPowerUpBehavior() {
+    _game.event().add(EventID::TANK_POWERUP, this);
+}
+TankPowerUpBehavior::~TankPowerUpBehavior() {
+    _game.event().remove(EventID::TANK_POWERUP, this);
+}
+
+Status TankPowerUpBehavior::tick(float delta) {
+    return success;
+}
+
+void TankPowerUpBehavior::onEvent(Event const& e) {
+    if (e.Id() == EventID::TANK_POWERUP) {
+
+        auto& info = e.data<TankPowerUpInfo>();
+        int type = info.prop->type;
+
+        if (type == Tank::STAR) {
+
+            // 坦克升级
+            auto tank = info.tank;
+            if (tank->tier != Tank::D) {
+                auto tier = Tank::Tier(info.tank->tier + 1);
+                auto& attr = Tank::getAttribute(tank->party, tank->tier);
+                tank->hp = attr.health;
+                tank->tier = tier;
+                tank->modifyTier();
+            }
+
+        } else if (type == Tank::TANK) {
+
+            // 奖命
+            auto& player = _game.get<PlayerModel>("player_model");
+            _game.event().notify(EasyEvent<int>(EventID::PLAYER_LIFE_CHANGED, ++player.life));
+
+        } else if (type == Tank::TIMER) {
+
+            // 时停
+            auto scene = _game.screen().scene_back();
+            auto& world = _game.get<WorldModel>("world_model");
+            float duration = Tank::getPowerUpDuration("FREEZE");
+            world.sleep = true;
+            scene->defer([]{
+                auto& world = _game.get<WorldModel>("world_model");
+                world.sleep = false;
+            }, duration);
+
+        } else if (type == Tank::GRENADE) {
+
+            // 炸弹
+            auto& world = _game.get<WorldModel>("world_model");
+            auto& tanks = world.tanks;
+            for (auto iter = tanks.begin(); iter != tanks.end();) {
+                auto tank = *iter;
+                if (tank->party == Tank::ENEMY) {
+                    tanks.erase(iter++);
+                    tank->createExplosion();
+                    tank->removeFromScreen();
+                    continue;
+                }
+                iter++;
+            }
+            auto sound = res::soundName("explosion_1");
+            _game.audio().loadEffect(sound);
+            _game.audio().playEffect(sound);
+
+        } else if (type == Tank::HELMET) {
+
+            // 护罩
+            _game.event().notify(EasyEvent<TankShieldInfo>(
+                    EventID::TANK_SHIELD,
+                    info.tank,
+                    Tank::getPowerUpDuration("SHIELD")
+            ));
+
+        }
+
+        info.prop->createScore();
+        auto& score = _game.force_get<int>("player_score");
+        score += 500;
     }
 }
 
 //=====================================================================================
 
 TankAI_Behavior::TankAI_Behavior(TankModel* model):_model(model) {
-
+    _world = &_game.get<WorldModel>("world_model");
 }
 
 Status TankAI_Behavior::tick(float delta) {
     if (_model->controller != Tank::AI) {
+        return running;
+    }
+    if (_model->party == Tank::ENEMY and _world->sleep) {
         return running;
     }
     return success;
@@ -243,9 +337,13 @@ Status TankAI_Behavior::tick(float delta) {
 //=====================================================================================
 
 TankMoveBehavior::TankMoveBehavior(TankModel* model, RectI const& bounds):_model(model), _world_bounds(bounds) {
+    _world = &_game.get<WorldModel>("world_model");
 }
 
 Status TankMoveBehavior::tick(float delta) {
+    if (_model->party == Tank::ENEMY and _world->sleep) {
+        return running;
+    }
     _model->position += _model->move * delta;
     Vector2i const& size = _model->size;
     if (_model->position.y < _world_bounds.y and _model->move.y < 0.0f) {
@@ -562,14 +660,16 @@ Status BulletTankCollisionBehavior::tick(float delta) {
                 score += (tank->tier+1) * 100;
             }
 
-            BulletHitTankInfo info;
-            info.bullet = _model;
-            info.tank = tank;
-            info.world = _world;
-            _game.event().notify(EasyEvent<BulletHitTankInfo>(EventID::BULLET_HIT_TANK, info));
-            bullet_explosion();
-            remove_bullet();
+            if (tank->party == Tank::ENEMY) {
+                bullet_explosion();
+            } else {
+                hit_base();
+            }
 
+            // remove tank
+            _game.event().notify(EasyEvent<BulletHitTankInfo>(EventID::BULLET_HIT_TANK, _model, tank, _world));
+            // remove bullet
+            remove_bullet();
             return fail;
         }
     }
@@ -578,12 +678,37 @@ Status BulletTankCollisionBehavior::tick(float delta) {
 
 //=====================================================================================
 
-PropCollisionBehavior::PropCollisionBehavior(WorldModel::TankList* tanks, WorldModel::PropList* props):
+PropCollisionBehavior::PropCollisionBehavior(PropModel* prop, WorldModel::TankList* tanks, WorldModel::PropList* props):
+_model(prop),
 _tanks(tanks),
 _props(props) {
 
 }
 
 Status PropCollisionBehavior::tick(float delta) {
+    for (auto& tank : *_tanks) {
+        if (tank->party == Tank::ENEMY) {
+            continue;
+        }
+        if (isCollision(_model->bounds, tank->bounds)) {
+            auto iter = std::find(_props->begin(), _props->end(), _model);
+            if (iter != _props->end()) {
+                _props->erase(iter);
+            }
+            _game.event().notify(EasyEvent<TankPowerUpInfo>(
+                    EventID::TANK_POWERUP,
+                    tank, _model
+            ));
+            this->playEffect(_model->type);
+            _model->removeFromScreen();
+            break;
+        }
+    }
     return success;
+}
+
+void PropCollisionBehavior::playEffect(Tank::PowerUp type) {
+    auto sound = res::soundName(type == Tank::TANK ? "life" : "powerup_pick");
+    _game.audio().loadEffect(sound);
+    _game.audio().playEffect(sound);
 }
