@@ -774,7 +774,8 @@ ScoreView::ScoreView():_total(nullptr) {
     }
 
     {
-        auto label = createLabel("STAGE  1", white, MIDDLE);
+        auto level = _game.get<int>("level");
+        auto label = createLabel("STAGE  " + std::to_string(level), white, MIDDLE);
         label->setPosition(size().x * 0.5f, size().y * 0.18f);
         widget.reset(label);
         root->addChild(widget);

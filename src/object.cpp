@@ -386,6 +386,7 @@ void TankView::modify_shield() {
         animate->setName("shield:animate");
         animate->play(0.1f);
         addChild(widget);
+        widget->performLayout();
     } else {
         auto view = find("shield:animate");
         if (view) {

@@ -147,6 +147,8 @@ public:
     void createExplosion();
     void createScore();
     void openShield(float duration);
+    void pause();
+    void resume();
 };
 
 class BulletView;

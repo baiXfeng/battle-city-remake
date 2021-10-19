@@ -248,14 +248,14 @@ void BattleFieldView::onEvent(Event const& e) {
             _player = view;
         }
 
-        float duration = 0.9f;
+        float duration = 1.2f;
         {
             // 出生动画
             auto view = New<FrameAnimationWidget>();
             auto animate = view->to<FrameAnimationWidget>();
             animate->setPosition(tank->position());
             animate->setFrames(skin::getTankAppearSkin());
-            animate->play(0.3f);
+            animate->play(0.4f);
             addChild(view);
             view->defer(animate, [](Widget* sender){
                 sender->removeFromParent();
@@ -263,7 +263,7 @@ void BattleFieldView::onEvent(Event const& e) {
         }
 
         view->setVisible(false);
-        defer(view, [](Widget* sender){
+        view->defer(view, [](Widget* sender){
             auto tank = sender->to<TankView>();
             tank->setVisible(true);
             if (tank->model()->party == Tank::PLAYER) {
@@ -271,6 +271,7 @@ void BattleFieldView::onEvent(Event const& e) {
                 tank->open_shield(Tank::getGlobalFloat("PLAYER_SPAWN_SHIELD_DURATION"));
             }
         }, duration);
+        view->pauseAllActionWhenHidden(false);
 
     } else if (e.Id() == EventID::GAME_OVER) {
 

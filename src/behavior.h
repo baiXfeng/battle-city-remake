@@ -56,17 +56,21 @@ private:
     WorldModel::TankList* _tanks;
 };
 
-class EnemySpawnBehavior : public Behavior {
+class EnemySpawnBehavior : public Behavior , public Event::Listener {
 public:
     EnemySpawnBehavior(WorldModel::TankList* tanks);
+    ~EnemySpawnBehavior();
 private:
+    void onEvent(Event const& e) override;
     Status tick(float delta) override;
+    Status onSpawn(float delta);
     int enemyCount() const;
     int enemyRemainCount() const;
     bool is_overlap(RectI const& r) const;
     void checkOverlap(int& index, int& overlapCount) const;
 private:
     int _index;
+    float _delay, _delay_tick;
     WorldModel::TankList* _tanks;
     AddTankList* _addtanks;
     PlayerModel* _player;

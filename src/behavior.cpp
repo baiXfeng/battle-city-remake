@@ -81,10 +81,17 @@ Status PlayerSpawnBehavior::tick(float delta) {
 
 //=====================================================================================
 
-EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks) {
+EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks), _delay_tick(0.0f) {
+    _delay = Tank::getGlobalFloat("ENEMY_SPAWN_DELAY");
+    _delay_tick = _delay;
     _addtanks = &_game.force_get<AddTankList>("add_tank_list");
     _player = &_game.force_get<PlayerModel>("player_model");
     _game.event().notify(EasyEvent<int>(EventID::ENEMY_NUMBER_CHANGED, enemyRemainCount()));
+    _game.event().add(EventID::ENEMY_KILLED, this);
+}
+
+EnemySpawnBehavior::~EnemySpawnBehavior() {
+    _game.event().remove(EventID::ENEMY_KILLED, this);
 }
 
 int EnemySpawnBehavior::enemyCount() const {
@@ -126,12 +133,27 @@ void EnemySpawnBehavior::checkOverlap(int& index, int& overlapCount) const {
     }
 }
 
-int const ENEMY_MAX_COUNT = 4;
+void EnemySpawnBehavior::onEvent(Event const& e) {
+
+    if (e.Id() == EventID::ENEMY_KILLED) {
+
+        _delay_tick = 0.0f;
+    }
+}
 
 Status EnemySpawnBehavior::tick(float delta) {
+    if ((_delay_tick += delta) < _delay) {
+        return running;
+    }
+    _delay_tick = 0.0f;
+    return onSpawn(delta);
+}
+
+Status EnemySpawnBehavior::onSpawn(float delta) {
     if (_player->win) {
         return success;
     }
+    int const ENEMY_MAX_COUNT = 4;
     int enemy_count = enemyCount();
     if (enemy_count >= ENEMY_MAX_COUNT) {
         // 同屏敌军坦克数量超过限制，不再生产
@@ -203,8 +225,8 @@ void PropCreateBehavior::onEvent(Event const& e) {
         }
 
         // 创建奖励
-        //auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
-        auto type = Tank::HELMET;
+        auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
+        //auto type = Tank::HELMET;
         auto view = Widget::New<PropView>(type);
         auto prop = view->to<PropView>();
         prop->setBattleField(_battlefield);
@@ -682,7 +704,7 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
     auto bullet = _model;
     auto world = _world;
 
-    if (tank->party == Tank::ENEMY and tank->has_drop or true) {
+    if (tank->party == Tank::ENEMY and tank->has_drop) {
         // 生成奖励
         _game.event().notify(Event(EventID::PROP_GEN));
     }
@@ -704,6 +726,8 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
         auto sound = res::soundName("explosion_1");
         _game.audio().loadEffect(sound);
         _game.audio().playEffect(sound);
+
+        _game.event().notify(Event(EventID::ENEMY_KILLED));
     }
 }
 
