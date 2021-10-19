@@ -1,9 +1,9 @@
 
 import "levels/level_api.lua" -- use import for dofile
 
+--==============================================================================
 -- 最大关卡数
 LEVEL_MAX = 25
-
 -- 初始生命数
 DEFAULT_LIFE_MAX = 3
 

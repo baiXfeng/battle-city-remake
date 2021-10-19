@@ -146,6 +146,7 @@ public:
     void createBullet();
     void createExplosion();
     void createScore();
+    void openShield(float duration);
 };
 
 class BulletView;
@@ -243,13 +244,6 @@ public:
     TankModel* tank;
     PropModel* prop;
     TankPowerUpInfo(TankModel* tank, PropModel* prop):tank(tank), prop(prop) {}
-};
-
-class TankShieldInfo {
-public:
-    TankModel* tank;
-    float duration;
-    TankShieldInfo(TankModel* tank, float duration):tank(tank), duration(duration) {}
 };
 
 #endif //SDL2_UI_DATA_H

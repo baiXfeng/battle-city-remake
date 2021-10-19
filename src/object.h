@@ -84,6 +84,8 @@ public:
     void explosion();
     void show_score();
     void modify_shield();
+    void open_shield(float duration);
+    TankModel const* model() const;
 private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;

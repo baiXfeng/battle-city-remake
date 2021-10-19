@@ -161,6 +161,10 @@ void TankModel::createScore() {
     notify_observers(&TankView::show_score);
 }
 
+void TankModel::openShield(float duration) {
+    notify_observers(&TankView::open_shield, duration);
+}
+
 void BulletModel::modifyPosition() {
     notify_observers(&Widget::setPosition, position.x, position.y);
 }

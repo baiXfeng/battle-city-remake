@@ -23,12 +23,4 @@ class ResumeGameCommand : public Command {
     void onEvent(Event const& e) override;
 };
 
-class BulletHitTankCommand : public Command {
-    void onEvent(Event const& e) override;
-};
-
-class TankShieldCommand : public Command {
-    void onEvent(Event const& e) override;
-};
-
 #endif //SDL2_UI_SRC_COMMAND_H

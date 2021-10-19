@@ -54,9 +54,7 @@ public:
         _game.command().add<GameOverCommand>(EventID::GAME_OVER_ANIMATION);
         _game.command().add<PauseGameCommand>(EventID::PAUSE_GAME);
         _game.command().add<ResumeGameCommand>(EventID::RESUME_GAME);
-        _game.command().add<BulletHitTankCommand>(EventID::BULLET_HIT_TANK);
         _game.command().add<PlayerWinCommand>(EventID::PLAYER_WIN);
-        _game.command().add<TankShieldCommand>(EventID::TANK_SHIELD);
     }
     void init() override {
         LOG_INIT();

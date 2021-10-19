@@ -264,7 +264,12 @@ void BattleFieldView::onEvent(Event const& e) {
 
         view->setVisible(false);
         defer(view, [](Widget* sender){
-            sender->setVisible(true);
+            auto tank = sender->to<TankView>();
+            tank->setVisible(true);
+            if (tank->model()->party == Tank::PLAYER) {
+                // 出生自带护罩
+                tank->open_shield(Tank::getGlobalFloat("PLAYER_SPAWN_SHIELD_DURATION"));
+            }
         }, duration);
 
     } else if (e.Id() == EventID::GAME_OVER) {

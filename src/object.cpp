@@ -394,6 +394,26 @@ void TankView::modify_shield() {
     }
 }
 
+void TankView::open_shield(float duration) {
+    auto tank = &_model;
+    auto delay = Action::New<Delay>(duration);
+    auto call = Action::New<CallBackT<TankModel*>>(tank, [](TankModel* tank){
+        tank->shield = false;
+        tank->modifyShield();
+    });
+    auto action = Action::Ptr(new Sequence({delay, call}));
+    auto scene = _game.screen().scene_back();
+    action->setName("player:shield");
+    scene->stopAction("player:shield");
+    scene->runAction(action);
+    tank->shield = true;
+    tank->modifyShield();
+}
+
+TankModel const* TankView::model() const {
+    return &_model;
+}
+
 void TankView::onChangeDir(Direction dir) {
     int half_size = Tile::SIZE >> 1;
     //坦克的坐标要卡在1/2大小的图块位置

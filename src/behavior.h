@@ -187,6 +187,7 @@ public:
     BulletTankCollisionBehavior(BulletModel* model, WorldModel* world);
 private:
     Status tick(float delta) override;
+    void bulletHitTank(TankModel* tank);
 };
 
 class PropCollisionBehavior : public Behavior {

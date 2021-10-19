@@ -304,11 +304,8 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
         } else if (type == Tank::HELMET) {
 
             // 护罩
-            _game.event().notify(EasyEvent<TankShieldInfo>(
-                    EventID::TANK_SHIELD,
-                    info.tank,
-                    Tank::getPowerUpDuration("SHIELD")
-            ));
+            auto tank = info.tank;
+            tank->openShield(Tank::getPowerUpDuration("SHIELD"));
 
         } else if (type == Tank::SHOVEL) {
 
@@ -671,13 +668,43 @@ Status BulletTankCollisionBehavior::tick(float delta) {
             }
 
             // remove tank
-            _game.event().notify(EasyEvent<BulletHitTankInfo>(EventID::BULLET_HIT_TANK, _model, tank, _world));
+            bulletHitTank(tank);
             // remove bullet
             remove_bullet();
             return fail;
         }
     }
     return success;
+}
+
+void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
+
+    auto bullet = _model;
+    auto world = _world;
+
+    if (tank->party == Tank::ENEMY and tank->has_drop or true) {
+        // 生成奖励
+        _game.event().notify(Event(EventID::PROP_GEN));
+    }
+
+    if (not tank->shield) {
+        --tank->hp;
+    }
+
+    if (tank->hp <= 0) {
+        auto& tanks = world->tanks;
+        auto iter = std::find(tanks.begin(), tanks.end(), tank);
+        if (iter != tanks.end()) {
+            tanks.erase(iter);
+        }
+        tank->createScore();
+        tank->createExplosion();
+        tank->removeFromScreen();
+
+        auto sound = res::soundName("explosion_1");
+        _game.audio().loadEffect(sound);
+        _game.audio().playEffect(sound);
+    }
 }
 
 //=====================================================================================
