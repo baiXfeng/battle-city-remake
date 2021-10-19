@@ -105,6 +105,15 @@ namespace Tank {
         state.pop();
         return ret;
     }
+    float getGlobalFloat(std::string const& name) {
+        auto& state = _game.force_get<lutok3::State>("lua");
+        float ret = 0.0f;
+        if (state.getGlobal(name) == lutok3::Type::Number) {
+            ret = state.get();
+        }
+        state.pop();
+        return ret;
+    }
 }
 
 TankModel::TankModel():

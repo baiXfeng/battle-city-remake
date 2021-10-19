@@ -123,7 +123,7 @@ void TankShieldCommand::onEvent(Event const& e) {
 
     auto& info = e.data<TankShieldInfo>();
     auto tank = info.tank;
-    float duration = info.duration * 100;
+    float duration = info.duration;
     auto delay = Action::New<Delay>(duration);
     auto call = Action::New<CallBackT<TankModel*>>(tank, [](TankModel* tank){
         tank->shield = false;

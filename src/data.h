@@ -90,6 +90,7 @@ namespace Tank {
 
     int getDefaultLifeMax();
     float getPowerUpDuration(std::string const& name);
+    float getGlobalFloat(std::string const& name);
 }
 
 typedef struct {

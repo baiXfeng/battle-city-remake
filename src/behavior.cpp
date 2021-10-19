@@ -258,7 +258,7 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
             auto tank = info.tank;
             if (tank->tier != Tank::D) {
                 auto tier = Tank::Tier(info.tank->tier + 1);
-                auto& attr = Tank::getAttribute(tank->party, tank->tier);
+                auto& attr = Tank::getAttribute(tank->party, tier);
                 tank->hp = attr.health;
                 tank->tier = tier;
                 tank->modifyTier();
@@ -309,6 +309,10 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
                     info.tank,
                     Tank::getPowerUpDuration("SHIELD")
             ));
+
+        } else if (type == Tank::SHOVEL) {
+
+            // 基地加固
 
         }
 

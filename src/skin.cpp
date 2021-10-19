@@ -15,6 +15,15 @@ namespace skin {
         };
     }
 
+    Textures getTankAppearSkin() {
+        return {
+                res::load_texture(_game.renderer(), res::imageName("appear_1")),
+                res::load_texture(_game.renderer(), res::imageName("appear_2")),
+                res::load_texture(_game.renderer(), res::imageName("appear_3")),
+                res::load_texture(_game.renderer(), res::imageName("appear_4")),
+        };
+    }
+
     TexturesArray getEnemySkin(Tank::Tier tier, bool has_drop) {
         std::string dir[4] = {"up", "right", "down", "left"};
         std::string name[4] = {"tank_basic_", "tank_fast_", "tank_power_", "tank_armor_"};

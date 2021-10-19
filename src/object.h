@@ -139,6 +139,7 @@ public:
 public:
     void insert_to(WorldModel* world);
     void show_score();
+    PropModel const* model() const;
 private:
     void onModifyPosition(Vector2f const& position) override;
     void onModifySize(Vector2f const& size) override;

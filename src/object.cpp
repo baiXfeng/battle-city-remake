@@ -415,6 +415,9 @@ void TankView::onChangeDir(Direction dir) {
 }
 
 void TankView::onUpdate(float delta) {
+    if (not _visible) {
+        return;
+    }
     _behavior->tick(delta);
 }
 
@@ -613,6 +616,10 @@ void PropView::show_score() {
     }, 1.0f);
     _battlefield->addToTop(widget);
     widget->performLayout();
+}
+
+PropModel const* PropView::model() const {
+    return &_model;
 }
 
 void PropView::onModifyPosition(Vector2f const& position) {
