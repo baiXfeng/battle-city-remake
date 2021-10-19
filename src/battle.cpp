@@ -14,6 +14,7 @@
 #include "common/log.h"
 #include "object.h"
 #include "const.h"
+#include "skin.h"
 
 //=====================================================================================
 
@@ -246,6 +247,25 @@ void BattleFieldView::onEvent(Event const& e) {
         if (info.controller == Tank::P1) {
             _player = view;
         }
+
+        float duration = 0.9f;
+        {
+            // 出生动画
+            auto view = New<FrameAnimationWidget>();
+            auto animate = view->to<FrameAnimationWidget>();
+            animate->setPosition(tank->position());
+            animate->setFrames(skin::getTankAppearSkin());
+            animate->play(0.3f);
+            addChild(view);
+            view->defer(animate, [](Widget* sender){
+                sender->removeFromParent();
+            }, duration);
+        }
+
+        view->setVisible(false);
+        defer(view, [](Widget* sender){
+            sender->setVisible(true);
+        }, duration);
 
     } else if (e.Id() == EventID::GAME_OVER) {
 
