@@ -451,10 +451,11 @@ BattleView::BattleView() {
         root_size.y = view->size().y;
 
         // 幕帘完全打开再开始运作战场
+        float delay = Tank::getGlobalFloat("LEVEL_START_DELAY");
         view->enableUpdate(false);
         this->defer(view, [](Widget* sender) {
             sender->enableUpdate(true);
-        }, 0.28f);
+        }, delay);
     }
 
     {

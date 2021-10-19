@@ -23,6 +23,8 @@ ENEMY_DEFAULT_SPAWN_POSITIONS = {
 
 --==============================================================================
 
+-- 开局延迟时间
+LEVEL_START_DELAY = 2
 -- 玩家坦克出生无敌时长
 PLAYER_SPAWN_SHIELD_DURATION = 3.5
 -- 敌人坦克出生时间间隔

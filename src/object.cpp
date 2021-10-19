@@ -423,6 +423,8 @@ void TankView::onUpdate(float delta) {
 
 void TankView::onModifyPosition(Vector2f const& position) {
     _model.position = position;
+    _model.bounds.x = position.x;
+    _model.bounds.y = position.y;
 }
 
 void TankView::onModifySize(Vector2f const& size) {
