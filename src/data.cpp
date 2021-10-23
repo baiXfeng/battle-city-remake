@@ -5,7 +5,9 @@
 #include "data.h"
 #include "common/loadres.h"
 #include "common/game.h"
+#include "common/audio.h"
 #include "object.h"
+#include "const.h"
 
 namespace Tank {
     template <typename T>
@@ -114,6 +116,25 @@ namespace Tank {
         state.pop();
         return ret;
     }
+    void resetPlayerScore() {
+        _game.set<int>("player_score", 0);
+        _game.set<bool>("add_life_once", false);
+    }
+    void playerScoreAdd(int value) {
+        auto& score = _game.force_get<int>("player_score");
+        score += value;
+
+        bool& once = _game.force_get<bool>("add_life_once");
+        if (score >= 20000 and not once) {
+            // 到达2万分仅一次奖励一命
+            auto& player = _game.get<PlayerModel>("player_model");
+            _game.event().notify(EasyEvent<int>(EventID::PLAYER_LIFE_CHANGED, ++player.life));
+            auto sound = res::soundName("life");
+            _game.audio().loadEffect(sound);
+            _game.audio().playEffect(sound);
+            once = true;
+        }
+    }
 }
 
 TankModel::TankModel():
@@ -135,6 +156,11 @@ void TileModel::removeFromScreen() {
 
 void TankModel::modifyPosition() {
     notify_observers(&Widget::setPosition, position.x, position.y);
+}
+
+void TankModel::modifyDir(Tank::Direction dir) {
+    notify_observers(&TankView::stop, dir);
+    notify_observers(&TankView::move, dir);
 }
 
 void TankModel::modifyShield() {

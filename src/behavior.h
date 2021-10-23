@@ -103,9 +103,13 @@ public:
     TankAI_Behavior(TankModel* model);
 private:
     Status tick(float delta) override;
+    void onAiShoot(float delta);
+    void onAiMove(float delta);
 private:
     WorldModel* _world;
     TankModel* _model;
+    float _shootTicks;
+    float _moveTicks;
 };
 
 class TankMoveBehavior : public Behavior {
@@ -137,6 +141,7 @@ private:
 private:
     TankModel* _model;
     WorldModel::TankList* _tanks;
+    RectI _world_bounds;
 };
 
 class TankFireBehavior : public Behavior {
@@ -192,6 +197,13 @@ public:
 private:
     Status tick(float delta) override;
     void bulletHitTank(TankModel* tank);
+};
+
+class BulletBulletCollisionBehavior : public BaseBulletCollisionBehavior {
+public:
+    BulletBulletCollisionBehavior(BulletModel* model, WorldModel* world);
+private:
+    Status tick(float delta) override;
 };
 
 class PropCollisionBehavior : public Behavior {

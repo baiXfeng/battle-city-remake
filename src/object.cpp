@@ -152,8 +152,8 @@ int TileView::type() const {
     return _type;
 }
 
-TileModel const& TileView::model() const {
-    return _model;
+TileModel const* TileView::model() const {
+    return &_model;
 }
 
 void TileView::insert_to(WorldModel* world) {
@@ -323,7 +323,12 @@ void TankView::onFire() {
 }
 
 BulletView* TankView::createBullet() const {
-    _game.audio().playEffect(shot_sound);
+
+    if (_model.party == Tank::PLAYER) {
+        // 只有玩家的坦克才会播放子弹音效
+        _game.audio().playEffect(shot_sound);
+    }
+
     Vector2f offset[4] = {
             {size().x * 0.5f, 0.0f},
             {size().x * 1.0f, size().y * 0.5f},
@@ -559,7 +564,14 @@ void BulletView::insert_to(WorldModel* world) {
     auto world_collision = Behavior::Ptr(new BulletWorldCollisionBehavior(&_model, world));
     auto tile_collision = Behavior::Ptr(new BulletTileCollisionBehavior(&_model, world));
     auto tank_collision = Behavior::Ptr(new BulletTankCollisionBehavior(&_model, world));
-    _behavior = Behavior::Ptr(new SequenceBehavior({move_behavior, world_collision, tile_collision, tank_collision}));
+    auto bullet_collision = Behavior::Ptr(new BulletBulletCollisionBehavior(&_model, world));
+    _behavior = Behavior::Ptr(new SequenceBehavior({
+        move_behavior,
+        world_collision,
+        tile_collision,
+        tank_collision,
+        bullet_collision,
+    }));
 }
 
 void BulletView::play_explosion() {

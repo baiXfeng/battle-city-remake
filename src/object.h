@@ -48,7 +48,7 @@ public:
 public:
     void setType(TYPE t);
     int type() const;
-    TileModel const& model() const;
+    TileModel const* model() const;
     void insert_to(WorldModel* world);
     int layer() const;
 private:

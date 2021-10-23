@@ -100,7 +100,12 @@ void BattleFieldView::onLoadLevel() {
 
     _game.set<WorldModel>("world_model");
     _game.set<PlayerModel>("player_model");
+    Tank::resetPlayerScore();
+
     _world = &_game.get<WorldModel>("world_model");
+    _world->base = nullptr;
+    _world->sleep = false;
+    memset(_world->player, 0, sizeof(_world->player));
 
     {
         TileBuilder::Array array;
@@ -115,6 +120,10 @@ void BattleFieldView::onLoadLevel() {
                 addToTop(widget);
             } else {
                 addToMiddle(widget);
+            }
+
+            if (tile->model()->type == Tile::Type::BASE) {
+                _world->base = (TileModel*)tile->model();
             }
         }
     }
@@ -246,6 +255,7 @@ void BattleFieldView::onEvent(Event const& e) {
         addToMiddle(tank);
         if (info.controller == Tank::P1) {
             _player = view;
+            _world->player[Tank::Controller::P1] = (TankModel*)_player->model();
         }
 
         float duration = 1.2f;

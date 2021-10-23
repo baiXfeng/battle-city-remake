@@ -336,8 +336,7 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
         }
 
         info.prop->createScore();
-        auto& score = _game.force_get<int>("player_score");
-        score += 500;
+        Tank::playerScoreAdd( 500 );
     }
 }
 
@@ -354,7 +353,62 @@ Status TankAI_Behavior::tick(float delta) {
     if (_model->party == Tank::ENEMY and _world->sleep) {
         return running;
     }
+    onAiShoot(delta);
+    onAiMove(delta);
     return success;
+}
+
+void TankAI_Behavior::onAiShoot(float delta) {
+    if ((_shootTicks += delta) < 0.25f) {
+        return;
+    }
+    _shootTicks -= 0.25f;
+    if (rand() % 100 < 40) {
+        _model->fire = true;
+    }
+}
+
+Tank::Direction _randomDir(std::vector<Tank::Direction> const& dirs) {
+    return dirs[ rand() % dirs.size() ];
+}
+
+void TankAI_Behavior::onAiMove(float delta) {
+    if ((_moveTicks += delta) < 0.33f) {
+        return;
+    }
+    _moveTicks -= 0.33f;
+    if (rand() % 100 >= 60) {
+        return;
+    }
+    typedef Tank::Direction Direction;
+    int n = rand() % 100;
+    auto base = _world->base;
+    auto dir = _randomDir({Direction::UP, Direction::DOWN, Direction::LEFT, Direction::RIGHT});
+
+    if (base != nullptr) {
+        int self_y = int(_model->position.y);
+        if (base->bounds.y > self_y) {
+            dir = Direction::DOWN;
+            if (n < 40) {
+                dir = _randomDir({Direction::UP, Direction::LEFT, Direction::RIGHT});
+            }
+        } else if (base->bounds.y == self_y) {
+            int self_x = int(_model->position.x);
+            if (base->bounds.x < self_x) {
+                dir = Direction::LEFT;
+                if (n < 40) {
+                    dir = _randomDir({Direction::UP, Direction::DOWN, Direction::RIGHT});
+                }
+            } else if (base->bounds.x > self_x) {
+                dir = Direction::RIGHT;
+                if (n < 40) {
+                    dir = _randomDir({Direction::UP, Direction::LEFT, Direction::DOWN});
+                }
+            }
+        }
+    }
+
+    _model->modifyDir(dir);
 }
 
 //=====================================================================================
@@ -443,7 +497,7 @@ Status TankTileCollisionBehavior::tick(float delta) {
 TankCollisionBehavior::TankCollisionBehavior(TankModel* model, WorldModel::TankList* tanks):
 _model(model),
 _tanks(tanks) {
-
+    _world_bounds = _game.get<WorldModel>("world_model").bounds;
 }
 
 Status TankCollisionBehavior::tick(float delta) {
@@ -458,23 +512,31 @@ Status TankCollisionBehavior::tick(float delta) {
             tank->bounds.h - 10,
             }, _model->bounds)) {
             if (_model->move.y < 0.0f and _model->bounds.y > tank->bounds.y) {
-                _model->position.y = tank->bounds.y + tank->bounds.h;
+                if (tank->bounds.y + tank->bounds.h <= _world_bounds.h) {
+                    _model->position.y = tank->bounds.y + tank->bounds.h;
+                }
                 _model->move.y = 0.0f;
                 _model->modifyPosition();
                 break;
             } else if (_model->move.y > 0.0f and _model->bounds.y < tank->bounds.y) {
-                _model->position.y = tank->bounds.y - _model->bounds.h;
+                if (tank->bounds.y - _model->bounds.h >= 0) {
+                    _model->position.y = tank->bounds.y - _model->bounds.h;
+                }
                 _model->move.y = 0.0f;
                 _model->modifyPosition();
                 break;
             }
             if (_model->move.x < 0.0f and _model->bounds.x > tank->bounds.x) {
-                _model->position.x = tank->bounds.x + tank->bounds.w;
+                if (tank->bounds.x + tank->bounds.w <= _world_bounds.w) {
+                    _model->position.x = tank->bounds.x + tank->bounds.w;
+                }
                 _model->move.x = 0.0f;
                 _model->modifyPosition();
                 break;
             } else if (_model->move.x > 0.0f and _model->bounds.x < tank->bounds.x) {
-                _model->position.x = tank->bounds.x - _model->bounds.w;
+                if (tank->bounds.x - _model->bounds.w >= 0) {
+                    _model->position.x = tank->bounds.x - _model->bounds.w;
+                }
                 _model->move.x = 0.0f;
                 _model->modifyPosition();
                 break;
@@ -679,8 +741,7 @@ Status BulletTankCollisionBehavior::tick(float delta) {
                 model.killCount[tank->tier] += 1;
 
                 // 记录得分
-                int& score = _game.force_get<int>("player_score");
-                score += (tank->tier+1) * 100;
+                Tank::playerScoreAdd( (tank->tier+1) * 100 );
             }
 
             if (tank->party == Tank::ENEMY) {
@@ -729,6 +790,38 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
 
         _game.event().notify(Event(EventID::ENEMY_KILLED));
     }
+}
+
+//=====================================================================================
+
+BulletBulletCollisionBehavior::BulletBulletCollisionBehavior(BulletModel* model, WorldModel* world):
+BaseBulletCollisionBehavior(model, world) {
+
+}
+
+Status BulletBulletCollisionBehavior::tick(float delta) {
+    auto& bullets = _world->bullets;
+    auto bullet = _model;
+    auto remove_self = false;
+    for (auto iter = bullets.begin(); iter != bullets.end();) {
+        if (bullet->id == (*iter)->id) {
+            iter++;
+            continue;
+        }
+        if (isCollision(bullet->bounds, (*iter)->bounds)) {
+            (*iter)->removeFromScreen();
+            bullets.erase(iter);
+            remove_self = true;
+            break;
+        }
+        iter++;
+    }
+    if (remove_self) {
+        auto iter = std::find(bullets.begin(), bullets.end(), bullet);
+        (*iter)->removeFromScreen();
+        bullets.erase(iter);
+    }
+    return success;
 }
 
 //=====================================================================================

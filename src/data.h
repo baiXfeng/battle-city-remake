@@ -91,6 +91,9 @@ namespace Tank {
     int getDefaultLifeMax();
     float getPowerUpDuration(std::string const& name);
     float getGlobalFloat(std::string const& name);
+
+    void resetPlayerScore();
+    void playerScoreAdd(int score);
 }
 
 typedef struct {
@@ -139,6 +142,7 @@ public:
     RectI bounds;
 public:
     TankModel();
+    void modifyDir(Tank::Direction dir);
     void modifyShield();
     void modifyPosition();
     void removeFromScreen();
@@ -192,6 +196,8 @@ public:
     TankList tanks;
     BulletList bullets;
     PropList props;
+    TankModel* player[Tank::Controller::P1 + 1];
+    TileModel* base;
     RectI bounds;
 };
 
