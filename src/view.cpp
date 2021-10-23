@@ -472,7 +472,7 @@ BattleView::BattleView() {
     {
         auto font = res::load_ttf_font(res::fontName("prstart"), 18);
         font->setColor({0, 0, 0, 255});
-        auto label = TTFLabel::New("L-CHEAT", font);
+        auto label = TTFLabel::New("L-MENU", font);
         label->setPosition(15, 15);
         addChild(label);
     }
@@ -937,10 +937,12 @@ CheatView::CheatView(CallBack const& cb):_index(0), _callback(cb == nullptr ? []
     root->setName("root");
     addChild(root);
 
-    std::string title[2] = {"CHEAT LIST", "BACK TITLE"};
+    int const TITLE_MAX = 1;
+    //std::string title[TITLE_MAX] = {"CHEAT LIST", "BACK TITLE"};
+    std::string title[TITLE_MAX] = {"BACK TITLE"};
     auto font = res::load_ttf_font(res::fontName("prstart"), 18);
     font->setColor({255, 255, 255, 255});
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < TITLE_MAX; ++i) {
         auto label = TTFLabel::New(title[i], font);
         label->setAnchor(0.0f, 0.5f);
         label->setPosition(80, 60 + i * 40);
@@ -974,15 +976,15 @@ void CheatView::onButtonDown(int key) {
         find("root")->setVisible(false);
         sleep_gamepad(0.33f);
     } else if (key == KeyCode::UP) {
-        _index = --_index <= -1 ? 1 : _index;
+        //_index = --_index <= -1 ? 1 : _index;
         _icon->setPosition(_position[_index]);
     } else if (key == KeyCode::DOWN) {
-        _index = ++_index >= 2 ? 0 : _index;
+        //_index = ++_index >= 2 ? 0 : _index;
         _icon->setPosition(_position[_index]);
     } else if (key == KeyCode::A) {
-        if (_index == 1) {
+        //if (_index == 1) {
             _game.screen().replace<StartView>();
-        }
+        //}
     }
 }
 
