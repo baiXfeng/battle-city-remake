@@ -1,3 +1,6 @@
+# battle-city-remake
+famicom game battle city remake with sdl2.
+
 build for Linux and macOS:
 ```
 mkdir build

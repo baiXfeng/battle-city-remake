@@ -113,8 +113,8 @@ typedef std::vector<AddTank> AddTankList;
 //===================================================================
 // 对象数据
 
-class TileView;
-class TileModel: public obs::observable<TileView>  {
+class Widget;
+class TileModel: public obs::observable<Widget>  {
 public:
     int id;
     int layer;
