@@ -21,6 +21,10 @@ cmake ..
 make
 ```
 
+Psvita install depends:
+```
+goto https://vitasdk.org/ and install vitasdk
+```
 
 build for Psvita:
 ```
