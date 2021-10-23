@@ -373,11 +373,11 @@ Tank::Direction _randomDir(std::vector<Tank::Direction> const& dirs) {
 }
 
 void TankAI_Behavior::onAiMove(float delta) {
-    float const interval = 0.5f;
+    float const interval = 0.33f;
     if ((_moveTicks += delta) < interval) {
         return;
     }
-    _moveTicks -= interval;
+    _moveTicks = 0;
     if (rand() % 100 >= 60) {
         return;
     }

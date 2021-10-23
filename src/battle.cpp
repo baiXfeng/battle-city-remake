@@ -310,6 +310,7 @@ void BattleFieldView::procTankControl() {
 void BattleFieldView::pause(bool v) {
     _pause = v;
     if (_pause) {
+        _keylist.clear();
         _game.event().notify(EasyEvent<Widget*>(EventID::PAUSE_GAME, this));
     } else {
         _game.event().notify(EasyEvent<Widget*>(EventID::RESUME_GAME, this));
