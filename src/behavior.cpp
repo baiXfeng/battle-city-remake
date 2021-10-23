@@ -362,7 +362,7 @@ void TankAI_Behavior::onAiShoot(float delta) {
     if ((_shootTicks += delta) < 0.25f) {
         return;
     }
-    _shootTicks -= 0.25f;
+    _shootTicks = 0;
     if (rand() % 100 < 40) {
         _model->fire = true;
     }
