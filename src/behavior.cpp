@@ -699,6 +699,14 @@ Status BulletTileCollisionBehavior::tick(float delta) {
             }
             if (tile->type == Tile::STEEL) {
                 hit_brick = false;
+
+                if (_model->wall_damage == 1) {
+                    // 无法击穿钢铁
+                    this->bullet_explosion();
+                    this->hit_wall();
+                    this->remove_bullet();
+                    return fail;
+                }
             }
             tiles.remove(tile);
             tile->removeFromScreen();

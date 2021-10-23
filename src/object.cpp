@@ -547,8 +547,10 @@ void TileBuilder::get_block(Array& r, TileType begin, Vector2i const& position) 
 
 BulletView::BulletView(TankModel const* tank, Vector2f const& position, Vector2f const& move):
 ImageWidget(load_texture(get_dir(move))) {
+    auto& attr = Tank::getAttribute(tank->party, tank->tier);
     _model.id = ++_objectCount;
     _model.sender_id = tank->id;
+    _model.wall_damage = attr.bulletWallDamage;
     _model.position = position - size() * 0.5f;
     _model.move = move;
     _model.party = tank->party;

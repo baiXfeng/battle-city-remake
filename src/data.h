@@ -160,6 +160,7 @@ class BulletModel : public obs::observable<BulletView> {
 public:
     int id;
     int sender_id;
+    int wall_damage;
     Tank::Party party;
     Vector2f move;
     Vector2f position;
