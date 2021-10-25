@@ -26,6 +26,7 @@ void RenderCopy::setTexture(SDL_Texture* texture) {
 void RenderCopy::setTexture(SDL_Texture* texture, SDL_Rect const& srcrect) {
     _texture = texture;
     _srcrect = srcrect;
+    _size = {srcrect.w, srcrect.h};
 }
 
 void RenderCopy::setSize(int w, int h) {
@@ -34,8 +35,7 @@ void RenderCopy::setSize(int w, int h) {
 }
 
 void RenderCopy::setOpacity(int opacity) {
-    _opacity = opacity % 256;
-    SDL_SetTextureAlphaMod(_texture, _opacity);
+    SDL_SetTextureAlphaMod(_texture, _opacity = opacity % 256);
 }
 
 int RenderCopy::opacity() const {

@@ -189,6 +189,7 @@ public:
     BulletTileCollisionBehavior(BulletModel* model, WorldModel* world);
 private:
     Status tick(float delta) override;
+    RectI getBulletBounds() const;
 };
 
 class BulletTankCollisionBehavior : public BaseBulletCollisionBehavior {

@@ -46,6 +46,8 @@ private:
     Frames _textures;
 };
 
+//=====================================================================================
+
 TileView::TileView(TYPE t):
 ImageWidget(nullptr),
 _type(TYPE_BEGIN) {
@@ -68,7 +70,7 @@ void TileView::setType(TYPE t) {
     _action->clear();
     switch (t) {
         case BASE:
-            texture = res::load_texture(_game.renderer(), "assets/images/base.png");
+            texture = res::load_texture(_game.renderer(), res::imageName("base"));
             setTexture(texture);
             _model.type = Tile::BASE;
             break;
@@ -77,9 +79,9 @@ void TileView::setType(TYPE t) {
         case BRICK_2:
         case BRICK_3:
         {
-            texture = res::load_texture(_game.renderer(), "assets/images/wall_brick.png");
-            int half_width = Tile::SIZE >> 1;
-            int half_height = Tile::SIZE >> 1;
+            texture = res::load_texture(_game.renderer(), res::imageName("wall_brick"));
+            int half_width = Tile::SIZE >> 2;
+            int half_height = Tile::SIZE >> 2;
             SDL_Rect srcrect[4] = {
                     {0, 0, half_width, half_height},
                     {half_width, 0, half_width, half_height},
@@ -87,10 +89,9 @@ void TileView::setType(TYPE t) {
                     {half_width, half_height, half_width, half_height},
             };
             setTexture(texture, srcrect[t-BRICK_0]);
-            setSize(half_width, half_height);
             _model.type = Tile::BRICK;
-            _model.bounds.w = Tile::SIZE >> 2;
-            _model.bounds.h = Tile::SIZE >> 2;
+            _model.bounds.w = half_width;
+            _model.bounds.h = half_height;
             return;
         }
             break;
@@ -99,9 +100,9 @@ void TileView::setType(TYPE t) {
         case STEEL_2:
         case STEEL_3:
         {
-            texture = res::load_texture(_game.renderer(), "assets/images/wall_steel.png");
-            int half_width = Tile::SIZE >> 1;
-            int half_height = Tile::SIZE >> 1;
+            texture = res::load_texture(_game.renderer(), res::imageName("wall_steel"));
+            int half_width = Tile::SIZE >> 2;
+            int half_height = Tile::SIZE >> 2;
             SDL_Rect srcrect[4] = {
                     {0, 0, half_width, half_height},
                     {half_width, 0, half_width, half_height},
@@ -109,21 +110,20 @@ void TileView::setType(TYPE t) {
                     {half_width, half_height, half_width, half_height},
             };
             setTexture(texture, srcrect[t-STEEL_0]);
-            setSize(half_width, half_height);
             _model.type = Tile::STEEL;
-            _model.bounds.w = Tile::SIZE >> 2;
-            _model.bounds.h = Tile::SIZE >> 2;
+            _model.bounds.w = half_width;
+            _model.bounds.h = half_height;
             return;
         }
             break;
         case TREES:
-            texture = res::load_texture(_game.renderer(), "assets/images/trees.png");
+            texture = res::load_texture(_game.renderer(), res::imageName("trees"));
             setTexture(texture);
             _model.layer = 2;
             _model.type = Tile::TREES;
             break;
         case ICE_FLOOR:
-            texture = res::load_texture(_game.renderer(), "assets/images/ice_floor.png");
+            texture = res::load_texture(_game.renderer(), res::imageName("ice_floor"));
             setTexture(texture);
             _model.layer = 0;
             _model.type = Tile::ICE_FLOOR;
@@ -131,8 +131,8 @@ void TileView::setType(TYPE t) {
         case WATER:
         {
             FrameAnimationAction::Frames frames = {
-                    res::load_texture(_game.renderer(), "assets/images/water_1.png"),
-                    res::load_texture(_game.renderer(), "assets/images/water_2.png"),
+                    res::load_texture(_game.renderer(), res::imageName("water_1")),
+                    res::load_texture(_game.renderer(), res::imageName("water_2")),
             };
             setTexture(frames[0]);
             runAction(Action::Ptr(new FrameAnimationAction(this, frames, 1.0f)));

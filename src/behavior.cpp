@@ -671,6 +671,22 @@ BaseBulletCollisionBehavior(model, world) {
 
 }
 
+RectI BulletTileCollisionBehavior::getBulletBounds() const {
+    auto horizontal = int(abs(_model->move.x)) != 0 ? true : false;
+    auto width = horizontal ? 2 : Tile::SIZE;
+    auto height = horizontal ? Tile::SIZE : 2;
+    Vector2i center{
+        _model->bounds.x + (_model->bounds.w >> 1),
+        _model->bounds.y + (_model->bounds.h >> 1),
+    };
+    return {
+        center.x - (width >> 1),
+        center.y - (height >> 1),
+        width,
+        height,
+    };
+}
+
 Status BulletTileCollisionBehavior::tick(float delta) {
     WorldModel::TileTree::SquareList list;
     auto& tiles = _world->tiles;
@@ -678,51 +694,51 @@ Status BulletTileCollisionBehavior::tick(float delta) {
     tiles.unique(list, [](TileModel* m) {
         return m;
     });
-    auto status = success;
-    bool hit_brick = true;
+
+    auto bullet_bounds = getBulletBounds();
+    std::vector<TileModel*> result;
     for (auto& tile : list) {
         if (tile->type == Tile::ICE_FLOOR or tile->type == Tile::TREES or tile->type == Tile::WATERS) {
             continue;
         }
-        if (isCollision(_model->bounds, tile->bounds)) {
-            if (tile->type == Tile::BASE) {
-                // 基地击破，GameOver
-                _game.event().notify(EasyEvent<Vector2f>(EventID::BASE_FALL, {
-                        float(tile->bounds.x + (tile->bounds.w >> 1)),
-                        float(tile->bounds.y + (tile->bounds.h >> 1)),
-                }));
-                this->hit_base();
-                tiles.remove(tile);
-                tile->removeFromScreen();
-                this->remove_bullet();
-                return fail;
-            }
-            if (tile->type == Tile::STEEL) {
-                hit_brick = false;
+        if (isCollision(bullet_bounds, tile->bounds)) {
+            result.push_back(tile);
+        }
+    }
 
-                if (_model->wall_damage == 1) {
-                    // 无法击穿钢铁
-                    this->bullet_explosion();
-                    this->hit_wall();
-                    this->remove_bullet();
-                    return fail;
-                }
+    bool base_killed = false;
+    bool steel_killed = false;
+    for (auto& tile : result) {
+        if (tile->type == Tile::BASE) {
+            base_killed = true;
+            _game.event().notify(EasyEvent<Vector2f>(EventID::BASE_FALL, {
+                    float(tile->bounds.x + (tile->bounds.w >> 1)),
+                    float(tile->bounds.y + (tile->bounds.h >> 1)),
+            }));
+        } else if (tile->type == Tile::STEEL) {
+            if (_model->wall_damage == 1) {
+                continue;
             }
-            tiles.remove(tile);
-            tile->removeFromScreen();
-            status = fail;
+            steel_killed = true;
         }
+        tiles.remove(tile);
+        tile->removeFromScreen();
     }
-    if (status == fail) {
-        this->bullet_explosion();
-        this->remove_bullet();
-        if (hit_brick) {
-            this->hit_brick();
+
+    if (result.size()) {
+        if (base_killed) {
+            hit_base();
+        } else if (steel_killed) {
+            hit_wall();
         } else {
-            this->hit_wall();
+            hit_brick();
         }
+        bullet_explosion();
+        remove_bullet();
+        return fail;
     }
-    return status;
+
+    return success;
 }
 
 //=====================================================================================

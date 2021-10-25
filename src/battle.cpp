@@ -77,7 +77,6 @@ _world(nullptr) {
     }
 
     onLoadLevel();
-    //sortElements();
 
     auto prop_create = Behavior::Ptr(new PropCreateBehavior(this, _world));
     auto tank_powerup = Behavior::Ptr(new TankPowerUpBehavior);
