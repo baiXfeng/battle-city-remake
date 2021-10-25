@@ -392,7 +392,12 @@ void SelectLevelView::onButtonDown(int key) {
         }, duration);
         sleep_gamepad(duration);
     } else if (key == KeyCode::START) {
-        _game.set<int>("player_score", 0);
+        auto& player = _game.force_get<PlayerModel>("player_model");
+        player.life = Tank::getDefaultLifeMax();
+        player.win = false;
+        memset(player.killCount, 0, sizeof(player.killCount));
+        Tank::resetPlayerScore();
+
         _game.get<int>("level") = _level;
         _game.screen().replace<BattleView>();
     }

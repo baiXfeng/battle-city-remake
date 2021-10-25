@@ -98,8 +98,6 @@ void BattleFieldView::onLoadLevel() {
     state.doFile(file);
 
     _game.set<WorldModel>("world_model");
-    _game.set<PlayerModel>("player_model");
-    Tank::resetPlayerScore();
 
     _world = &_game.get<WorldModel>("world_model");
     _world->base = nullptr;
@@ -127,9 +125,8 @@ void BattleFieldView::onLoadLevel() {
         }
     }
 
-    auto& player = _game.get<PlayerModel>("player_model");
+    auto& player = _game.force_get<PlayerModel>("player_model");
     player.win = false;
-    player.life = Tank::getDefaultLifeMax();
     memset(player.killCount, 0, sizeof(player.killCount));
 }
 
