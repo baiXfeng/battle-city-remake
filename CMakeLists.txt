@@ -17,6 +17,7 @@ else()
 endif()
 
 set(PROJECT_NAME "sdl2-ui")
+set(PROJECT_ELF ${PROJECT_NAME}.elf)
 project(${PROJECT_NAME})
 
 set(BASIC_SOURCE "")
@@ -43,11 +44,10 @@ include_directories(
 		third/obs
 )
 
-add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
-
 if (BUILD_PSV)
+	add_executable(${PROJECT_ELF} ${BASIC_SOURCE})
 	add_definitions(-DLUA_C89_NUMBERS)
-	target_link_libraries(${PROJECT_NAME}
+	target_link_libraries(${PROJECT_ELF}
 			SDL2
 			SDL2_ttf
 			SDL2_image
@@ -94,7 +94,7 @@ if (BUILD_PSV)
 	set(VITA_TITLEID  "SDL2BC001") #目录名必须9个字符
 	set(VITA_VERSION  "01.00")
 
-	vita_create_self(${PROJECT_NAME}.self ${PROJECT_NAME})
+	vita_create_self(${PROJECT_NAME}.self ${PROJECT_ELF})
 	vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
         	VERSION ${VITA_VERSION}
         	NAME ${VITA_APP_NAME}
@@ -105,6 +105,7 @@ if (BUILD_PSV)
         	${VPKFILES}
     	)
 else()
+	add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 	file(COPY assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 	set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 	find_package(SDL2 REQUIRED)

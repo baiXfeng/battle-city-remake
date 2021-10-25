@@ -458,6 +458,12 @@ void TankView::onModifySize(Vector2f const& size) {
     _model.bounds.h = Tile::SIZE;
 }
 
+void TankView::onVisible(bool visible) {
+    if (_model.party == Tank::ENEMY) {
+        _model.shield = !visible;
+    }
+}
+
 void TankView::updateMoveSpeed() {
     if (_model.dir == Tank::Direction::MAX) {
         return;

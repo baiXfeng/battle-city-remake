@@ -42,7 +42,7 @@ _world(nullptr) {
     _game.event().add(EventID::TANK_FIRE, this);
     _game.event().add(EventID::TANK_GEN, this);
     _game.event().add(EventID::GAME_OVER, this);
-    _game.gamepad().sleep(0.0f);
+    _game.gamepad().sleep(10.0f);
 
     auto old_size = this->size();
     this->setSize(Tile::MAP_SIZE, Tile::MAP_SIZE);
@@ -146,7 +146,7 @@ void BattleFieldView::draw(SDL_Renderer* renderer) {
 }
 
 void BattleFieldView::onDraw(SDL_Renderer* renderer) {
-    //_quadtree->draw(renderer, _global_position.to<int>());
+    _world->tiles.draw(renderer, _global_position.to<int>());
 }
 
 void BattleFieldView::onButtonDown(int key) {
@@ -164,18 +164,6 @@ void BattleFieldView::onButtonDown(int key) {
         _game.screen().scene_back()->addChild(widget);
     } else if (key == KeyCode::A or key == KeyCode::B) {
         _player->fire();
-    } else if (key == KeyCode::X) {
-        static Tank::Tier tier = Tank::A;
-        static bool has_drop = false;
-        //_player->setSkin(tier, has_drop);
-        int lv = tier + 1;
-        if (lv > Tank::Tier::D) {
-            lv = tier = Tank::A;
-            has_drop = !has_drop;
-        }
-        tier = Tank::Tier(lv);
-        //_player->setSkin(Tank::P1, tier);
-        _player->setSkin(tier, has_drop);
     } else if (key == KeyCode::Y) {
         _player->setTopEnemySkin();
     }
@@ -222,7 +210,7 @@ void BattleFieldView::onEvent(Event const& e) {
 
         auto base = New<ImageWidget>(res::load_texture(_game.renderer(), res::imageName("base_destroyed")));
         base->setPosition(position - base->size() * 0.5f);
-        addToMiddle(base);
+        addToBottom(base);
 
         auto widget = New<BigExplosionView>();
         auto animate = widget->to<BigExplosionView>();
@@ -275,6 +263,7 @@ void BattleFieldView::onEvent(Event const& e) {
             if (tank->model()->party == Tank::PLAYER) {
                 // 出生自带护罩
                 tank->open_shield(Tank::getGlobalFloat("PLAYER_SPAWN_SHIELD_DURATION"));
+                _game.gamepad().sleep(0.0f);
             }
         }, duration);
         view->pauseAllActionWhenHidden(false);

@@ -226,6 +226,10 @@ tiles(0, {0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE}, [](TileModel* tile) {
     return tile->bounds;
 }) {}
 
+PlayerModel::PlayerModel():life(Tank::getDefaultLifeMax()), win(false) {
+    memset(killCount, 0, sizeof(killCount));
+}
+
 namespace res {
     std::string soundName(std::string const& key) {
         return std::string("assets/sounds/") + key + ".ogg";

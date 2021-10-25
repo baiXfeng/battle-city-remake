@@ -70,6 +70,7 @@ protected:
     virtual void onUpdate(float delta) {}
     virtual void onDraw(SDL_Renderer* renderer) {}
     virtual void onDirty() {}
+    virtual void onVisible(bool visible) {}
 protected:
     virtual void enter();
     virtual void exit();

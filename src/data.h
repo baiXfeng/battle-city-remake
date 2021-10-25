@@ -207,6 +207,7 @@ public:
     bool win;
     int life;
     int killCount[Tank::TIER_MAX];   // 击落数
+    PlayerModel();
 };
 
 typedef Tank::Spawns PlayerSpawns;

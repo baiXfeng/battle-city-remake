@@ -219,14 +219,13 @@ void PropCreateBehavior::onEvent(Event const& e) {
 
         // 保证同屏最多只有一个奖励
         while (_world->props.size()) {
-            auto& prop = _world->props.front();
-            _world->props.pop_front();
-            prop->removeFromScreen();
+            auto iter = _world->props.begin();
+            (*iter)->removeFromScreen();
+            _world->props.erase(iter);
         }
 
         // 创建奖励
         auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
-        //auto type = Tank::HELMET;
         auto view = Widget::New<PropView>(type);
         auto prop = view->to<PropView>();
         prop->setBattleField(_battlefield);
@@ -690,12 +689,11 @@ RectI BulletTileCollisionBehavior::getBulletBounds() const {
 Status BulletTileCollisionBehavior::tick(float delta) {
     WorldModel::TileTree::SquareList list;
     auto& tiles = _world->tiles;
-    tiles.retrieve(list, _model->bounds);
+    auto bullet_bounds = getBulletBounds();
+    tiles.retrieve(list, bullet_bounds);
     tiles.unique(list, [](TileModel* m) {
         return m;
     });
-
-    auto bullet_bounds = getBulletBounds();
     std::vector<TileModel*> result;
     for (auto& tile : list) {
         if (tile->type == Tile::ICE_FLOOR or tile->type == Tile::TREES or tile->type == Tile::WATERS) {
@@ -760,15 +758,6 @@ Status BulletTankCollisionBehavior::tick(float delta) {
         }
         if (isCollision(_model->bounds, tank->bounds)) {
 
-            if (_model->party == Tank::PLAYER and tank->party == Tank::ENEMY) {
-                // 记录击败的敌人
-                auto& model = _game.get<PlayerModel>("player_model");
-                model.killCount[tank->tier] += 1;
-
-                // 记录得分
-                Tank::playerScoreAdd( (tank->tier+1) * 100 );
-            }
-
             if (tank->party == Tank::ENEMY) {
                 bullet_explosion();
             } else {
@@ -790,16 +779,24 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
     auto bullet = _model;
     auto world = _world;
 
-    if (tank->party == Tank::ENEMY and tank->has_drop) {
-        // 生成奖励
-        _game.event().notify(Event(EventID::PROP_GEN));
-    }
-
     if (not tank->shield) {
         --tank->hp;
+        if (tank->party == Tank::ENEMY and tank->has_drop) {
+            // 生成奖励
+            _game.event().notify(Event(EventID::PROP_GEN));
+        }
     }
 
     if (tank->hp <= 0) {
+
+        if (_model->party == Tank::PLAYER and tank->party == Tank::ENEMY) {
+            // 记录击败的敌人
+            auto& model = _game.get<PlayerModel>("player_model");
+            model.killCount[tank->tier] += 1;
+            // 记录得分
+            Tank::playerScoreAdd( (tank->tier+1) * 100 );
+        }
+
         auto& tanks = world->tanks;
         auto iter = std::find(tanks.begin(), tanks.end(), tank);
         if (iter != tanks.end()) {

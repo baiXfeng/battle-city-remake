@@ -513,10 +513,6 @@ BattleView::BattleView() {
     auto sound = res::soundName("stage_start");
     _game.audio().loadEffect(sound);
     _game.audio().playEffect(sound);
-    _game.gamepad().sleep(10.0f);
-    defer([&]{
-        _game.gamepad().sleep(0.0f);
-    }, 1.8f);
 }
 
 //=====================================================================================

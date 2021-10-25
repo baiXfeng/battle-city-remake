@@ -68,7 +68,6 @@ private:
 private:
     bool _sleep;
     bool _keyboard_event;
-    WidgetPtr _widget;
     KeyMap _keyValue;
     KeyState _keyState;
     Vector2i _joyValue[2];

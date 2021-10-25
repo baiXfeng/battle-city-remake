@@ -119,6 +119,7 @@ void Widget::enableUpdate(bool update) {
 
 void Widget::setVisible(bool visible) {
     _visible = visible;
+    this->onVisible(_visible);
 }
 
 void Widget::performLayout() {

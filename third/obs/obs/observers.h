@@ -15,31 +15,33 @@ namespace obs {
 template<typename T>
 class observers {
 public:
-  typedef T observer_type;
-  typedef safe_list<observer_type> list_type;
-  typedef typename list_type::iterator iterator;
+    typedef T observer_type;
+    typedef safe_list<observer_type> list_type;
+    typedef typename list_type::iterator iterator;
 
-  bool empty() const { return m_observers.empty(); }
-  std::size_t size() const { return m_observers.size(); }
+    virtual ~observers() {}
 
-  void add_observer(observer_type* observer) {
-    m_observers.push_back(observer);
-  }
+    bool empty() const { return m_observers.empty(); }
+    std::size_t size() const { return m_observers.size(); }
 
-  void remove_observer(observer_type* observer) {
-    m_observers.erase(observer);
-  }
-
-  template<typename ...Args>
-  void notify_observers(void (observer_type::*method)(Args...), Args ...args) {
-    for (auto observer : m_observers) {
-      if (observer)
-        (observer->*method)(std::forward<Args>(args)...);
+    void add_observer(observer_type* observer) {
+        m_observers.push_back(observer);
     }
-  }
+
+    void remove_observer(observer_type* observer) {
+        m_observers.erase(observer);
+    }
+
+    template<typename ...Args>
+    void notify_observers(void (observer_type::*method)(Args...), Args ...args) {
+        for (auto observer : m_observers) {
+            if (observer)
+                (observer->*method)(std::forward<Args>(args)...);
+        }
+    }
 
 private:
-  list_type m_observers;
+    list_type m_observers;
 };
 
 } // namespace obs
