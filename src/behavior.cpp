@@ -284,6 +284,10 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
                 tank->tier = tier;
                 tank->modifyTier();
             }
+            if (tank->party == Tank::PLAYER) {
+                // 保留玩家坦克等级，进入下一关时还原
+                _game.get<PlayerModel>("player_model").tier = tank->tier;
+            }
 
         } else if (type == Tank::TANK) {
 
@@ -789,12 +793,18 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
 
     if (tank->hp <= 0) {
 
+        auto& player = _game.get<PlayerModel>("player_model");
+
         if (_model->party == Tank::PLAYER and tank->party == Tank::ENEMY) {
             // 记录击败的敌人
-            auto& model = _game.get<PlayerModel>("player_model");
-            model.killCount[tank->tier] += 1;
+            player.killCount[tank->tier] += 1;
             // 记录得分
             Tank::playerScoreAdd( (tank->tier+1) * 100 );
+        }
+
+        if (tank->party == Tank::PLAYER) {
+            // 玩家被击毁，等级归零
+            player.tier = Tank::A;
         }
 
         auto& tanks = world->tanks;

@@ -93,7 +93,7 @@ namespace Tank {
             ret = state.get();
         }
         state.pop();
-        return ret;
+        return --ret <= 0 ? 1 : ret;
     }
     float getPowerUpDuration(std::string const& name) {
         auto& state = _game.force_get<lutok3::State>("lua");
@@ -110,6 +110,15 @@ namespace Tank {
     float getGlobalFloat(std::string const& name) {
         auto& state = _game.force_get<lutok3::State>("lua");
         float ret = 0.0f;
+        if (state.getGlobal(name) == lutok3::Type::Number) {
+            ret = state.get();
+        }
+        state.pop();
+        return ret;
+    }
+    int getGlobalInt(std::string const& name) {
+        auto& state = _game.force_get<lutok3::State>("lua");
+        int ret = 0;
         if (state.getGlobal(name) == lutok3::Type::Number) {
             ret = state.get();
         }
@@ -226,7 +235,7 @@ tiles(0, {0, 0, Tile::MAP_SIZE, Tile::MAP_SIZE}, [](TileModel* tile) {
     return tile->bounds;
 }) {}
 
-PlayerModel::PlayerModel():life(Tank::getDefaultLifeMax()), win(false) {
+PlayerModel::PlayerModel():life(Tank::getDefaultLifeMax()), win(false), tier(Tank::A) {
     memset(killCount, 0, sizeof(killCount));
 }
 

@@ -127,6 +127,7 @@ void BattleFieldView::onLoadLevel() {
 
     auto& player = _game.force_get<PlayerModel>("player_model");
     player.win = false;
+    player.life += 1;
     memset(player.killCount, 0, sizeof(player.killCount));
 }
 
@@ -230,7 +231,11 @@ void BattleFieldView::onEvent(Event const& e) {
     } else if (e.Id() == EventID::TANK_GEN) {
         // 添加坦克
         auto& info = e.data<TankBuildInfo>();
-        auto tank = Widget::Ptr(new TankView(info.party, info.tier, info.direction, info.has_drop, info.controller));
+        auto tier = info.tier;
+        if (info.controller == Tank::P1) {
+            tier = _game.get<PlayerModel>("player_model").tier;
+        }
+        auto tank = Widget::Ptr(new TankView(info.party, tier, info.direction, info.has_drop, info.controller));
         auto view = tank->to<TankView>();
         view->setBattleField(this);
         view->setPosition(info.position);

@@ -91,6 +91,7 @@ namespace Tank {
     int getDefaultLifeMax();
     float getPowerUpDuration(std::string const& name);
     float getGlobalFloat(std::string const& name);
+    int getGlobalInt(std::string const& name);
 
     void resetPlayerScore();
     void playerScoreAdd(int score);
@@ -207,6 +208,7 @@ public:
     bool win;
     int life;
     int killCount[Tank::TIER_MAX];   // 击落数
+    Tank::Tier tier;
     PlayerModel();
 };
 

@@ -37,11 +37,8 @@ public:
     }
     void initLevelMax() {
         // 记录最大关卡数
-        auto& state = *_state;
-        state.getGlobal("LEVEL_MAX");
-        int value = state.get();
-        state.pop();
-        _game.force_get<int>("level_max") = value == 0 ? 1 : value;
+        int level_max = Tank::getGlobalInt("LEVEL_MAX");
+        _game.force_get<int>("level_max") = level_max == 0 ? 1 : level_max;
         _game.force_get<int>("level") = 1;
     }
     void initData() {
@@ -61,7 +58,7 @@ public:
         srand(time(nullptr));
         this->initData();
         this->initCommand();
-        _game.screen().push<BattleView>();
+        _game.screen().push<LogoView>();
     }
     void update(float delta) override {
         _game.screen().update(delta);
