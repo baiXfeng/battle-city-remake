@@ -13,6 +13,12 @@
 #define GAME_SCREEN_WIDTH 960
 #define GAME_SCREEN_HEIGHT 544
 
+#ifdef WIN32
+#define GameApp WinMain
+#else
+#define GameApp main
+#endif
+
 class Game : public GameVariable {
 public:
     class Delegate {
