@@ -65,11 +65,9 @@ EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _
     _addtanks = &_game.force_get<AddTankList>("add_tank_list");
     _player = &_game.force_get<PlayerModel>("player_model");
     _game.event().notify(EasyEvent<int>(EventID::ENEMY_NUMBER_CHANGED, enemyRemainCount()));
-    _game.event().add(EventID::ENEMY_KILLED, this);
 }
 
 EnemySpawnBehavior::~EnemySpawnBehavior() {
-    _game.event().remove(EventID::ENEMY_KILLED, this);
 }
 
 int EnemySpawnBehavior::enemyCount() const {
@@ -111,23 +109,10 @@ void EnemySpawnBehavior::checkOverlap(int& index, int& overlapCount) const {
     }
 }
 
-void EnemySpawnBehavior::onEvent(Event const& e) {
-
-    if (e.Id() == EventID::ENEMY_KILLED) {
-
-        _delay_tick = 0.0f;
-    }
-}
-
 Status EnemySpawnBehavior::tick(float delta) {
     if ((_delay_tick += delta) < _delay) {
         return running;
     }
-    _delay_tick = 0.0f;
-    return onSpawn(delta);
-}
-
-Status EnemySpawnBehavior::onSpawn(float delta) {
     if (_player->win) {
         return success;
     }
@@ -173,6 +158,10 @@ Status EnemySpawnBehavior::onSpawn(float delta) {
     info.controller = Tank::AI;
     info.has_drop = addtank.has_drop;
     _game.event().notify(EasyEvent<TankBuildInfo>(EventID::TANK_GEN, info));
+
+    // 重新计时
+    _delay_tick = 0.0f;
+
     return success;
 }
 
@@ -779,8 +768,6 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
             // 记录得分
             Tank::playerScoreAdd( (tank->tier+1) * 100 );
             tank->createScore();
-
-            _game.event().notify(Event(EventID::ENEMY_KILLED));
         }
 
         if (tank->party == Tank::PLAYER) {

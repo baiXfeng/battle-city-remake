@@ -25,14 +25,12 @@ private:
     WorldModel::TankList* _tanks;
 };
 
-class EnemySpawnBehavior : public Behavior , public Event::Listener {
+class EnemySpawnBehavior : public Behavior {
 public:
     EnemySpawnBehavior(WorldModel::TankList* tanks);
     ~EnemySpawnBehavior();
 private:
-    void onEvent(Event const& e) override;
     Status tick(float delta) override;
-    Status onSpawn(float delta);
     int enemyCount() const;
     int enemyRemainCount() const;
     bool is_overlap(RectI const& r) const;
