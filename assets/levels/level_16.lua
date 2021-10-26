@@ -58,8 +58,8 @@ auto_enemy({
     {a},
     {a},
     {a},
-    {a},
-    {a, drop},
     {b},
-    {b},
+    {b, drop},
+    {d},
+    {d},
 })

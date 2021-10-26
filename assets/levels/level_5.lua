@@ -44,8 +44,8 @@ local drop = true
 auto_enemy({
     {c},
     {c},
-    {c, drop},
     {c},
+    {c, drop},
     {c},
     {d},
     {d},
