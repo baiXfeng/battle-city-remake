@@ -236,8 +236,8 @@ void PropCreateBehavior::onEvent(Event const& e) {
         int x = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
         int y = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
         Vector2f position = {
-                x - (x % (Tile::SIZE >> 1)),
-                y - (y % (Tile::SIZE >> 1)),
+                float(x - (x % (Tile::SIZE >> 1))),
+                float(y - (y % (Tile::SIZE >> 1))),
         };
         view->setPosition(position);
         view->performLayout();
