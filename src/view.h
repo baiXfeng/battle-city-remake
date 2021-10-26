@@ -2,8 +2,8 @@
 // Created by baifeng on 2021/9/29.
 //
 
-#ifndef SDL2_UI_VIEW_H
-#define SDL2_UI_VIEW_H
+#ifndef BATTLE_CITY_VIEW_H
+#define BATTLE_CITY_VIEW_H
 
 #include "common/widget.h"
 #include "common/quadtree.h"
@@ -116,7 +116,7 @@ public:
     typedef std::function<void()> FinishCall;
 public:
     BigExplosionView();
-    void play(FinishCall const& fc);
+    void play(FinishCall const& fc = nullptr);
 };
 
 class BulletExplosionView : public FrameAnimationWidget {
@@ -134,4 +134,4 @@ public:
     virtual void addToTop(Widget::Ptr& widget) {}
 };
 
-#endif //SDL2_UI_VIEW_H
+#endif //BATTLE_CITY_VIEW_H

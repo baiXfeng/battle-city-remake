@@ -2,7 +2,7 @@
 // Created by baifeng on 2021/10/9.
 //
 
-#include "behavior.h"
+#include "behaviors.h"
 #include "common/collision.h"
 #include "common/game.h"
 #include "common/event.h"
@@ -13,28 +13,6 @@
 #include "object.h"
 
 typedef Behavior::Status Status;
-
-//=====================================================================================
-
-SequenceBehavior::SequenceBehavior() {}
-
-SequenceBehavior::SequenceBehavior(Behaviors const& sequence):_sequence(sequence) {
-
-}
-
-Status SequenceBehavior::tick(float delta) {
-    auto status = success;
-    for (auto& c : _sequence) {
-        if ((status = c->tick(delta)) == fail) {
-            break;
-        }
-    }
-    return status;
-}
-
-void SequenceBehavior::add(Behavior::Ptr const& behavior) {
-    _sequence.push_back(behavior);
-}
 
 //=====================================================================================
 
@@ -800,11 +778,15 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
             player.killCount[tank->tier] += 1;
             // 记录得分
             Tank::playerScoreAdd( (tank->tier+1) * 100 );
+            tank->createScore();
+
+            _game.event().notify(Event(EventID::ENEMY_KILLED));
         }
 
         if (tank->party == Tank::PLAYER) {
             // 玩家被击毁，等级归零
             player.tier = Tank::A;
+            _game.event().notify(EasyEvent<TankModel*>(EventID::PLAYER_DEAD, tank));
         }
 
         auto& tanks = world->tanks;
@@ -812,15 +794,12 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
         if (iter != tanks.end()) {
             tanks.erase(iter);
         }
-        tank->createScore();
         tank->createExplosion();
         tank->removeFromScreen();
 
         auto sound = res::soundName("explosion_1");
         _game.audio().loadEffect(sound);
         _game.audio().playEffect(sound);
-
-        _game.event().notify(Event(EventID::ENEMY_KILLED));
     }
 }
 

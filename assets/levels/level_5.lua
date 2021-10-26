@@ -42,6 +42,13 @@ local d = tank.d
 local drop = true
 
 auto_enemy({
+    {c},
+    {c},
+    {c, drop},
+    {c},
+    {c},
+    {d},
+    {d},
     {a},
     {a},
     {a},
@@ -50,16 +57,9 @@ auto_enemy({
     {a},
     {a},
     {a},
-    {a},
-    {a},
-    {a, drop},
-    {a},
-    {a},
-    {a},
-    {a},
-    {a},
-    {a},
-    {a, drop},
+    {b},
+    {b},
+    {b, drop},
     {b},
     {b},
 })

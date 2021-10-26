@@ -2,12 +2,12 @@
 // Created by baifeng on 2021/10/7.
 //
 
-#ifndef SDL2_UI_BATTLE_H
-#define SDL2_UI_BATTLE_H
+#ifndef BATTLE_CITY_BATTLE_H
+#define BATTLE_CITY_BATTLE_H
 
 #include "common/widget.h"
 #include "common/quadtree.h"
-#include "behavior.h"
+#include "behaviors.h"
 #include "view.h"
 #include <list>
 
@@ -51,4 +51,4 @@ private:
 };
 
 
-#endif //SDL2_UI_BATTLE_H
+#endif //BATTLE_CITY_BATTLE_H

@@ -2,8 +2,8 @@
 // Created by baifeng on 2021/10/2.
 //
 
-#ifndef SDL2_UI_DATA_H
-#define SDL2_UI_DATA_H
+#ifndef BATTLE_CITY_DATA_H
+#define BATTLE_CITY_DATA_H
 
 #include "common/types.h"
 #include "common/quadtree.h"
@@ -258,4 +258,4 @@ public:
     TankPowerUpInfo(TankModel* tank, PropModel* prop):tank(tank), prop(prop) {}
 };
 
-#endif //SDL2_UI_DATA_H
+#endif //BATTLE_CITY_DATA_H

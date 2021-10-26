@@ -2,8 +2,8 @@
 // Created by baifeng on 2021/10/9.
 //
 
-#ifndef SDL2_UI_OBJECT_H
-#define SDL2_UI_OBJECT_H
+#ifndef BATTLE_CITY_OBJECT_H
+#define BATTLE_CITY_OBJECT_H
 
 #include "common/widget.h"
 #include "data.h"
@@ -152,4 +152,4 @@ private:
     BehaviorPtr _behavior;
 };
 
-#endif //SDL2_UI_OBJECT_H
+#endif //BATTLE_CITY_OBJECT_H

@@ -7,7 +7,7 @@
 #include "common/loadres.h"
 #include "common/game.h"
 #include "common/audio.h"
-#include "behavior.h"
+#include "behaviors.h"
 #include "view.h"
 #include "skin.h"
 #include "const.h"
@@ -357,7 +357,7 @@ void TankView::explosion() {
     auto animate = widget->to<BigExplosionView>();
     animate->setAnchor(0.5f, 0.5f);
     animate->setPosition(position() + size() * 0.5f);
-    animate->play(std::bind(&Widget::removeFromParent, animate));
+    animate->play();
     _battlefield->addToMiddle(widget);
     widget->performLayout();
 }

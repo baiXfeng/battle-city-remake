@@ -2,8 +2,8 @@
 // Created by baifeng on 2021/10/3.
 //
 
-#ifndef SDL2_UI_TEST_QUADTREE_H
-#define SDL2_UI_TEST_QUADTREE_H
+#ifndef BATTLE_CITY_TEST_QUADTREE_H
+#define BATTLE_CITY_TEST_QUADTREE_H
 
 class Object : public RenderFillRect {
 public:
@@ -181,4 +181,4 @@ public:
     }
 };
 
-#endif //SDL2_UI_TEST_QUADTREE_H
+#endif //BATTLE_CITY_TEST_QUADTREE_H

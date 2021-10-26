@@ -2,43 +2,12 @@
 // Created by baifeng on 2021/10/9.
 //
 
-#ifndef SDL2_UI_BEHAVIOR_H
-#define SDL2_UI_BEHAVIOR_H
+#ifndef BATTLE_CITY_BEHAVIORS_H
+#define BATTLE_CITY_BEHAVIORS_H
 
-#include <memory>
-#include <vector>
-#include "data.h"
 #include "common/event.h"
-
-class Behavior {
-public:
-    enum Status {
-        fail,
-        success,
-        running
-    };
-    typedef std::shared_ptr<Behavior> Ptr;
-    template<typename T, typename... Args>
-    static Ptr New(Args const&... args) {
-        return Ptr(new T(args...));
-    }
-public:
-    virtual ~Behavior() {}
-    virtual Status tick(float delta) = 0;
-};
-
-class SequenceBehavior : public Behavior {
-public:
-    typedef std::vector<Ptr> Behaviors;
-public:
-    SequenceBehavior();
-    SequenceBehavior(Behaviors const& sequence);
-protected:
-    Status tick(float delta) override;
-    void add(Behavior::Ptr const& behavior);
-protected:
-    Behaviors _sequence;
-};
+#include "common/behavior.h"
+#include "data.h"
 
 class TankSpawnBehavior : public SequenceBehavior {
 public:
@@ -219,4 +188,4 @@ private:
     WorldModel::PropList* _props;
 };
 
-#endif //SDL2_UI_BEHAVIOR_H
+#endif //BATTLE_CITY_BEHAVIORS_H

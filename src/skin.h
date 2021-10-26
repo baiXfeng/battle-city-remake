@@ -2,8 +2,8 @@
 // Created by baifeng on 2021/10/13.
 //
 
-#ifndef SDL2_UI_SKIN_H
-#define SDL2_UI_SKIN_H
+#ifndef BATTLE_CITY_SKIN_H
+#define BATTLE_CITY_SKIN_H
 
 #include <vector>
 #include <memory>
@@ -22,4 +22,4 @@ namespace skin {
     TexturesArray getPlayerSkin(Tank::Tier tier, Tank::Controller player);
 }
 
-#endif //SDL2_UI_SKIN_H
+#endif //BATTLE_CITY_SKIN_H

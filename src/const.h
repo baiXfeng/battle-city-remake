@@ -2,8 +2,8 @@
 // Created by baifeng on 2021/10/2.
 //
 
-#ifndef SDL2_UI_CONST_H
-#define SDL2_UI_CONST_H
+#ifndef BATTLE_CITY_CONST_H
+#define BATTLE_CITY_CONST_H
 
 namespace EventID {
     enum {
@@ -12,6 +12,7 @@ namespace EventID {
         GAME_OVER,
         GAME_OVER_ANIMATION,
         PLAYER_WIN,
+        PLAYER_DEAD,
         PAUSE_GAME,
         RESUME_GAME,
         BASE_FALL,      // 基地击破
@@ -23,4 +24,4 @@ namespace EventID {
     };
 }
 
-#endif //SDL2_UI_CONST_H
+#endif //BATTLE_CITY_CONST_H

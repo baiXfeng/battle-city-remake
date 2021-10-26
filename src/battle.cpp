@@ -27,6 +27,7 @@ BattleFieldView::~BattleFieldView() {
     _game.event().remove(EventID::TANK_FIRE, this);
     _game.event().remove(EventID::TANK_GEN, this);
     _game.event().remove(EventID::GAME_OVER, this);
+    _game.event().remove(EventID::PLAYER_DEAD, this);
 }
 
 BattleFieldView::BattleFieldView():
@@ -42,6 +43,7 @@ _world(nullptr) {
     _game.event().add(EventID::TANK_FIRE, this);
     _game.event().add(EventID::TANK_GEN, this);
     _game.event().add(EventID::GAME_OVER, this);
+    _game.event().add(EventID::PLAYER_DEAD, this);
     _game.gamepad().sleep(10.0f);
 
     auto old_size = this->size();
@@ -164,9 +166,9 @@ void BattleFieldView::onButtonDown(int key) {
         });
         _game.screen().scene_back()->addChild(widget);
     } else if (key == KeyCode::A or key == KeyCode::B) {
-        _player->fire();
-    } else if (key == KeyCode::Y) {
-        _player->setTopEnemySkin();
+        if (_player) {
+            _player->fire();
+        }
     }
 }
 
@@ -276,6 +278,15 @@ void BattleFieldView::onEvent(Event const& e) {
     } else if (e.Id() == EventID::GAME_OVER) {
 
         this->gameOver();
+
+    } else if (e.Id() == EventID::PLAYER_DEAD) {
+
+        _player = nullptr;
+
+        auto& player = _game.get<PlayerModel>("player_model");
+        if (player.life == 0) {
+            gameOver();
+        }
     }
 }
 
