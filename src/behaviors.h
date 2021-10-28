@@ -51,6 +51,7 @@ public:
 private:
     Status tick(float delta) override;
     void onEvent(Event const& e) override;
+    void randomPosition(Vector2i& position, int retryCount);
 private:
     BattleFieldInterface* _battlefield;
     WorldModel* _world;

@@ -199,13 +199,9 @@ void PropCreateBehavior::onEvent(Event const& e) {
         _battlefield->addToTop(view);
 
         // 设置坐标
-        int x = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
-        int y = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
-        Vector2f position = {
-                float(x - (x % (Tile::SIZE >> 1))),
-                float(y - (y % (Tile::SIZE >> 1))),
-        };
-        view->setPosition(position);
+        Vector2i position;
+        this->randomPosition(position, 5);
+        view->setPosition(position.to<float>());
         view->performLayout();
 
         // 闪烁动画
@@ -217,6 +213,58 @@ void PropCreateBehavior::onEvent(Event const& e) {
         auto sound = res::soundName("powerup_appear");
         _game.audio().loadEffect(sound);
         _game.audio().playEffect(sound);
+    }
+}
+
+void PropCreateBehavior::randomPosition(Vector2i& position, int retryCount) {
+    int x = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
+    int y = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
+    int const size = Tile::SIZE >> 1;
+    position = {
+            float(x - (x % size)),
+            float(y - (y % size)),
+    };
+    if (retryCount <= 0) {
+        //printf("奖励坐标重设超过最大重试次数.\n");
+        return;
+    }
+    auto& tiles = _world->tiles;
+    WorldModel::TileTree::SquareList result;
+    tiles.retrieve(result, {
+        position.x,
+        position.y,
+        Tile::SIZE,
+        Tile::SIZE,
+    });
+    tiles.unique(result, [](TileModel* m){
+        return m;
+    });
+    Vector2i offset[4] = {
+            {0, 0},
+            {size, 0},
+            {0, size},
+            {size, size},
+    };
+    int overlapCount = 0;
+    for (int i = 0; i < 4; ++i) {
+        Rect bounds{
+            position.x + offset[i].x,
+            position.y + offset[i].y,
+            size, size,
+        };
+        for (auto& tile : result) {
+            if (tile->type == Tile::WATERS or tile->type == Tile::STEEL) {
+                if (isCollision(tile->bounds, bounds)) {
+                    overlapCount++;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (overlapCount >= 4) {
+        //printf("奖励坐标重设[%d, %d].\n", position.x, position.y);
+        randomPosition(position, --retryCount);
     }
 }
 
