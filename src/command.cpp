@@ -53,10 +53,11 @@ void PlayerWinCommand::onEvent(Event const& e) {
     auto scene = _game.screen().scene_back();
     scene->defer([](){
         _game.gamepad().sleep(60.0f);
-    }, 1.5f);
+        _game.event().notify(Event(EventID::PLAYER_STOP_CONTROL));
+    }, 3.0f);
     scene->defer([]{
         _game.screen().replace<ScoreView>();
-    }, 3.0f);
+    }, 4.0f);
 }
 
 void PauseGameCommand::onEvent(Event const& e) {

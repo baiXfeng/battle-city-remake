@@ -80,7 +80,7 @@ public:
     void stop(Direction dir = Direction::MAX);
     void insert_to(WorldModel* world);
     void fire();
-    void onFire();
+    void createBullet();
     bool moving() const;
     void explosion();
     void show_score();
@@ -94,7 +94,6 @@ private:
     void onModifySize(Vector2f const& size) override;
     void onVisible(bool visible) override;
     void updateMoveSpeed();
-    BulletView* createBullet() const;
 private:
     bool _force_move;
     TexturesArray _texArr;

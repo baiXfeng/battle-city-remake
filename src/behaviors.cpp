@@ -110,9 +110,6 @@ void EnemySpawnBehavior::checkOverlap(int& index, int& overlapCount) const {
 }
 
 Status EnemySpawnBehavior::tick(float delta) {
-    if ((_delay_tick += delta) < _delay) {
-        return running;
-    }
     if (_player->win) {
         return success;
     }
@@ -133,7 +130,9 @@ Status EnemySpawnBehavior::tick(float delta) {
         // 所有坦克生产完毕，不再生产
         return running;
     }
-
+    if ((_delay_tick += delta) < _delay) {
+        return running;
+    }
     // 检查出生点是否有坦克占据
     auto& spawns = Tank::getSpawns(Tank::ENEMY);
     int index = rand() % spawns.size();
@@ -844,7 +843,7 @@ BaseBulletCollisionBehavior(model, world) {
 Status BulletTankCollisionBehavior::tick(float delta) {
     auto& tanks = _world->tanks;
     for (auto& tank : tanks) {
-        if (_model->sender_id == tank->id) {
+        if (_model->sender_id == tank->id or !tank->visible) {
             continue;
         }
         if (_model->party == tank->party and _model->party == Tank::ENEMY) {
@@ -931,8 +930,9 @@ Status BulletBulletCollisionBehavior::tick(float delta) {
             continue;
         }
         if (isCollision(bullet->bounds, (*iter)->bounds)) {
-            (*iter)->removeFromScreen();
+            auto p = *iter;
             bullets.erase(iter);
+            p->removeFromScreen();
             remove_self = true;
             break;
         }
@@ -940,8 +940,11 @@ Status BulletBulletCollisionBehavior::tick(float delta) {
     }
     if (remove_self) {
         auto iter = std::find(bullets.begin(), bullets.end(), bullet);
-        (*iter)->removeFromScreen();
-        bullets.erase(iter);
+        if (iter != bullets.end()) {
+            bullets.erase(iter);
+        }
+        bullet->removeFromScreen();
+        return fail;
     }
     return success;
 }

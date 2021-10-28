@@ -213,6 +213,7 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool
     _model.id = ++_objectCount;
     _model.fire = false;
     _model.shield = false;
+    _model.visible = true;
     _model.party = party;
     _model.controller = c;
     _model.size = {Tile::SIZE, Tile::SIZE};
@@ -322,18 +323,12 @@ void TankView::fire() {
     _model.fire = true;
 }
 
-void TankView::onFire() {
-    Widget::Ptr bullet(createBullet());
-    _game.event().notify(EasyEvent<Widget::Ptr>(EventID::TANK_FIRE, bullet));
-}
-
-BulletView* TankView::createBullet() const {
+void TankView::createBullet() {
 
     if (_model.party == Tank::PLAYER) {
         // 只有玩家的坦克才会播放子弹音效
         _game.audio().playEffect(shot_sound);
     }
-
     Vector2f offset[4] = {
             {size().x * 0.5f, 0.0f},
             {size().x * 1.0f, size().y * 0.5f},
@@ -348,9 +343,14 @@ BulletView* TankView::createBullet() const {
             {0.0f, bulletSpeed},
             {-bulletSpeed, 0.0f},
     };
+    auto world = &_game.get<WorldModel>("world_model");
     auto bullet = new BulletView(&_model, position() + offset[_model.dir], speed[_model.dir]);
     bullet->setBattleField(battleField());
-    return bullet;
+    bullet->insert_to(world);
+
+    Widget::Ptr widget(bullet);
+    battleField()->addToMiddle(widget);
+    widget->performLayout();
 }
 
 bool TankView::moving() const {
@@ -464,9 +464,7 @@ void TankView::onModifySize(Vector2f const& size) {
 }
 
 void TankView::onVisible(bool visible) {
-    if (_model.party == Tank::ENEMY) {
-        _model.shield = !visible;
-    }
+    _model.visible = visible;
 }
 
 void TankView::updateMoveSpeed() {

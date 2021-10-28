@@ -24,10 +24,10 @@ static RectI tileRectCatcher(QuadTree<TileModel*>::Square const& square) {
 
 BattleFieldView::~BattleFieldView() {
     _game.event().remove(EventID::BASE_FALL, this);
-    _game.event().remove(EventID::TANK_FIRE, this);
     _game.event().remove(EventID::TANK_GEN, this);
     _game.event().remove(EventID::GAME_OVER, this);
     _game.event().remove(EventID::PLAYER_DEAD, this);
+    _game.event().remove(EventID::PLAYER_STOP_CONTROL, this);
 }
 
 BattleFieldView::BattleFieldView():
@@ -40,10 +40,10 @@ _joyUsed(false),
 _world(nullptr) {
 
     _game.event().add(EventID::BASE_FALL, this);
-    _game.event().add(EventID::TANK_FIRE, this);
     _game.event().add(EventID::TANK_GEN, this);
     _game.event().add(EventID::GAME_OVER, this);
     _game.event().add(EventID::PLAYER_DEAD, this);
+    _game.event().add(EventID::PLAYER_STOP_CONTROL, this);
     _game.gamepad().sleep(10.0f);
 
     auto old_size = this->size();
@@ -227,13 +227,6 @@ void BattleFieldView::onEvent(Event const& e) {
         this->addChild(widget);
         widget->performLayout();
 
-    } else if (e.Id() == EventID::TANK_FIRE) {
-        // 添加子弹
-        auto bullet = e.data<Widget::Ptr>();
-        bullet->to<BulletView>()->insert_to(_world);
-        addToMiddle(bullet);
-        bullet->performLayout();
-
     } else if (e.Id() == EventID::TANK_GEN) {
         // 添加坦克
         auto& info = e.data<TankBuildInfo>();
@@ -281,6 +274,7 @@ void BattleFieldView::onEvent(Event const& e) {
 
     } else if (e.Id() == EventID::GAME_OVER) {
 
+        _keylist.clear();
         this->gameOver();
 
     } else if (e.Id() == EventID::PLAYER_DEAD) {
@@ -291,6 +285,10 @@ void BattleFieldView::onEvent(Event const& e) {
         if (player.life == 0) {
             gameOver();
         }
+
+    } else if (e.Id() == EventID::PLAYER_STOP_CONTROL) {
+
+        _keylist.clear();
     }
 }
 

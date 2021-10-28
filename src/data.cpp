@@ -189,7 +189,7 @@ void TankModel::modifyTier() {
 }
 
 void TankModel::createBullet() {
-    notify_observers(&TankView::onFire);
+    notify_observers(&TankView::createBullet);
 }
 
 void TankModel::createExplosion() {

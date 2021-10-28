@@ -13,10 +13,10 @@ namespace EventID {
         GAME_OVER_ANIMATION,
         PLAYER_WIN,
         PLAYER_DEAD,
+        PLAYER_STOP_CONTROL,
         PAUSE_GAME,
         RESUME_GAME,
         BASE_FALL,      // 基地击破
-        TANK_FIRE,
         TANK_GEN,       // 生成坦克
         TANK_POWERUP,   // 升级坦克
         PROP_GEN,       // 生成奖励

@@ -191,6 +191,7 @@ void Widget::update(float delta) {
     this->onUpdate(delta);
     auto list = _children;
     for (auto child : list) {
+        assert(child->parent() != nullptr and "Widget::update children parent nullptr.");
         child->update(delta);
     }
 }
