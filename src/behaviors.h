@@ -63,7 +63,6 @@ public:
 private:
     Status tick(float delta) override;
     void onEvent(Event const& e) override;
-    void onBaseReinforce();
 private:
     WorldModel* _world;
     BattleFieldInterface* _battlefield;
@@ -78,8 +77,9 @@ private:
     void onEvent(Event const& e) override;
     void onBlink();
     void onFinish();
+    void onBlinkImp();
 private:
-    bool _visible;
+    bool _steel;
     WorldModel* _world;
     BattleFieldInterface* _battlefield;
 };

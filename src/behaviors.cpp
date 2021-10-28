@@ -303,7 +303,12 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
         } else if (type == Tank::SHOVEL) {
 
             // 基地加固
-            onBaseReinforce();
+            float shovel_duration = Tank::getPowerUpDuration("SHOVEL");
+            auto scene = _game.screen().scene_back();
+            scene->defer([]{
+                _game.event().notify(Event(EventID::BASE_REINFORCE_FINISH));
+            }, shovel_duration);
+            _game.event().notify(Event(EventID::BASE_REINFORCE_START));
         }
 
         info.prop->createScore();
@@ -311,83 +316,12 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
     }
 }
 
-void TankPowerUpBehavior::onBaseReinforce() {
-    auto& tiles = _world->tiles;
-    auto& base = _world->base;
-    auto size = Tile::SIZE >> 1;
-    RectI bounds{
-        base->bounds.x - size,
-        base->bounds.y - size,
-        base->bounds.w + Tile::SIZE,
-        base->bounds.h + Tile::SIZE,
-    };
-    WorldModel::TileTree::SquareList result;
-    tiles.retrieve(result, bounds);
-    tiles.unique(result, [](TileModel* m){
-        return m;
-    });
-    // 移除基地周围砖块
-    for (auto& tile : result) {
-        if (tile->type == Tile::BASE) {
-            // 保留基地
-            continue;
-        }
-        tiles.remove(tile);
-        tile->removeFromScreen();
-    }
-    // 在基地周围添加钢铁砖块
-    Vector2f offset[8] = {
-            {size * 0, 0.0f},
-            {size * 1, 0.0f},
-            {size * 2, 0.0f},
-            {size * 3, 0.0f},
-            {0.0f, size * 1},
-            {0.0f, size * 2},
-            {size * 3, size * 1},
-            {size * 3, size * 2},
-    };
-    TileBuilder builder(_world);
-    TileBuilder::Array widgets;
-    AddTileList add_tile_list;
-    for (int i = 0; i < 8; ++i) {
-        add_tile_list.push_back({
-            Tile::STEEL,
-            int(bounds.x + offset[i].x),
-            int(bounds.y + offset[i].y),
-        });
-    }
-    builder.gen(widgets, add_tile_list);
-    for (auto& widget : widgets) {
-        _battlefield->addToMiddle(widget);
-    }
-
-    widgets.clear();
-    add_tile_list.clear();
-
-    // 在基地周围添加隐藏的砖块
-    for (int i = 0; i < 8; ++i) {
-        add_tile_list.push_back({
-            Tile::BRICK,
-            int(bounds.x + offset[i].x),
-            int(bounds.y + offset[i].y),
-        });
-    }
-    builder.gen(widgets, add_tile_list);
-    for (auto& widget : widgets) {
-        widget->setVisible(false);
-        _battlefield->addToMiddle(widget);
-    }
-    float shovel_duration = Tank::getPowerUpDuration("SHOVEL");
-    auto scene = _game.screen().scene_back();
-    scene->defer([]{
-        _game.event().notify(Event(EventID::BASE_REINFORCE_FINISH));
-    }, shovel_duration);
-    _game.event().notify(Event(EventID::BASE_REINFORCE_START));
-}
-
 //=====================================================================================
 
-BaseReinforceBehavior::BaseReinforceBehavior(WorldModel* world, BattleFieldInterface* battlefield):_world(world), _battlefield(battlefield) {
+BaseReinforceBehavior::BaseReinforceBehavior(WorldModel* world, BattleFieldInterface* battlefield):
+_steel(false),
+_world(world),
+_battlefield(battlefield) {
     _game.event().add(EventID::BASE_REINFORCE_START, this);
     _game.event().add(EventID::BASE_REINFORCE_FINISH, this);
 }
@@ -407,7 +341,8 @@ void BaseReinforceBehavior::onEvent(Event const& e) {
 
     if (e.Id() == EventID::BASE_REINFORCE_START) {
 
-        _visible = true;
+        _steel = true;
+        this->onBlinkImp();
         auto scene = _game.screen().scene_back();
         scene->stopAction(actionName);
 
@@ -416,7 +351,7 @@ void BaseReinforceBehavior::onEvent(Event const& e) {
         auto blink = Action::New<CallBackVoid>(std::bind(&BaseReinforceBehavior::onBlink, this));
         auto delay = Action::New<Delay>(0.25f);
         auto actions = Action::Ptr(new Sequence({blink, delay}));
-        auto repeat = Action::New<Repeat>(actions, 7);
+        auto repeat = Action::New<Repeat>(actions, 14);
         auto finish = Action::New<CallBackVoid>(std::bind(&BaseReinforceBehavior::onFinish, this));
         auto action = Action::Ptr(new Sequence({repeat, finish}));
         auto scene = _game.screen().scene_back();
@@ -427,42 +362,18 @@ void BaseReinforceBehavior::onEvent(Event const& e) {
 }
 
 void BaseReinforceBehavior::onBlink() {
-    auto& tiles = _world->tiles;
-    auto& base = _world->base;
-    auto size = Tile::SIZE >> 1;
-    RectI bounds{
-            base->bounds.x - size,
-            base->bounds.y - size,
-            base->bounds.w + Tile::SIZE,
-            base->bounds.h + Tile::SIZE,
-    };
-    WorldModel::TileTree::SquareList result;
-    tiles.retrieve(result, bounds);
-    tiles.unique(result, [](TileModel* m){
-        return m;
-    });
-    _visible = !_visible;
-    // 对基地周围的砖块和钢铁进行闪烁
-    for (auto& tile : result) {
-        if (tile->type == Tile::BRICK) {
-            tile->visible = !_visible;
-            tile->modifyDisplay();
-        }   if (tile->type == Tile::STEEL) {
-            tile->visible = _visible;
-            tile->modifyDisplay();
-        }
-    }
+    _steel = !_steel;
+    onBlinkImp();
 }
 
-void BaseReinforceBehavior::onFinish() {
+void BaseReinforceBehavior::onBlinkImp() {
     auto& tiles = _world->tiles;
     auto& base = _world->base;
-    auto size = Tile::SIZE >> 1;
     RectI bounds{
-            base->bounds.x - size,
-            base->bounds.y - size,
-            base->bounds.w + Tile::SIZE,
-            base->bounds.h + Tile::SIZE,
+            base->bounds.x - Tile::SIZE,
+            base->bounds.y - Tile::SIZE,
+            base->bounds.w + (Tile::SIZE >> 1),
+            base->bounds.h + (Tile::SIZE >> 1),
     };
     WorldModel::TileTree::SquareList result;
     tiles.retrieve(result, bounds);
@@ -479,6 +390,12 @@ void BaseReinforceBehavior::onFinish() {
         tile->removeFromScreen();
     }
     // 在基地周围添加砖块
+    auto size = Tile::SIZE >> 1;
+    Vector2f position = {
+            base->bounds.x - size,
+            base->bounds.y - size,
+    };
+    auto type = _steel ? Tile::STEEL : Tile::BRICK;
     Vector2f offset[8] = {
             {size * 0, 0.0f},
             {size * 1, 0.0f},
@@ -494,15 +411,20 @@ void BaseReinforceBehavior::onFinish() {
     AddTileList add_tile_list;
     for (int i = 0; i < 8; ++i) {
         add_tile_list.push_back({
-            Tile::BRICK,
-            int(bounds.x + offset[i].x),
-            int(bounds.y + offset[i].y),
+            type,
+            int(position.x + offset[i].x),
+            int(position.y + offset[i].y),
         });
     }
     builder.gen(widgets, add_tile_list);
     for (auto& widget : widgets) {
         _battlefield->addToMiddle(widget);
     }
+}
+
+void BaseReinforceBehavior::onFinish() {
+    _steel = false;
+    onBlinkImp();
 }
 
 //=====================================================================================
