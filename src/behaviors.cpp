@@ -221,8 +221,8 @@ void PropCreateBehavior::randomPosition(Vector2i& position, int retryCount) {
     int y = rand() % (Tile::MAP_SIZE - Tile::SIZE * 3) + Tile::SIZE;
     int const size = Tile::SIZE >> 1;
     position = {
-            float(x - (x % size)),
-            float(y - (y % size)),
+            x - (x % size),
+            y - (y % size),
     };
     if (retryCount <= 0) {
         //printf("奖励坐标重设超过最大重试次数.\n");
@@ -247,7 +247,7 @@ void PropCreateBehavior::randomPosition(Vector2i& position, int retryCount) {
     };
     int overlapCount = 0;
     for (int i = 0; i < 4; ++i) {
-        Rect bounds{
+        RectI bounds{
             position.x + offset[i].x,
             position.y + offset[i].y,
             size, size,
@@ -438,18 +438,18 @@ void BaseReinforceBehavior::onBlinkImp() {
     }
     // 在基地周围添加砖块
     auto size = Tile::SIZE >> 1;
-    Vector2f position = {
+    Vector2i position = {
             base->bounds.x - size,
             base->bounds.y - size,
     };
     auto type = _steel ? Tile::STEEL : Tile::BRICK;
-    Vector2f offset[8] = {
-            {size * 0, 0.0f},
-            {size * 1, 0.0f},
-            {size * 2, 0.0f},
-            {size * 3, 0.0f},
-            {0.0f, size * 1},
-            {0.0f, size * 2},
+    Vector2i offset[8] = {
+            {size * 0, 0},
+            {size * 1, 0},
+            {size * 2, 0},
+            {size * 3, 0},
+            {0, size * 1},
+            {0, size * 2},
             {size * 3, size * 1},
             {size * 3, size * 2},
     };
