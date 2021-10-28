@@ -10,7 +10,7 @@ Famicom game battle city remake with sdl2.
 
 ### Build for Windows
 - Install [CLion](https://www.jetbrains.com/clion/) - A cross-platform IDE for C and C++
-- Open CLion and open battle-city-remake folder
+- Run CLion and open battle-city-remake folder
 - Build and Run
 
 
