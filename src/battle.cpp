@@ -80,10 +80,11 @@ _world(nullptr) {
 
     onLoadLevel();
 
-    auto prop_create = Behavior::Ptr(new PropCreateBehavior(this, _world));
-    auto tank_powerup = Behavior::Ptr(new TankPowerUpBehavior);
+    auto prop_create = Behavior::Ptr(new PropCreateBehavior(_world, this));
+    auto tank_powerup = Behavior::Ptr(new TankPowerUpBehavior(_world, this));
+    auto base_reinforce = Behavior::Ptr(new BaseReinforceBehavior(_world, this));
     auto tank_spawn = Behavior::Ptr(new TankSpawnBehavior(&_world->tanks));
-    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_powerup, tank_spawn}));
+    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_powerup, base_reinforce, tank_spawn}));
 }
 
 void BattleFieldView::onLoadLevel() {
@@ -134,6 +135,9 @@ void BattleFieldView::onLoadLevel() {
 }
 
 void BattleFieldView::onUpdate(float delta) {
+    if (_pause) {
+        return;
+    }
     procTankControl();
     _behavior->tick(delta);
 }

@@ -119,10 +119,12 @@ class TileModel: public obs::observable<Widget>  {
 public:
     int id;
     int layer;
+    bool visible;       // 显示属性
     Tile::Type type;
     RectI bounds;
 public:
     void removeFromScreen();
+    void modifyDisplay();
 };
 
 class TankView;

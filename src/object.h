@@ -56,6 +56,7 @@ private:
     void draw(SDL_Renderer* renderer) override;
     void onModifyPosition(Vector2f const& position) override;
     void onModifySize(Vector2f const& size) override;
+    void onVisible(bool visible) override;
 private:
     TYPE _type;
     TileModel _model;

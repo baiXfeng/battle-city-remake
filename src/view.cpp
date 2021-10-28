@@ -440,7 +440,16 @@ void SelectLevelView::stopAutoAddLevel() {
 
 //=====================================================================================
 
+BattleView::~BattleView() {
+    _game.event().remove(EventID::PAUSE_GAME, this);
+    _game.event().remove(EventID::RESUME_GAME, this);
+}
+
 BattleView::BattleView() {
+
+    _game.event().add(EventID::PAUSE_GAME, this);
+    _game.event().add(EventID::RESUME_GAME, this);
+
     Ptr widget;
 
     auto root = New<WindowWidget>();
@@ -513,6 +522,18 @@ BattleView::BattleView() {
     auto sound = res::soundName("stage_start");
     _game.audio().loadEffect(sound);
     _game.audio().playEffect(sound);
+}
+
+void BattleView::onEvent(const Event &e) {
+
+    if (e.Id() == EventID::PAUSE_GAME) {
+
+        this->pauseAllActions();
+
+    } else if (e.Id() == EventID::RESUME_GAME) {
+
+        this->resumeAllActions();
+    }
 }
 
 //=====================================================================================

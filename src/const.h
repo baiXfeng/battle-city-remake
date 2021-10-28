@@ -19,8 +19,9 @@ namespace EventID {
         TANK_FIRE,
         TANK_GEN,       // 生成坦克
         TANK_POWERUP,   // 升级坦克
-        ENEMY_KILLED,   // 杀死敌军坦克
         PROP_GEN,       // 生成奖励
+        BASE_REINFORCE_START,
+        BASE_REINFORCE_FINISH,
     };
 }
 

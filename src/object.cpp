@@ -53,6 +53,7 @@ ImageWidget(nullptr),
 _type(TYPE_BEGIN) {
     _model.id = ++_objectCount;
     _model.layer = 0;
+    _model.visible = true;
     _model.type = Tile::TYPE_END;
     _model.add_observer(this);
     setType(t);
@@ -188,6 +189,10 @@ void TileView::onModifyPosition(Vector2f const& position) {
 void TileView::onModifySize(Vector2f const& size) {
     _model.bounds.w = size.x;
     _model.bounds.h = size.y;
+}
+
+void TileView::onVisible(bool visible) {
+    _model.visible = visible;
 }
 
 //=====================================================================================

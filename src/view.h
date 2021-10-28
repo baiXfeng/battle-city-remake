@@ -59,6 +59,9 @@ private:
 class BattleView : public WindowWidget {
 public:
     BattleView();
+    ~BattleView();
+private:
+    void onEvent(Event const& e) override;
 };
 
 class BattleInfoView : public Widget {

@@ -46,7 +46,7 @@ private:
 class BattleFieldInterface;
 class PropCreateBehavior : public Behavior, public Event::Listener {
 public:
-    PropCreateBehavior(BattleFieldInterface* battlefield, WorldModel* world);
+    PropCreateBehavior(WorldModel* world, BattleFieldInterface* battlefield);
     ~PropCreateBehavior();
 private:
     Status tick(float delta) override;
@@ -58,11 +58,30 @@ private:
 
 class TankPowerUpBehavior : public Behavior, public Event::Listener {
 public:
-    TankPowerUpBehavior();
+    TankPowerUpBehavior(WorldModel* world, BattleFieldInterface* battlefield);
     ~TankPowerUpBehavior();
 private:
     Status tick(float delta) override;
     void onEvent(Event const& e) override;
+    void onBaseReinforce();
+private:
+    WorldModel* _world;
+    BattleFieldInterface* _battlefield;
+};
+
+class BaseReinforceBehavior : public Behavior, public Event::Listener {
+public:
+    BaseReinforceBehavior(WorldModel* world, BattleFieldInterface* battlefield);
+    ~BaseReinforceBehavior();
+private:
+    Status tick(float delta) override;
+    void onEvent(Event const& e) override;
+    void onBlink();
+    void onFinish();
+private:
+    bool _visible;
+    WorldModel* _world;
+    BattleFieldInterface* _battlefield;
 };
 
 class TankAI_Behavior : public Behavior {

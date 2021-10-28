@@ -16,10 +16,16 @@ void GameOverCommand::onEvent(Event const& e) {
 
     _game.gamepad().sleep(60.0f);
 
+    std::string const box_name = "gameover:box";
     auto& target = e.data<Widget*>();
+    if (target->find(box_name)) {
+        return;
+    }
+
     auto box = Widget::New<WindowWidget>();
     box->setPosition(target->size().x * 0.5f, target->size().y * 1.1f);
     box->setAnchor(0.5f, 0.5f);
+    box->setName(box_name);
     target->addChild(box);
 
     auto font = res::load_ttf_font(res::fontName("prstart"), 20);

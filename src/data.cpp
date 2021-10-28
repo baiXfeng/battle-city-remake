@@ -163,6 +163,10 @@ void TileModel::removeFromScreen() {
     notify_observers(&Widget::removeFromParent);
 }
 
+void TileModel::modifyDisplay() {
+    notify_observers(&Widget::setVisible, visible);
+}
+
 void TankModel::modifyPosition() {
     notify_observers(&Widget::setPosition, position.x, position.y);
 }
