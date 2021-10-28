@@ -930,9 +930,8 @@ Status BulletBulletCollisionBehavior::tick(float delta) {
             continue;
         }
         if (isCollision(bullet->bounds, (*iter)->bounds)) {
-            auto p = *iter;
+            (*iter)->removeFromScreen();
             bullets.erase(iter);
-            p->removeFromScreen();
             remove_self = true;
             break;
         }

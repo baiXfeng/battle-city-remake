@@ -1048,9 +1048,9 @@ BulletExplosionView::BulletExplosionView() {
 
 void BulletExplosionView::play() {
     float const duration = 0.15f;
+    FrameAnimationWidget::play(duration, false);
     this->defer(this, [](Widget* sender) {
         sender->setVisible(false);
     }, duration * 0.8f);
-    FrameAnimationWidget::play(duration, false);
-    defer(std::bind(&Widget::removeFromParent, this), duration);
+    this->defer(std::bind(&Widget::removeFromParent, this), duration);
 }
