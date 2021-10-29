@@ -204,14 +204,6 @@ void TankModel::openShield(float duration) {
     notify_observers(&TankView::open_shield, duration);
 }
 
-void TankModel::pause() {
-    //notify_observers(&Widget::enableUpdate, false);
-}
-
-void TankModel::resume() {
-    //notify_observers(&Widget::enableUpdate, true);
-}
-
 void BulletModel::modifyPosition() {
     notify_observers(&Widget::setPosition, position.x, position.y);
 }
