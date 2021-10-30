@@ -302,6 +302,7 @@ _frameIndex(0),
 _frameTicks(0.0f),
 _maxFrameTicks(0.06f) {
     _animates = skin::getPlayerSkin(_model->tier, _model->controller);
+    _tier = _model->tier;
     _frameTicks = _maxFrameTicks;
 }
 
@@ -309,10 +310,15 @@ void PlayerTankAnimate::update(float delta) {
     if (_model->dir == Tank::Direction::MAX) {
         return;
     }
+    if (_tier != _model->tier) {
+        _tier = _model->tier;
+        _animates = skin::getPlayerSkin(_model->tier, _model->controller);
+        _tier = _model->tier;
+        _frameTicks = _maxFrameTicks;
+    }
     if ((_frameTicks += delta) >= _maxFrameTicks) {
         auto& frames = _animates[_model->dir];
-        bool standby = int(_model->move.x) == 0 and int(_model->move.y) == 0;
-        if (standby) {
+        if (not _model->moving) {
             setTexture(frames[0]->data());
             return;
         }
@@ -355,6 +361,7 @@ void TankView::move(Direction dir) {
         this->onChangeDir(dir);
     }
     _model.dir = dir;
+    _model.moving = true;
     this->updateMoveSpeed();
 }
 
@@ -370,17 +377,18 @@ void TankView::stop(Direction dir) {
     } else {
         _model.move = {0, 0};
     }
+    _model.moving = false;
 }
 
 void TankView::insert_to(WorldModel* world) {
     _model.position = position();
     world->tanks.push_back(&_model);
     auto tank_ai = Behavior::Ptr(new TankAI_Behavior(&_model));
-    auto tank_move = Behavior::Ptr(new TankMoveBehavior(&_model, world->bounds));
     auto tank_fire = Behavior::Ptr(new TankFireBehavior(&_model, &world->bullets));
+    auto tank_move = Behavior::Ptr(new TankMoveBehavior(&_model, world->bounds));
     auto tank_collision = Behavior::New<TankCollisionBehavior>(&_model, &world->tanks);
     auto tile_collision = Behavior::New<TankTileCollisionBehavior>(&_model, &world->tiles);
-    _behavior = Behavior::Ptr(new SequenceBehavior({tank_ai, tank_move, tank_fire, tank_collision, tile_collision}));
+    _behavior = Behavior::Ptr(new SequenceBehavior({tank_ai, tank_fire, tank_move, tank_collision, tile_collision}));
 }
 
 void TankView::fire() {
@@ -639,14 +647,14 @@ void BulletView::insert_to(WorldModel* world) {
     world->bullets.push_back(&_model);
     auto move_behavior = Behavior::Ptr(new BulletMoveBehavior(&_model));
     auto world_collision = Behavior::Ptr(new BulletWorldCollisionBehavior(&_model, world));
-    auto tile_collision = Behavior::Ptr(new BulletTileCollisionBehavior(&_model, world));
     auto tank_collision = Behavior::Ptr(new BulletTankCollisionBehavior(&_model, world));
+    auto tile_collision = Behavior::Ptr(new BulletTileCollisionBehavior(&_model, world));
     auto bullet_collision = Behavior::Ptr(new BulletBulletCollisionBehavior(&_model, world));
     _behavior = Behavior::Ptr(new SequenceBehavior({
         move_behavior,
         world_collision,
-        tile_collision,
         tank_collision,
+        tile_collision,
         bullet_collision,
     }));
 }

@@ -69,10 +69,10 @@ public:
     typedef std::vector<Textures> TexturesArray;
     typedef std::shared_ptr<TankAnimate> Ptr;
 public:
-    TankAnimate(TankModel* model): _model(model) {}
+    TankAnimate(TankModel const* model): _model(model) {}
     virtual void update(float delta) {}
 protected:
-    TankModel* _model;
+    TankModel const* _model;
 };
 
 class EnemyTankAnimate : public TankAnimate {
@@ -121,6 +121,7 @@ public:
     PlayerTankAnimate(TankModel* model);
     void update(float delta) override;
 protected:
+    int _tier;
     int _frameIndex;
     float _frameTicks;
     float const _maxFrameTicks;

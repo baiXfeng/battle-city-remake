@@ -136,6 +136,7 @@ public:
     bool shield;
     bool has_drop;
     bool visible;
+    bool moving;
     Tank::Party party;
     Tank::Tier tier;
     Tank::Direction dir;

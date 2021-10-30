@@ -1003,7 +1003,7 @@ void CheatView::onButtonDown(int key) {
     } else if (key == KeyCode::DOWN) {
         //_index = ++_index >= 2 ? 0 : _index;
         _icon->setPosition(_position[_index]);
-    } else if (key == KeyCode::A) {
+    } else if (key == KeyCode::A or key == KeyCode::START) {
         //if (_index == 1) {
             _game.screen().replace<StartView>();
         //}

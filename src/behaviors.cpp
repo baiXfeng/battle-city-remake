@@ -11,6 +11,7 @@
 #include "const.h"
 #include "view.h"
 #include "object.h"
+#include "debug.h"
 
 typedef Behavior::Status Status;
 
@@ -192,6 +193,9 @@ void PropCreateBehavior::onEvent(Event const& e) {
 
         // 创建奖励
         auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
+        if (Debug::appear_powerup_type != Tank::POWER_MAX) {
+            type = Debug::appear_powerup_type;
+        }
         auto view = Widget::New<PropView>(type);
         auto prop = view->to<PropView>();
         prop->setBattleField(_battlefield);
@@ -475,7 +479,10 @@ void BaseReinforceBehavior::onFinish() {
 
 //=====================================================================================
 
-TankAI_Behavior::TankAI_Behavior(TankModel* model):_model(model) {
+TankAI_Behavior::TankAI_Behavior(TankModel* model):
+_model(model),
+_shootTicks(1.0f),
+_moveTicks(1.0f) {
     _world = &_game.get<WorldModel>("world_model");
 }
 
@@ -486,7 +493,9 @@ Status TankAI_Behavior::tick(float delta) {
     if (_model->party == Tank::ENEMY and _world->sleep) {
         return running;
     }
-    onAiShoot(delta);
+    if (not Debug::enemy_misfire) {
+        onAiShoot(delta);
+    }
     onAiMove(delta);
     return success;
 }
@@ -602,23 +611,23 @@ Status TankTileCollisionBehavior::tick(float delta) {
         }
         if (isCollision(_model->bounds, tile->bounds)) {
             if (_model->move.y < 0.0f and _model->bounds.y > tile->bounds.y) {
-                _model->position.y = tile->bounds.y + tile->bounds.h;
+                _model->position -= _model->move * delta;
                 _model->move.y = 0.0f;
                 _model->modifyPosition();
                 break;
             } else if (_model->move.y > 0.0f and _model->bounds.y < tile->bounds.y) {
-                _model->position.y = tile->bounds.y - _model->bounds.h;
+                _model->position -= _model->move * delta;
                 _model->move.y = 0.0f;
                 _model->modifyPosition();
                 break;
             }
             if (_model->move.x < 0.0f and _model->bounds.x > tile->bounds.x) {
-                _model->position.x = tile->bounds.x + tile->bounds.w;
+                _model->position -= _model->move * delta;
                 _model->move.x = 0.0f;
                 _model->modifyPosition();
                 break;
             } else if (_model->move.x > 0.0f and _model->bounds.x < tile->bounds.x) {
-                _model->position.x = tile->bounds.x - _model->bounds.w;
+                _model->position -= _model->move * delta;
                 _model->move.x = 0.0f;
                 _model->modifyPosition();
                 break;
@@ -649,31 +658,23 @@ Status TankCollisionBehavior::tick(float delta) {
             tank->bounds.h - 10,
             }, _model->bounds)) {
             if (_model->move.y < 0.0f and _model->bounds.y > tank->bounds.y) {
-                if (tank->bounds.y + tank->bounds.h <= _world_bounds.h) {
-                    _model->position.y = tank->bounds.y + tank->bounds.h;
-                }
+                _model->position -= _model->move * delta;
                 _model->move.y = 0.0f;
                 _model->modifyPosition();
                 break;
             } else if (_model->move.y > 0.0f and _model->bounds.y < tank->bounds.y) {
-                if (tank->bounds.y - _model->bounds.h >= 0) {
-                    _model->position.y = tank->bounds.y - _model->bounds.h;
-                }
+                _model->position -= _model->move * delta;
                 _model->move.y = 0.0f;
                 _model->modifyPosition();
                 break;
             }
             if (_model->move.x < 0.0f and _model->bounds.x > tank->bounds.x) {
-                if (tank->bounds.x + tank->bounds.w <= _world_bounds.w) {
-                    _model->position.x = tank->bounds.x + tank->bounds.w;
-                }
+                _model->position -= _model->move * delta;
                 _model->move.x = 0.0f;
                 _model->modifyPosition();
                 break;
             } else if (_model->move.x > 0.0f and _model->bounds.x < tank->bounds.x) {
-                if (tank->bounds.x - _model->bounds.w >= 0) {
-                    _model->position.x = tank->bounds.x - _model->bounds.w;
-                }
+                _model->position -= _model->move * delta;
                 _model->move.x = 0.0f;
                 _model->modifyPosition();
                 break;
@@ -727,6 +728,7 @@ Status BulletMoveBehavior::tick(float delta) {
 
 std::string hit_wall = res::soundName("bullet_hit_1");
 std::string hit_brick = res::soundName("bullet_hit_2");
+std::string tank_explosion = res::soundName("explosion_1");
 std::string base_explosion = res::soundName("explosion_2");
 
 BaseBulletCollisionBehavior::BaseBulletCollisionBehavior(BulletModel* model, WorldModel* world):
@@ -734,6 +736,7 @@ _model(model),
 _world(world) {
     _game.audio().loadEffect(::hit_wall);
     _game.audio().loadEffect(::hit_brick);
+    _game.audio().loadEffect(tank_explosion);
     _game.audio().loadEffect(base_explosion);
 }
 
@@ -765,6 +768,10 @@ void BaseBulletCollisionBehavior::hit_brick() {
 
 void BaseBulletCollisionBehavior::hit_base() {
     _game.audio().playEffect(base_explosion);
+}
+
+void BaseBulletCollisionBehavior::hit_tank() {
+    _game.audio().playEffect(tank_explosion);
 }
 
 //=====================================================================================
@@ -849,6 +856,9 @@ Status BulletTileCollisionBehavior::tick(float delta) {
     bool steel_killed = false;
     for (auto& tile : result) {
         if (tile->type == Tile::BASE) {
+            if (Debug::base_unmatched) {
+                continue;
+            }
             base_killed = true;
             _game.event().notify(EasyEvent<Vector2f>(EventID::BASE_FALL, {
                     float(tile->bounds.x + (tile->bounds.w >> 1)),
@@ -901,14 +911,13 @@ Status BulletTankCollisionBehavior::tick(float delta) {
 
             if (tank->party == Tank::ENEMY) {
                 bullet_explosion();
-            } else {
-                hit_base();
             }
 
             // remove tank
             bulletHitTank(tank);
             // remove bullet
             remove_bullet();
+
             return fail;
         }
     }
@@ -922,11 +931,20 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
 
     if (not tank->shield) {
         --tank->hp;
-        if (tank->party == Tank::ENEMY and tank->has_drop) {
+
+        if (tank->party == Tank::ENEMY and Debug::enemy_unmatched) {
+            ++tank->hp;
+        } else if (tank->party == Tank::PLAYER and Debug::player_unmatched) {
+            ++tank->hp;
+        }
+    }
+
+    if (tank->party == Tank::ENEMY) {
+        if (tank->has_drop or Debug::always_appear_powerup) {
             // 生成奖励
+            tank->has_drop = false;
             _game.event().notify(Event(EventID::PROP_GEN));
         }
-        tank->has_drop = false;
     }
 
     if (tank->hp <= 0) {
@@ -955,9 +973,11 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
         tank->createExplosion();
         tank->removeFromScreen();
 
-        auto sound = res::soundName("explosion_1");
-        _game.audio().loadEffect(sound);
-        _game.audio().playEffect(sound);
+        if (tank->party == Tank::PLAYER) {
+            hit_base();
+        } else {
+            hit_tank();
+        }
     }
 }
 

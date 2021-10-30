@@ -15,6 +15,7 @@
 #include "object.h"
 #include "const.h"
 #include "skin.h"
+#include "debug.h"
 
 //=====================================================================================
 
@@ -233,6 +234,9 @@ void BattleFieldView::onEvent(Event const& e) {
         auto tier = info.tier;
         if (info.controller == Tank::P1) {
             tier = _game.get<PlayerModel>("player_model").tier;
+            if (Debug::player_level_max) {
+                tier = Tank::D;
+            }
         }
         auto tank = Widget::Ptr(new TankView(info.party, tier, info.direction, info.has_drop, info.controller));
         auto view = tank->to<TankView>();

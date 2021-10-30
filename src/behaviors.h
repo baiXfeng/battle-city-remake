@@ -159,6 +159,7 @@ protected:
     void hit_wall();
     void hit_brick();
     void hit_base();
+    void hit_tank();
 protected:
     BulletModel* _model;
     WorldModel* _world;
