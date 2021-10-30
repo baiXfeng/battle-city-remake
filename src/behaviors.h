@@ -178,6 +178,9 @@ public:
 private:
     Status tick(float delta) override;
     RectI getBulletBounds() const;
+private:
+    bool _soundPlayed;
+    int _vanishCount;
 };
 
 class BulletTankCollisionBehavior : public BaseBulletCollisionBehavior {

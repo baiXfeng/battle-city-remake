@@ -200,6 +200,12 @@ void TankModel::openShield(float duration) {
     notify_observers(&TankView::open_shield, duration);
 }
 
+BulletModel::BulletModel():
+id(0),
+sender_id(0),
+wall_damage(0),
+destroy_steel(false) {}
+
 void BulletModel::modifyPosition() {
     notify_observers(&Widget::setPosition, position.x, position.y);
 }

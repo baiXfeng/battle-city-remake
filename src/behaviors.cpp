@@ -810,7 +810,9 @@ Status BulletWorldCollisionBehavior::tick(float delta) {
 //=====================================================================================
 
 BulletTileCollisionBehavior::BulletTileCollisionBehavior(BulletModel* model, WorldModel* world):
-BaseBulletCollisionBehavior(model, world) {
+BaseBulletCollisionBehavior(model, world),
+_vanishCount(0),
+_soundPlayed(false) {
 
 }
 
@@ -865,7 +867,7 @@ Status BulletTileCollisionBehavior::tick(float delta) {
                     float(tile->bounds.y + (tile->bounds.h >> 1)),
             }));
         } else if (tile->type == Tile::STEEL) {
-            if (_model->wall_damage == 1) {
+            if (not _model->destroy_steel) {
                 continue;
             }
             steel_killed = true;
@@ -874,7 +876,18 @@ Status BulletTileCollisionBehavior::tick(float delta) {
         tile->removeFromScreen();
     }
 
-    if (result.size()) {
+    if (_model->wall_damage <= 1 and _model->destroy_steel) {
+        if (++_vanishCount >= 2) {
+            _model->position -= _model->move * 0.016f * _vanishCount;
+            _model->modifyPosition();
+            bullet_explosion();
+            remove_bullet();
+            return fail;
+        }
+    }
+
+    if (result.size() and not _soundPlayed) {
+        _soundPlayed = true;
         if (base_killed) {
             hit_base();
         } else if (steel_killed) {
@@ -882,6 +895,9 @@ Status BulletTileCollisionBehavior::tick(float delta) {
         } else {
             hit_brick();
         }
+    }
+
+    if (result.size() and --_model->wall_damage <= 0) {
         bullet_explosion();
         remove_bullet();
         return fail;

@@ -163,11 +163,13 @@ public:
     int id;
     int sender_id;
     int wall_damage;
+    bool destroy_steel;
     Tank::Party party;
     Vector2f move;
     Vector2f position;
     RectI bounds;
 public:
+    BulletModel();
     void modifyPosition();
     void removeFromScreen();
     void playExplosion();

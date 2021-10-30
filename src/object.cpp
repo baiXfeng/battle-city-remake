@@ -637,6 +637,10 @@ ImageWidget(load_texture(get_dir(move))) {
     _model.position = position - size() * 0.5f;
     _model.move = move;
     _model.party = tank->party;
+    if (_model.party == Tank::PLAYER and tank->tier == Tank::D) {
+        // 最高等级玩家坦克可以消除铁块
+        _model.destroy_steel = true;
+    }
     _model.add_observer(this);
     this->setPosition(_model.position);
     this->setSize(ImageWidget::size());
