@@ -297,7 +297,6 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
                 auto& attr = Tank::getAttribute(tank->party, tier);
                 tank->hp = attr.health;
                 tank->tier = tier;
-                tank->modifyTier();
             }
             if (tank->party == Tank::PLAYER) {
                 // 保留玩家坦克等级，进入下一关时还原
@@ -927,6 +926,7 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
             // 生成奖励
             _game.event().notify(Event(EventID::PROP_GEN));
         }
+        tank->has_drop = false;
     }
 
     if (tank->hp <= 0) {

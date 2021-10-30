@@ -18,7 +18,7 @@ namespace skin {
     Textures getShieldSkin();
     Textures getTankAppearSkin();
     TexturesArray getEnemySkin(Tank::Tier tier, bool has_drop);
-    TexturesArray getTopEnemySkin();
+    TexturesArray getDEnemySkin(Tank::Tier tier);
     TexturesArray getPlayerSkin(Tank::Tier tier, Tank::Controller player);
 }
 

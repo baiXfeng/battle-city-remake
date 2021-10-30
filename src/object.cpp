@@ -197,24 +197,144 @@ void TileView::onVisible(bool visible) {
 
 //=====================================================================================
 
+EnemyTankAnimate::EnemyTankAnimate(TankModel* model):TankAnimate(model) {
+    _animate[0] = Ptr(new ABC_EnemyTankAnimate(model));
+    _animate[1] = Ptr(new D_EnemyTankAnimate(model));
+}
+
+void EnemyTankAnimate::update(float delta) {
+    auto& animate = _animate[ _model->tier == Tank::D ? 1 : 0 ];
+    animate->update(delta);
+    setSize(animate->size());
+}
+
+void EnemyTankAnimate::draw(SDL_Renderer* renderer, Vector2i const& position) {
+    auto& animate = _animate[ _model->tier == Tank::D ? 1 : 0 ];
+    animate->draw(renderer, position);
+}
+
+//=====================================================================================
+
+ABC_EnemyTankAnimate::ABC_EnemyTankAnimate(TankModel* model):
+TankAnimate(model),
+_frameIndex(0),
+_frameTicks(0.0f),
+_maxFrameTicks(0.06f) {
+    _animates = skin::getEnemySkin(_model->tier, _model->has_drop);
+    _frameTicks = _maxFrameTicks;
+}
+
+void ABC_EnemyTankAnimate::update(float delta) {
+    if (_model->dir == Tank::Direction::MAX) {
+        return;
+    }
+    if ((_frameTicks += delta) >= _maxFrameTicks) {
+        auto& frames = _animates[_model->dir];
+        _frameTicks -= _maxFrameTicks;
+        _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
+        setTexture(frames[_frameIndex]->data());
+    }
+}
+
+//=====================================================================================
+
+D_EnemyTankAnimate::D_EnemyTankAnimate(TankModel* model):
+TankAnimate(model),
+_hp(0),
+_switchIndex(0),
+_frameIndex(0),
+_frameTicks(0.0f),
+_maxFrameTicks(0.06f) {
+    if (model->has_drop) {
+        _animates = skin::getEnemySkin(_model->tier, _model->has_drop);
+    } else {
+        _animates = skin::getDEnemySkin(_model->tier);
+    }
+    _grayAnimates = skin::getDEnemySkin(Tank::A);
+    _hp = model->hp;
+    _frameTicks = _maxFrameTicks;
+}
+
+void D_EnemyTankAnimate::update(float delta) {
+    if (_model->dir == Tank::Direction::MAX) {
+        return;
+    }
+    if (_hp != _model->hp) {
+        _hp = _model->hp;
+        modifySkin();
+    }
+    if (_hp == 3) {
+        tierC_update(delta);
+        return;
+    }
+    if ((_frameTicks += delta) >= _maxFrameTicks) {
+        auto& frames = _animates[_model->dir];
+        _frameTicks -= _maxFrameTicks;
+        _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
+        setTexture(frames[_frameIndex]->data());
+    }
+}
+
+void D_EnemyTankAnimate::tierC_update(float delta) {
+    auto& frames = _animates[_model->dir];
+    auto& grays = _grayAnimates[_model->dir];
+    Texture::Ptr texture[2] = {
+            frames[ _frameIndex ],
+            grays[ _frameIndex ],
+    };
+    setTexture(texture[ _switchIndex = 1 - _switchIndex ]->data());
+    if ((_frameTicks += delta) >= _maxFrameTicks) {
+        _frameTicks -= _maxFrameTicks;
+        _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
+    }
+}
+
+void D_EnemyTankAnimate::modifySkin() {
+    auto tier = Tank::Tier(_hp-1);
+    _animates = skin::getDEnemySkin(tier);
+}
+
+//=====================================================================================
+
+PlayerTankAnimate::PlayerTankAnimate(TankModel* model):
+TankAnimate(model),
+_frameIndex(0),
+_frameTicks(0.0f),
+_maxFrameTicks(0.06f) {
+    _animates = skin::getPlayerSkin(_model->tier, _model->controller);
+    _frameTicks = _maxFrameTicks;
+}
+
+void PlayerTankAnimate::update(float delta) {
+    if (_model->dir == Tank::Direction::MAX) {
+        return;
+    }
+    if ((_frameTicks += delta) >= _maxFrameTicks) {
+        auto& frames = _animates[_model->dir];
+        bool standby = int(_model->move.x) == 0 and int(_model->move.y) == 0;
+        if (standby) {
+            setTexture(frames[0]->data());
+            return;
+        }
+        _frameTicks -= _maxFrameTicks;
+        _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
+        setTexture(frames[_frameIndex]->data());
+    }
+}
+
+//=====================================================================================
+
 std::string shot_sound = res::soundName("bullet_shot");
 
 TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop, Controller c) {
-    _model.dir = dir;
-    if (party == Tank::ENEMY) {
-        if (tier == Tank::D and not has_drop) {
-            setTopEnemySkin();
-        } else {
-            setSkin(tier, has_drop);
-        }
-    } else if (party == Tank::PLAYER) {
-        setSkin(c, tier);
-    }
     _model.id = ++_objectCount;
     _model.fire = false;
     _model.shield = false;
     _model.visible = true;
+    _model.has_drop = has_drop;
+    _model.dir = dir;
     _model.party = party;
+    _model.tier = tier;
     _model.controller = c;
     _model.size = {Tile::SIZE, Tile::SIZE};
     _model.dir = Direction::MAX;
@@ -225,80 +345,24 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool
 
     enableUpdate(true);
     _game.audio().loadEffect(shot_sound);
-}
 
-void TankView::setSkin(Controller c, Tank::Tier tier) {
-    _texArr = skin::getPlayerSkin(tier, c);
-    _model.has_drop = false;
-    _model.party = Tank::PLAYER;
-    _model.tier = tier;
-    if (_model.dir != Tank::MAX) {
-        updateMoveSpeed();
-        setFrames(_texArr[_model.dir]);
-        if (moving()) {
-            play(0.12f);
-        } else {
-            turn(_model.dir);
-        }
-    }
-}
-
-void TankView::setSkin(Tank::Tier tier, bool has_drop) {
-    _texArr = skin::getEnemySkin(tier, has_drop);
-    _model.has_drop = has_drop;
-    _model.party = Tank::ENEMY;
-    _model.tier = tier;
-    if (_model.dir != Tank::MAX) {
-        updateMoveSpeed();
-        setFrames(_texArr[_model.dir]);
-        play(0.12f);
-    }
-}
-
-void TankView::setTopEnemySkin() {
-    _texArr = skin::getTopEnemySkin();
-    _model.has_drop = false;
-    _model.party = Tank::ENEMY;
-    _model.tier = Tank::D;
-    if (_model.dir != Tank::MAX) {
-        updateMoveSpeed();
-        setFrames(_texArr[_model.dir]);
-        play(0.12f);
-    }
+    _tankAnimate[Tank::PLAYER] = TankAnimatePtr(new PlayerTankAnimate(&_model));
+    _tankAnimate[Tank::ENEMY] = TankAnimatePtr(new EnemyTankAnimate(&_model));
 }
 
 void TankView::move(Direction dir) {
-    if (!_force_move) {
-        if (dir == Direction::MAX or _model.dir == dir) {
-            return;
-        }
-    }
     if (_model.dir != dir) {
-        setFrames(_texArr[dir]);
+        this->onChangeDir(dir);
     }
-    play(0.12f);
-    _force_move = false;
     _model.dir = dir;
     this->updateMoveSpeed();
-    this->onChangeDir(dir);
 }
 
 void TankView::turn(Direction dir) {
-    if (dir < _texArr.size() and _texArr[dir].size()) {
-        setTexture(_texArr[dir].front());
-    }
     _model.dir = dir;
-    _force_move = true;
 }
 
 void TankView::stop(Direction dir) {
-    _force_move = true;
-    if (_model.move == Vector2f{0.0f, 0.0f}) {
-        if (_model.party == Tank::PLAYER) {
-            FrameAnimationWidget::stop();
-        }
-        return;
-    }
     if (dir == Direction::UP or dir == Direction::DOWN) {
         _model.move.y = 0.0f;
     } else if (dir == Direction::LEFT or dir == Direction::RIGHT) {
@@ -314,9 +378,9 @@ void TankView::insert_to(WorldModel* world) {
     auto tank_ai = Behavior::Ptr(new TankAI_Behavior(&_model));
     auto tank_move = Behavior::Ptr(new TankMoveBehavior(&_model, world->bounds));
     auto tank_fire = Behavior::Ptr(new TankFireBehavior(&_model, &world->bullets));
-    auto tile_collision = Behavior::New<TankTileCollisionBehavior>(&_model, &world->tiles);
     auto tank_collision = Behavior::New<TankCollisionBehavior>(&_model, &world->tanks);
-    _behavior = Behavior::Ptr(new SequenceBehavior({tank_ai, tank_move, tank_fire, tile_collision, tank_collision}));
+    auto tile_collision = Behavior::New<TankTileCollisionBehavior>(&_model, &world->tiles);
+    _behavior = Behavior::Ptr(new SequenceBehavior({tank_ai, tank_move, tank_fire, tank_collision, tile_collision}));
 }
 
 void TankView::fire() {
@@ -351,10 +415,6 @@ void TankView::createBullet() {
     Widget::Ptr widget(bullet);
     battleField()->addToMiddle(widget);
     widget->performLayout();
-}
-
-bool TankView::moving() const {
-    return _model.move.x > 0 or _model.move.y > 0;
 }
 
 void TankView::explosion() {
@@ -450,6 +510,12 @@ void TankView::onUpdate(float delta) {
         return;
     }
     _behavior->tick(delta);
+    _tankAnimate[_model.party]->update(delta);
+    setSize(_tankAnimate[_model.party]->size().to<float>());
+}
+
+void TankView::onDraw(SDL_Renderer* renderer) {
+    _tankAnimate[_model.party]->draw(renderer, _global_position.to<int>());
 }
 
 void TankView::onModifyPosition(Vector2f const& position) {

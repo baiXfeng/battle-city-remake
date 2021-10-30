@@ -34,6 +34,10 @@ void RenderCopy::setSize(int w, int h) {
     _size.y = h;
 }
 
+void RenderCopy::setSize(Vector2i const& size) {
+    _size = size;
+}
+
 void RenderCopy::setOpacity(int opacity) {
     SDL_SetTextureAlphaMod(_texture, _opacity = opacity % 256);
 }

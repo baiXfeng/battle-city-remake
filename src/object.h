@@ -62,26 +62,86 @@ private:
     TileModel _model;
 };
 
+class TankAnimate : public RenderCopy {
+public:
+    typedef std::shared_ptr<Texture> TexturePtr;
+    typedef std::vector<TexturePtr> Textures;
+    typedef std::vector<Textures> TexturesArray;
+    typedef std::shared_ptr<TankAnimate> Ptr;
+public:
+    TankAnimate(TankModel* model): _model(model) {}
+    virtual void update(float delta) {}
+protected:
+    TankModel* _model;
+};
+
+class EnemyTankAnimate : public TankAnimate {
+public:
+    EnemyTankAnimate(TankModel* model);
+protected:
+    void update(float delta) override;
+    void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0}) override;
+protected:
+    TankAnimate::Ptr _animate[2];
+};
+
+// Tank: A, B, C
+class ABC_EnemyTankAnimate : public TankAnimate {
+public:
+    ABC_EnemyTankAnimate(TankModel* model);
+    void update(float delta) override;
+protected:
+    int _frameIndex;
+    float _frameTicks;
+    float const _maxFrameTicks;
+    TexturesArray _animates;
+};
+
+// Tank: D
+class D_EnemyTankAnimate : public TankAnimate {
+public:
+    D_EnemyTankAnimate(TankModel* model);
+protected:
+    void update(float delta) override;
+    void tierC_update(float delta);
+    void modifySkin();
+protected:
+    int _hp;
+    int _switchIndex;
+    int _frameIndex;
+    float _frameTicks;
+    float const _maxFrameTicks;
+    TexturesArray _animates;
+    TexturesArray _grayAnimates;
+};
+
+// Player
+class PlayerTankAnimate : public TankAnimate {
+public:
+    PlayerTankAnimate(TankModel* model);
+    void update(float delta) override;
+protected:
+    int _frameIndex;
+    float _frameTicks;
+    float const _maxFrameTicks;
+    TexturesArray _animates;
+};
+
 class Behavior;
-class TankView : public FrameAnimationWidget, public BattleFieldHolder {
+class TankView : public Widget, public BattleFieldHolder {
 public:
     typedef Tank::Direction Direction;
     typedef Tank::Controller Controller;
-    typedef std::vector<TexturePtr> Textures;
-    typedef std::vector<Textures> TexturesArray;
     typedef std::shared_ptr<Behavior> BehaviorPtr;
+    typedef std::shared_ptr<TankAnimate> TankAnimatePtr;
 public:
     TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop = false, Controller c = Tank::AI);
-    void setSkin(Controller c, Tank::Tier tier);
-    void setSkin(Tank::Tier tier, bool has_drop);
-    void setTopEnemySkin();
     void move(Direction dir);
     void turn(Direction dir);
     void stop(Direction dir = Direction::MAX);
     void insert_to(WorldModel* world);
     void fire();
     void createBullet();
-    bool moving() const;
     void explosion();
     void show_score();
     void modify_shield();
@@ -90,15 +150,15 @@ public:
 private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;
+    void onDraw(SDL_Renderer* renderer) override;
     void onModifyPosition(Vector2f const& position) override;
     void onModifySize(Vector2f const& size) override;
     void onVisible(bool visible) override;
     void updateMoveSpeed();
 private:
-    bool _force_move;
-    TexturesArray _texArr;
     TankModel _model;
     BehaviorPtr _behavior;
+    TankAnimatePtr _tankAnimate[2];
 };
 
 class TileBuilder {

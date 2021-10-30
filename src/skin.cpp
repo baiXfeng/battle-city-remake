@@ -39,14 +39,15 @@ namespace skin {
         return ret;
     }
 
-    TexturesArray getTopEnemySkin() {
+    TexturesArray getDEnemySkin(Tank::Tier tier) {
         std::string dir[4] = {"up", "right", "down", "left"};
+        std::string lv[4] = {"_c0", "_c2", "_c2", "_c1"};
         std::string name = "tank_armor_";
         TexturesArray ret;
         for (int i = 0; i < 4; ++i) {
             ret.push_back({
-                res::load_texture(_game.renderer(), res::imageName(name + dir[i] + "_c1_t1")),
-                res::load_texture(_game.renderer(), res::imageName(name + dir[i] + "_c1_t2")),
+                res::load_texture(_game.renderer(), res::imageName(name + dir[i] + lv[tier] + "_t1")),
+                res::load_texture(_game.renderer(), res::imageName(name + dir[i] + lv[tier] + "_t2")),
             });
         }
         return ret;

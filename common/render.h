@@ -16,6 +16,7 @@ public:
     void setTexture(SDL_Texture* texture);
     void setTexture(SDL_Texture* texture, SDL_Rect const& srcrect);
     void setSize(int w, int h);
+    void setSize(Vector2i const& size);
     Vector2i const& size() const;
     void setOpacity(int opacity);
     int opacity() const;

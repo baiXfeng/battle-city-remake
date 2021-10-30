@@ -172,7 +172,6 @@ void TankModel::modifyPosition() {
 }
 
 void TankModel::modifyDir(Tank::Direction dir) {
-    notify_observers(&TankView::stop, dir);
     notify_observers(&TankView::move, dir);
 }
 
@@ -182,10 +181,6 @@ void TankModel::modifyShield() {
 
 void TankModel::removeFromScreen() {
     notify_observers(&Widget::removeFromParent);
-}
-
-void TankModel::modifyTier() {
-    notify_observers(&TankView::setSkin, controller, tier);
 }
 
 void TankModel::createBullet() {

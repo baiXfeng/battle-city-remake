@@ -150,7 +150,6 @@ public:
     void modifyShield();
     void modifyPosition();
     void removeFromScreen();
-    void modifyTier();
     void createBullet();
     void createExplosion();
     void createScore();
