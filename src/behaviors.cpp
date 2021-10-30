@@ -810,9 +810,7 @@ Status BulletWorldCollisionBehavior::tick(float delta) {
 //=====================================================================================
 
 BulletTileCollisionBehavior::BulletTileCollisionBehavior(BulletModel* model, WorldModel* world):
-BaseBulletCollisionBehavior(model, world),
-_vanishCount(0),
-_soundPlayed(false) {
+BaseBulletCollisionBehavior(model, world) {
 
 }
 
@@ -832,6 +830,22 @@ RectI BulletTileCollisionBehavior::getBulletBounds() const {
     };
 }
 
+RectI BulletTileCollisionBehavior::getBigBulletBounds() const {
+    auto horizontal = int(abs(_model->move.x)) != 0 ? true : false;
+    auto width = horizontal ? 2 + (Tile::SIZE >> 1) : Tile::SIZE;
+    auto height = horizontal ? Tile::SIZE : 2 + (Tile::SIZE >> 1);
+    Vector2i center{
+            _model->bounds.x + (_model->bounds.w >> 1),
+            _model->bounds.y + (_model->bounds.h >> 1),
+    };
+    return {
+            center.x - (width >> 1),
+            center.y - (height >> 1),
+            width,
+            height,
+    };
+}
+
 Status BulletTileCollisionBehavior::tick(float delta) {
     WorldModel::TileTree::SquareList list;
     auto& tiles = _world->tiles;
@@ -840,18 +854,35 @@ Status BulletTileCollisionBehavior::tick(float delta) {
     tiles.unique(list, [](TileModel* m) {
         return m;
     });
-    std::vector<TileModel*> result;
-    for (auto& tile : list) {
-        if (not tile->visible) {
-            // 砖块隐藏状态不进行碰撞
-            continue;
+
+    auto collision = [&list, &bullet_bounds]{
+        std::vector<TileModel*> result;
+        for (auto& tile : list) {
+            if (not tile->visible) {
+                // 砖块隐藏状态不进行碰撞
+                continue;
+            }
+            if (tile->type == Tile::ICE_FLOOR or tile->type == Tile::TREES or tile->type == Tile::WATERS) {
+                continue;
+            }
+            if (isCollision(bullet_bounds, tile->bounds)) {
+                result.push_back(tile);
+            }
         }
-        if (tile->type == Tile::ICE_FLOOR or tile->type == Tile::TREES or tile->type == Tile::WATERS) {
-            continue;
-        }
-        if (isCollision(bullet_bounds, tile->bounds)) {
-            result.push_back(tile);
-        }
+        return result;
+    };
+
+    auto result = collision();
+
+    // 如果是玩家顶级坦克子弹，需要扩大子弹检测区域，让子弹一次可以消除两层砖块或者铁块
+    if (_model->wall_damage > 1 and result.size()) {
+        list.clear();
+        bullet_bounds = getBigBulletBounds();
+        tiles.retrieve(list, bullet_bounds);
+        tiles.unique(list, [](TileModel* m) {
+            return m;
+        });
+        result = collision();
     }
 
     bool base_killed = false;
@@ -876,18 +907,7 @@ Status BulletTileCollisionBehavior::tick(float delta) {
         tile->removeFromScreen();
     }
 
-    if (_model->wall_damage <= 1 and _model->destroy_steel) {
-        if (++_vanishCount >= 2) {
-            _model->position -= _model->move * 0.016f * _vanishCount;
-            _model->modifyPosition();
-            bullet_explosion();
-            remove_bullet();
-            return fail;
-        }
-    }
-
-    if (result.size() and not _soundPlayed) {
-        _soundPlayed = true;
+    if (result.size()) {
         if (base_killed) {
             hit_base();
         } else if (steel_killed) {
@@ -895,9 +915,6 @@ Status BulletTileCollisionBehavior::tick(float delta) {
         } else {
             hit_brick();
         }
-    }
-
-    if (result.size() and --_model->wall_damage <= 0) {
         bullet_explosion();
         remove_bullet();
         return fail;
