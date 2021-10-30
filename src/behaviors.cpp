@@ -60,6 +60,36 @@ Status PlayerSpawnBehavior::tick(float delta) {
 
 //=====================================================================================
 
+TankStandbyBehavior::TankStandbyBehavior(WorldModel::TileTree* tiles): _tiles(tiles) {
+    _game.event().add(EventID::PLAYER_STANDBY, this);
+}
+
+TankStandbyBehavior::~TankStandbyBehavior() {
+    _game.event().remove(EventID::PLAYER_STANDBY, this);
+}
+
+void TankStandbyBehavior::onEvent(Event const& e) {
+    if (e.Id() == EventID::PLAYER_STANDBY) {
+        auto tank = e.data<TankModel*>();
+        WorldModel::TileTree::SquareList list;
+        _tiles->retrieve(list, tank->bounds);
+        _tiles->unique(list, [](TileModel* m) {
+            return m;
+        });
+        for (auto& tile : list) {
+            if (tile->type != Tile::ICE_FLOOR) {
+                continue;
+            }
+            if (isCollision(tile->bounds, tank->bounds)) {
+                tank->onIceFloor();
+                return;
+            }
+        }
+    }
+}
+
+//=====================================================================================
+
 EnemySpawnBehavior::EnemySpawnBehavior(WorldModel::TankList* tanks):_index(0), _tanks(tanks), _delay_tick(0.0f) {
     _delay = Tank::getGlobalFloat("ENEMY_SPAWN_DELAY");
     _delay_tick = _delay;
@@ -634,7 +664,6 @@ Status TankTileCollisionBehavior::tick(float delta) {
             }
         }
     }
-    //printf("碰撞: %d\n", list.size());
     return success;
 }
 

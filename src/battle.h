@@ -41,6 +41,7 @@ private:
 private:
     bool _pause;
     bool _joyUsed;
+    int _keyCount;
     Widget* _floor;
     Widget* _root;
     Widget* _upper;

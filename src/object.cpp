@@ -356,13 +356,18 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool
     _tankAnimate[Tank::ENEMY] = TankAnimatePtr(new EnemyTankAnimate(&_model));
 }
 
-void TankView::move(Direction dir) {
+void TankView::move(Direction dir, bool gamepad_controll) {
     if (_model.dir != dir) {
         this->onChangeDir(dir);
     }
     _model.dir = dir;
     _model.moving = true;
     this->updateMoveSpeed();
+
+    if (gamepad_controll) {
+        // 玩家操作同时取消冰面滑行动作
+        stopAction("TankView::on_ice_floor:action");
+    }
 }
 
 void TankView::turn(Direction dir) {
@@ -487,6 +492,22 @@ void TankView::open_shield(float duration) {
     scene->runAction(action);
     tank->shield = true;
     tank->modifyShield();
+}
+
+void TankView::on_ice_floor() {
+    std::string actionName = "TankView::on_ice_floor:action";
+    if (hasAction(actionName)) {
+        return;
+    }
+    auto duration = Tank::getGlobalFloat("PLAYER_ICE_FLOOR_SLIDING_DURATION");
+    auto delay = Action::New<Delay>(duration);
+    auto callback = Action::New<CallBackVoid>([this]{
+        this->stop();
+    });
+    auto action = Action::Ptr(new Sequence({delay, callback}));
+    action->setName(actionName);
+    runAction(action);
+    this->move(_model.dir, false);
 }
 
 TankModel const* TankView::model() const {

@@ -155,6 +155,7 @@ public:
     void createExplosion();
     void createScore();
     void openShield(float duration);
+    void onIceFloor();
 };
 
 class BulletView;

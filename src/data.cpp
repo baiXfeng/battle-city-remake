@@ -173,7 +173,7 @@ void TankModel::modifyPosition() {
 }
 
 void TankModel::modifyDir(Tank::Direction dir) {
-    notify_observers(&TankView::move, dir);
+    notify_observers(&TankView::move, dir, true);
 }
 
 void TankModel::modifyShield() {
@@ -198,6 +198,10 @@ void TankModel::createScore() {
 
 void TankModel::openShield(float duration) {
     notify_observers(&TankView::open_shield, duration);
+}
+
+void TankModel::onIceFloor() {
+    notify_observers(&TankView::on_ice_floor);
 }
 
 BulletModel::BulletModel():

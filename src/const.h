@@ -14,6 +14,7 @@ namespace EventID {
         PLAYER_WIN,
         PLAYER_DEAD,
         PLAYER_STOP_CONTROL,
+        PLAYER_STANDBY,
         PAUSE_GAME,
         RESUME_GAME,
         BASE_FALL,      // 基地击破

@@ -32,6 +32,7 @@ BattleFieldView::~BattleFieldView() {
 }
 
 BattleFieldView::BattleFieldView():
+_keyCount(0),
 _floor(nullptr),
 _root(nullptr),
 _upper(nullptr),
@@ -83,9 +84,10 @@ _world(nullptr) {
 
     auto prop_create = Behavior::Ptr(new PropCreateBehavior(_world, this));
     auto tank_powerup = Behavior::Ptr(new TankPowerUpBehavior(_world, this));
-    auto base_reinforce = Behavior::Ptr(new BaseReinforceBehavior(_world, this));
     auto tank_spawn = Behavior::Ptr(new TankSpawnBehavior(&_world->tanks));
-    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_powerup, base_reinforce, tank_spawn}));
+    auto tank_standby = Behavior::Ptr(new TankStandbyBehavior(&_world->tiles));
+    auto base_reinforce = Behavior::Ptr(new BaseReinforceBehavior(_world, this));
+    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_powerup, tank_spawn, tank_standby,  base_reinforce}));
 }
 
 void BattleFieldView::onLoadLevel() {
@@ -309,9 +311,12 @@ void BattleFieldView::procTankControl() {
     };
     if (_keylist.size()) {
         _player->move(TankView::Direction(keyMap[_keylist.back()]));
-    } else {
-        _player->stop();
     }
+    if (_keylist.empty() and _keylist.size() != _keyCount) {
+        _player->stop();
+        _game.event().notify(EasyEvent<TankModel*>(EventID::PLAYER_STANDBY, (TankModel*)_player->model()));
+    }
+    _keyCount = _keylist.size();
 }
 
 void BattleFieldView::pause(bool v) {

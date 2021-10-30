@@ -137,7 +137,7 @@ public:
     typedef std::shared_ptr<TankAnimate> TankAnimatePtr;
 public:
     TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop = false, Controller c = Tank::AI);
-    void move(Direction dir);
+    void move(Direction dir, bool gamepad_controll = true);
     void turn(Direction dir);
     void stop(Direction dir = Direction::MAX);
     void insert_to(WorldModel* world);
@@ -147,6 +147,7 @@ public:
     void show_score();
     void modify_shield();
     void open_shield(float duration);
+    void on_ice_floor();
     TankModel const* model() const;
 private:
     void onChangeDir(Direction dir);

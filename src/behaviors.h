@@ -25,6 +25,17 @@ private:
     WorldModel::TankList* _tanks;
 };
 
+class TankStandbyBehavior : public Behavior, public Event::Listener {
+public:
+    TankStandbyBehavior(WorldModel::TileTree* tiles);
+    ~TankStandbyBehavior();
+private:
+    Status tick(float delta) override {}
+    void onEvent(Event const& e) override;
+private:
+    WorldModel::TileTree* _tiles;
+};
+
 class EnemySpawnBehavior : public Behavior {
 public:
     EnemySpawnBehavior(WorldModel::TankList* tanks);
