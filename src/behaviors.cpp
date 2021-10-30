@@ -68,6 +68,10 @@ TankStandbyBehavior::~TankStandbyBehavior() {
     _game.event().remove(EventID::PLAYER_STANDBY, this);
 }
 
+Status TankStandbyBehavior::tick(float delta) {
+    return success;
+}
+
 void TankStandbyBehavior::onEvent(Event const& e) {
     if (e.Id() == EventID::PLAYER_STANDBY) {
         auto tank = e.data<TankModel*>();

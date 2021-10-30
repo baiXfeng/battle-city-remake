@@ -30,7 +30,7 @@ public:
     TankStandbyBehavior(WorldModel::TileTree* tiles);
     ~TankStandbyBehavior();
 private:
-    Status tick(float delta) override {}
+    Status tick(float delta) override;
     void onEvent(Event const& e) override;
 private:
     WorldModel::TileTree* _tiles;

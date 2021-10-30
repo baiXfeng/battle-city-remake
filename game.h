@@ -58,7 +58,11 @@ public:
         srand(time(nullptr));
         this->initData();
         this->initCommand();
+#ifdef WIN32
+        _game.screen().push<StartView>();
+#else
         _game.screen().push<LogoView>();
+#endif
     }
     void update(float delta) override {
         _game.screen().update(delta);
