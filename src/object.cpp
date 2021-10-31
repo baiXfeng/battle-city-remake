@@ -350,6 +350,7 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool
     _model.hp = attr.health;
 
     enableUpdate(true);
+    setSize(Tile::SIZE, Tile::SIZE);
     _game.audio().loadEffect(shot_sound);
 
     _tankAnimate[Tank::PLAYER] = TankAnimatePtr(new PlayerTankAnimate(&_model));
