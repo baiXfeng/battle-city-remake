@@ -3,7 +3,6 @@
 //
 
 #include "render.h"
-#include "widget.h"
 
 RenderCopy::RenderCopy():
 _texture(nullptr),

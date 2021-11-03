@@ -206,22 +206,6 @@ private:
     TexturePtr _texture[3];
 };
 
-class DrawColor {
-public:
-    DrawColor(SDL_Renderer* r):_renderer(r) {
-        SDL_GetRenderDrawColor(_renderer, &_back.r, &_back.g, &_back.b, &_back.a);
-    }
-    ~DrawColor() {
-        SDL_SetRenderDrawColor(_renderer, _back.r, _back.g, _back.b, _back.a);
-    }
-    void setColor(SDL_Color const& c) {
-        SDL_SetRenderDrawColor(_renderer, c.r, c.g, c.b, c.a);
-    }
-private:
-    SDL_Renderer* _renderer;
-    SDL_Color _back;
-};
-
 class MaskWidget : public Widget {
 public:
     MaskWidget(SDL_Color const& c);

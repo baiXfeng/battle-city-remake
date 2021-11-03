@@ -1,21 +1,14 @@
 cmake_minimum_required (VERSION 2.8.3)
 
-option(BUILD_PSV "build vpk for psvita." OFF)
+option(PSV "build vpk for psvita." OFF)
 
-if (BUILD_PSV)
-	if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-  		if(DEFINED ENV{VITASDK})
-    		set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
-  		else()
-    		message(FATAL_ERROR "Please define VITASDK to point to your SDK path!")
-  		endif()
-	endif()
+if (PSV)
+	set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
 	include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 	include_directories($ENV{VITASDK}/arm-vita-eabi/include/SDL2)
-else()
-	set(CMAKE_CXX_STANDARD 17)
 endif()
 
+set(CMAKE_CXX_FLAGS "-std=c++17")
 set(PROJECT_NAME "sdl2-ui")
 set(PROJECT_ELF ${PROJECT_NAME}.elf)
 project(${PROJECT_NAME})
@@ -23,7 +16,7 @@ project(${PROJECT_NAME})
 set(BASIC_SOURCE "")
 file( GLOB
 		BASIC_SOURCE
-        *.c*
+		*.c*
 		src/*.c*
 		common/*.c*
 		third/obs/obs/*.c*
@@ -44,7 +37,7 @@ include_directories(
 		third/obs
 )
 
-if (BUILD_PSV)
+if (PSV)
 	add_executable(${PROJECT_ELF} ${BASIC_SOURCE})
 	add_definitions(-DLUA_C89_NUMBERS)
 	target_link_libraries(${PROJECT_ELF}
@@ -78,7 +71,7 @@ if (BUILD_PSV)
 			m
 			z
 			-Wl,--whole-archive pthread -Wl,--no-whole-archive # fix std::thread crash after use
-			)
+	)
 
     file( GLOB_RECURSE ASSETS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} assets/*)
 
@@ -98,12 +91,36 @@ if (BUILD_PSV)
 	vita_create_vpk(${PROJECT_NAME}.vpk ${VITA_TITLEID} ${PROJECT_NAME}.self
         	VERSION ${VITA_VERSION}
         	NAME ${VITA_APP_NAME}
-        	FILE psv/sce_sys/icon0.png sce_sys/icon0.png
-        	FILE psv/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
-        	FILE psv/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
-        	FILE psv/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
+        	FILE platform/psv/sce_sys/icon0.png sce_sys/icon0.png
+        	FILE platform/psv/sce_sys/livearea/contents/bg.png sce_sys/livearea/contents/bg.png
+        	FILE platform/psv/sce_sys/livearea/contents/startup.png sce_sys/livearea/contents/startup.png
+        	FILE platform/psv/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
         	${VPKFILES}
     	)
+elseif (PLATFORM_PSP)
+	include_directories($ENV{PSPDEV}/psp/include/SDL2)
+	add_definitions(-DLUA_C89_NUMBERS)
+	add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
+	target_link_libraries(${PROJECT_NAME} PRIVATE
+			SDL2main
+			SDL2
+			SDL2_ttf
+			SDL2_image
+			SDL2_mixer
+			m
+			GL
+			pspvram
+			${PSP_LIBRARIES}
+	)
+	create_pbp_file(
+			TARGET ${PROJECT_NAME}
+			ICON_PATH ICON0.PNG
+			BACKGROUND_PATH NULL
+			PREVIEW_PATH NULL
+			TITLE ${PROJECT_NAME}
+	)
+	file(COPY platform/psp/ICON0.PNG DESTINATION ${CMAKE_BINARY_DIR})
+	file(COPY assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 else()
 	add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 	file(COPY assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

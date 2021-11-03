@@ -12,8 +12,6 @@
 #include <functional>
 #include "types.h"
 
-void TestAction();
-
 class Action {
 public:
     enum State {

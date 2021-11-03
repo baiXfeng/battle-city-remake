@@ -4,12 +4,7 @@
 
 #include "action.h"
 #include "widget.h"
-#include "game.h"
 #include <algorithm>
-
-void TestAction() {
-
-}
 
 typedef Action::State State;
 
