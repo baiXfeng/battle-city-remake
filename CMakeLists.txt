@@ -106,8 +106,10 @@ elseif (PLATFORM_PSP)
 	target_link_libraries(${PROJECT_NAME} PRIVATE
 			SDL2_image
 			SDL2_mixer
+			SDL2main
 			SDL2
 			SDL2_ttf
+			stdc++
 			freetype
 			jpeg
 			vorbisidec
@@ -116,7 +118,6 @@ elseif (PLATFORM_PSP)
 			png
 			m
 			z
-			c
 			GL
 			pspvram
 			${PSP_LIBRARIES}

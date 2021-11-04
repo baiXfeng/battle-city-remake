@@ -13,8 +13,10 @@
 #define GAME_SCREEN_WIDTH 960
 #define GAME_SCREEN_HEIGHT 544
 
-#ifdef WIN32
+#if defined(WIN32)
 #define GameApp WinMain
+#elif defined(__PSP__)
+#define GameApp SDL_main
 #else
 #define GameApp main
 #endif
