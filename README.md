@@ -41,7 +41,7 @@ make
 ```
 mkdir build
 cd build
-cmake -DBUILD_PSV=ON ..
+cmake -DPSV=ON ..
 make
 ```
 

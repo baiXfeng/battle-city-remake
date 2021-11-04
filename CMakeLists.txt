@@ -104,10 +104,10 @@ elseif (PLATFORM_PSP)
 	add_definitions(-DLUA_C89_NUMBERS)
 	add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 	target_link_libraries(${PROJECT_NAME} PRIVATE
-			SDL2
-			SDL2_ttf
 			SDL2_image
 			SDL2_mixer
+			SDL2
+			SDL2_ttf
 			freetype
 			jpeg
 			vorbisidec
