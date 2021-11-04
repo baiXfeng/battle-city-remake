@@ -6,9 +6,11 @@ if (PSV)
 	set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
 	include("$ENV{VITASDK}/share/vita.cmake" REQUIRED)
 	include_directories($ENV{VITASDK}/arm-vita-eabi/include/SDL2)
+	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
+	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(PROJECT_NAME "sdl2-ui")
 set(PROJECT_ELF ${PROJECT_NAME}.elf)
 project(${PROJECT_NAME})
@@ -102,12 +104,19 @@ elseif (PLATFORM_PSP)
 	add_definitions(-DLUA_C89_NUMBERS)
 	add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
 	target_link_libraries(${PROJECT_NAME} PRIVATE
-			SDL2main
 			SDL2
 			SDL2_ttf
 			SDL2_image
 			SDL2_mixer
+			freetype
+			jpeg
+			vorbisidec
+			mikmod
+			ogg
+			png
 			m
+			z
+			c
 			GL
 			pspvram
 			${PSP_LIBRARIES}

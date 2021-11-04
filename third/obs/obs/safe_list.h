@@ -11,11 +11,58 @@
 #include <atomic>
 #include <cassert>
 #include <chrono>
-#include <condition_variable>
 #include <iterator>
+#include <vector>
+
+// fix build error on psp platform
+#if defined(__PSP__)
+
+#include <functional>
+
+namespace std {
+    class mutex {
+    public:
+
+    };
+    template<typename T> class lock_guard {
+    public:
+        lock_guard(mutex const&) {}
+    };
+    template<typename T> class unique_lock {
+    public:
+    };
+    class condition_variable {
+    public:
+        void notify_all() {}
+        void wait(unique_lock<std::mutex> const& lock, function<bool()> const& f) {
+
+        }
+    };
+    namespace thread {
+        class id {
+        public:
+            id():_id(0) {}
+            bool operator==(id const& o) const {
+                return _id == o._id;
+            }
+        private:
+            int _id;
+        };
+    }
+    namespace this_thread {
+        static thread::id get_id() {
+            return thread::id();
+        }
+    }
+}
+
+#else
+
 #include <mutex>
 #include <thread>
-#include <vector>
+#include <condition_variable>
+
+#endif
 
 namespace obs {
 

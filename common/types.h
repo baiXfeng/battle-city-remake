@@ -5,6 +5,8 @@
 #ifndef SDL2_UI_TYPES_H
 #define SDL2_UI_TYPES_H
 
+#include "fix.hpp"
+
 template<typename T>
 class Vector {
 public:
