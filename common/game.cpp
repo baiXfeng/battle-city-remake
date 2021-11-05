@@ -88,6 +88,8 @@ int Game::run() {
     }
 
     _delegate->fini();
+    this->finiVariable();
+    this->clear();
     finiSDL();
 
     return 0;

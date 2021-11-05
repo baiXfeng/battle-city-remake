@@ -18,9 +18,6 @@ class EventCenter;
 class CommandCenter;
 class GameVariable : public Proxy<std::string> {
 public:
-    GameVariable();
-    virtual ~GameVariable();
-public:
     Fps& fps();
     ScreenWidget& screen();
     GamePad& gamepad();
@@ -30,6 +27,7 @@ public:
     CommandCenter& command();
 protected:
     void initVariable();
+    void finiVariable();
 protected:
     std::shared_ptr<Fps> _fps;
     std::shared_ptr<ScreenWidget> _screen;

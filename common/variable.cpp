@@ -10,20 +10,6 @@
 #include "mouse.h"
 #include "command.h"
 
-GameVariable::GameVariable() {
-
-}
-
-GameVariable::~GameVariable() {
-    _screen = nullptr;
-    _gamepad = nullptr;
-    _mouse = nullptr;
-    _command = nullptr;
-    _event = nullptr;
-    _audio = nullptr;
-    _fps = nullptr;
-}
-
 void GameVariable::initVariable() {
     _fps = std::make_shared<Fps>();
     _audio = std::make_shared<AudioSystem>();
@@ -32,6 +18,16 @@ void GameVariable::initVariable() {
     _mouse = std::make_shared<Mouse>();
     _gamepad = std::make_shared<GamePad>();
     _screen = std::make_shared<ScreenWidget>();
+}
+
+void GameVariable::finiVariable() {
+    _screen = nullptr;
+    _gamepad = nullptr;
+    _mouse = nullptr;
+    _command = nullptr;
+    _event = nullptr;
+    _audio = nullptr;
+    _fps = nullptr;
 }
 
 Fps& GameVariable::fps() {
