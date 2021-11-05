@@ -33,7 +33,7 @@ void initKeyMapVita(GamePad::KeyMap& km) {
 }
 
 GamePad::GamePad():_keyboard_event(false), _sleep(false) {
-#if defined(__vita__)
+#if defined(__vita__) or defined(__PSP__)
     initKeyMapVita(_keyValue);
 #endif
     _keyState.resize(KeyCode::MAX, false);
