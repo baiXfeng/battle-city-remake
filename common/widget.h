@@ -147,7 +147,21 @@ public:
     WindowWidget();
 };
 
+class Texture;
+class RenderTargetWidget : public WindowWidget {
+public:
+    typedef std::shared_ptr<Texture> TexturePtr;
+    static Ptr New(Vector2i const& textureSize);
+protected:
+    RenderTargetWidget(Vector2i const& textureSize);
+    void draw(SDL_Renderer* renderer) override;
+protected:
+    TexturePtr _texture;
+};
+
 class GamePadWidget : public WindowWidget {
+public:
+    typedef GamePad::KeyCode KeyCode;
 protected:
     void enter() override;
     void exit() override;
@@ -155,7 +169,6 @@ protected:
 };
 
 class RenderCopy;
-class Texture;
 class ImageWidget : public Widget {
 public:
     typedef std::shared_ptr<RenderCopy> RenderCopyPtr;

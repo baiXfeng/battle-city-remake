@@ -44,4 +44,15 @@ namespace LOG {
 #define LOG_FINI()
 #endif
 
+#define ENABLE_LOG false
+
+#if not ENABLE_LOG
+#undef LOG_INIT
+#undef LOG
+#undef LOG_FINI
+#define LOG_INIT()
+#define LOG(format, args...)
+#define LOG_FINI()
+#endif
+
 #endif //SDL2_UI_LOG_H

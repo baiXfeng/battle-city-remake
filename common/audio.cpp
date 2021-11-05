@@ -60,11 +60,7 @@ void SoundEffect::free() {
 
 
 AudioSystem::AudioSystem() {
-    int result = Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 1024 );
-    // Check load
-    if ( result != 0 ) {
-        std::cout << "Failed to open audio: " << Mix_GetError() << std::endl;
-    }
+
 }
 
 void AudioSystem::loadMusic(std::string const& name) {

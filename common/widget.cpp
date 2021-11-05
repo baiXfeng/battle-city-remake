@@ -432,6 +432,69 @@ WindowWidget::WindowWidget() {
 
 //=====================================================================================
 
+Widget::Ptr RenderTargetWidget::New(Vector2i const& textureSize) {
+    if (SDL_RenderTargetSupported(_game.renderer())) {
+        return Ptr(new RenderTargetWidget(textureSize));
+    }
+    return Ptr(new WindowWidget);
+}
+
+RenderTargetWidget::RenderTargetWidget(Vector2i const& textureSize) {
+    auto texture = SDL_CreateTexture(
+            _game.renderer(),
+            SDL_PIXELFORMAT_RGBA8888,
+            SDL_TEXTUREACCESS_TARGET,
+            textureSize.x,
+            textureSize.y
+    );
+    _texture = TexturePtr(new Texture(texture));
+#ifndef __vita__
+    SDL_SetTextureScaleMode(texture, SDL_ScaleModeLinear);
+#endif
+}
+
+void RenderTargetWidget::draw(SDL_Renderer* renderer) {
+    if (not _visible) {
+        return;
+    }
+
+    auto scale = _scale;
+    auto anchor = _anchor;
+    auto position = _position;
+    auto parent = _parent;
+    this->_scale = {1.0f, 1.0f};
+    this->_anchor = {0.0f, 0.0f};
+    this->_position = {0.0f, 0.0f};
+    this->_parent = nullptr;
+    this->modifyLayout();
+
+    auto render_target = SDL_GetRenderTarget(renderer);
+    SDL_SetRenderTarget(renderer, _texture->data());
+    SDL_RenderClear(renderer);
+
+    this->onDraw(renderer);
+    for (auto& child : _children) {
+        child->draw(renderer);
+    }
+    SDL_SetRenderTarget(renderer, render_target);
+
+    _parent = parent;
+    _position = position;
+    _anchor = anchor;
+    _scale = scale;
+    this->modifyLayout();
+
+    SDL_Rect dstrect{
+            int(_global_position.x),
+            int(_global_position.y),
+            int(_global_size.x),
+            int(_global_size.y),
+    };
+    SDL_RenderCopy(renderer, _texture->data(), nullptr, &dstrect);
+}
+
+//=====================================================================================
+
 void GamePadWidget::enter() {
     _game.gamepad().add(this->ptr());
     onEnter();
@@ -637,10 +700,15 @@ void CurtainWidget::moveMaskVertical(MaskWidget* target, float yStep, float dura
 //=====================================================================================
 
 ScreenWidget::ScreenWidget():_curtain(nullptr), _root(nullptr) {
+
+    Widget::Ptr box(new WindowWidget);
     Widget::Ptr window(new WindowWidget);
     Widget::Ptr curtain(new CurtainWidget);
-    addChild(window);
-    addChild(curtain);
+
+    addChild(box);
+    box->addChild(window);
+    box->addChild(curtain);
+
     _root = window->to<WindowWidget>();
     _curtain = curtain->to<CurtainWidget>();
 }

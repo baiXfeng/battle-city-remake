@@ -8,6 +8,7 @@
 #include <SDL.h>
 #include <string>
 #include <memory>
+#include "types.h"
 
 class Texture {
 public:
@@ -17,6 +18,9 @@ public:
 #if !defined(__vita__)
         //SDL_SetTextureBlendMode(_texture, SDL_BLENDMODE_BLEND);
 #endif
+        if (_texture) {
+            SDL_QueryTexture(_texture, nullptr, nullptr, &_size.x, &_size.y);
+        }
     }
     virtual ~Texture() {
         if (_texture) {
@@ -28,6 +32,9 @@ public:
     SDL_Texture* data() const {
         return _texture;
     }
+    Vector2i const& size() const {
+        return _size;
+    }
     void setPath(std::string const& path) {
         _path = path;
     }
@@ -37,6 +44,7 @@ public:
 protected:
     SDL_Texture* _texture;
     std::string _path;
+    Vector2i _size;
 };
 
 #endif //SDL2_UI_TEXTURE_H

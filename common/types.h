@@ -117,4 +117,12 @@ private:
     T _data;
 };
 
+#if defined(WIN32)
+#define GameApp WinMain
+#elif defined(__PSP__)
+#define GameApp SDL_main
+#else
+#define GameApp main
+#endif
+
 #endif //SDL2_UI_TYPES_H

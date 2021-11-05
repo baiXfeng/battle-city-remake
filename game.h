@@ -63,6 +63,10 @@ public:
 #else
         _game.screen().push<LogoView>();
 #endif
+
+#if defined(__PSP__)
+        SDL_RenderSetScale(_game.renderer(), 0.5f, 0.5f);
+#endif
     }
     void update(float delta) override {
         _game.screen().update(delta);
