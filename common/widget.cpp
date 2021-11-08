@@ -47,6 +47,7 @@ _update(false),
 _pause_action_when_hidden(false),
 _dirty(true),
 _action(std::make_shared<ActionExecuter>()),
+_rotation(0.0f),
 _position({0.0f, 0.0f}),
 _global_position({0.0f, 0.0f}),
 _size({0.0f, 0.0f}),
@@ -284,9 +285,8 @@ void Widget::onModifyPosition(Vector2f const& position) {
 }
 
 void Widget::setPosition(Vector2f const& position) {
-    _position = position;
     _dirty = true;
-    this->onModifyPosition(_position);
+    this->onModifyPosition(_position = position);
 }
 
 void Widget::setPosition(float dx, float dy) {
@@ -317,9 +317,8 @@ void Widget::onModifySize(Vector2f const& size) {
 }
 
 void Widget::setSize(Vector2f const& size) {
-    _size = size;
     _dirty = true;
-    this->onModifySize(_size);
+    this->onModifySize(_size = size);
 }
 
 void Widget::setSize(float sx, float sy) {
@@ -342,9 +341,8 @@ void Widget::onModifyAnchor(Vector2f const& anchor) {
 }
 
 void Widget::setAnchor(Vector2f const& anchor) {
-    _anchor = anchor;
     _dirty = true;
-    this->onModifyAnchor(_anchor);
+    this->onModifyAnchor(_anchor = anchor);
 }
 
 void Widget::setAnchor(float x, float y) {
@@ -363,9 +361,8 @@ void Widget::onModifyScale(Vector2f const& scale) {
 }
 
 void Widget::setScale(Vector2f const& scale) {
-    _scale = scale;
     _dirty = true;
-    this->onModifyScale(_scale);
+    this->onModifyScale(_scale = scale);
 }
 
 void Widget::setScale(float x, float y) {
@@ -380,8 +377,7 @@ Vector2f const& Widget::scale() const {
 }
 
 void Widget::setOpacity(unsigned char opacity) {
-    _opacity = opacity;
-    this->onModifyOpacity(_opacity);
+    this->onModifyOpacity(_opacity = opacity);
 }
 
 unsigned char Widget::opacity() const {
@@ -389,6 +385,18 @@ unsigned char Widget::opacity() const {
 }
 
 void Widget::onModifyOpacity(unsigned char opacity) {
+
+}
+
+void Widget::setRotation(float rotation) {
+    this->onModifyRotation(_rotation = rotation);
+}
+
+float Widget::rotation() const {
+    return _rotation;
+}
+
+void Widget::onModifyRotation(float rotation) {
 
 }
 
@@ -448,9 +456,12 @@ RenderTargetWidget::RenderTargetWidget(Vector2i const& textureSize) {
             textureSize.y
     );
     _texture = TexturePtr(new Texture(texture));
-#ifndef __vita__
-    SDL_SetTextureScaleMode(texture, SDL_ScaleModeLinear);
-#endif
+    if (texture) {
+        //some problem on psvita
+        //SDL_SetTextureScaleMode(texture, SDL_ScaleModeLinear);
+    }
+    _target = std::make_shared<RenderCopyEx>();
+    _target->setTexture(_texture->data());
 }
 
 void RenderTargetWidget::draw(SDL_Renderer* renderer) {
@@ -484,13 +495,12 @@ void RenderTargetWidget::draw(SDL_Renderer* renderer) {
     _scale = scale;
     this->modifyLayout();
 
-    SDL_Rect dstrect{
-            int(_global_position.x),
-            int(_global_position.y),
-            int(_global_size.x),
-            int(_global_size.y),
-    };
-    SDL_RenderCopy(renderer, _texture->data(), nullptr, &dstrect);
+    _target->setAnchor(_anchor);
+    _target->setScale(_scale);
+    _target->setSize(_size.to<int>());
+    _target->setOpacity(_opacity);
+    _target->setAngle(_rotation);
+    _target->draw(renderer, _position.to<int>());
 }
 
 //=====================================================================================
@@ -524,8 +534,8 @@ void ImageWidget::setTexture(TexturePtr const& texture) {
         setSize(0.0f, 0.0f);
         return;
     }
-    _target->setTexture(texture->data());
-    this->_texture = texture;
+    _texture = texture;
+    _target->setTexture(_texture->data());
     this->setSize(_target->size().to<float>());
 }
 
@@ -533,8 +543,8 @@ void ImageWidget::setTexture(TexturePtr const& texture, SDL_Rect const& srcrect)
     if (texture == nullptr) {
         return;
     }
-    _target->setTexture(texture->data(), srcrect);
-    this->_texture = texture;
+    _texture = texture;
+    _target->setTexture(_texture->data(), srcrect);
     this->setSize(_target->size().to<float>());
 }
 
@@ -543,8 +553,11 @@ void ImageWidget::dirty() {
     this->onDirty();
 }
 
+void ImageWidget::onModifyOpacity(unsigned char opacity) {
+    _target->setOpacity(opacity);
+}
+
 void ImageWidget::onDraw(SDL_Renderer* renderer) {
-    _target->setOpacity(_opacity);
     _target->draw(renderer, global_position().to<int>());
 }
 

@@ -37,16 +37,16 @@ void RenderCopy::setSize(Vector2i const& size) {
     _size = size;
 }
 
+Vector2i const& RenderCopy::size() const {
+    return _size;
+}
+
 void RenderCopy::setOpacity(int opacity) {
-    SDL_SetTextureAlphaMod(_texture, _opacity = opacity % 256);
+    _opacity = opacity % 256;
 }
 
 int RenderCopy::opacity() const {
     return _opacity;
-}
-
-Vector2i const& RenderCopy::size() const {
-    return _size;
 }
 
 void RenderCopy::draw(SDL_Renderer* renderer, Vector2i const& position) {
@@ -59,6 +59,7 @@ void RenderCopy::draw(SDL_Renderer* renderer, Vector2i const& position) {
         _size.x,
         _size.y
     };
+    SDL_SetTextureAlphaMod(_texture, _opacity);
     SDL_RenderCopy(renderer, _texture, &_srcrect, &dstrect);
 }
 
@@ -113,6 +114,7 @@ void RenderCopyEx::draw(SDL_Renderer* renderer, Vector2i const& position) {
     } else if (_scale.y < 0) {
         flip = SDL_RendererFlip::SDL_FLIP_VERTICAL;
     }
+    SDL_SetTextureAlphaMod(_texture, _opacity);
     SDL_RenderCopyEx(renderer, _texture, &_srcrect, &dstrect, _angle, &center, flip);
 }
 

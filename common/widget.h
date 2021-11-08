@@ -113,6 +113,10 @@ public:
     unsigned char opacity() const;
     virtual void onModifyOpacity(unsigned char opacity);
 public:
+    void setRotation(float rotation);
+    float rotation() const;
+    virtual void onModifyRotation(float rotation);
+public:
     void runAction(ActionPtr const& action);
     void stopAction(ActionPtr const& action);
     void stopAction(std::string const& name);
@@ -131,6 +135,7 @@ protected:
     unsigned char _opacity;
     void* _userdata;
     Widget* _parent;
+    float _rotation;
     Vector2f _position;
     Vector2f _global_position;
     Vector2f _global_size;
@@ -148,15 +153,18 @@ public:
 };
 
 class Texture;
+class RenderCopyEx;
 class RenderTargetWidget : public WindowWidget {
 public:
     typedef std::shared_ptr<Texture> TexturePtr;
+    typedef std::shared_ptr<RenderCopyEx> RenderCopyExPtr;
     static Ptr New(Vector2i const& textureSize);
 protected:
     RenderTargetWidget(Vector2i const& textureSize);
     void draw(SDL_Renderer* renderer) override;
 protected:
     TexturePtr _texture;
+    RenderCopyExPtr _target;
 };
 
 class GamePadWidget : public WindowWidget {
@@ -181,6 +189,7 @@ public:
     void setTexture(TexturePtr const& texture, SDL_Rect const& srcrect);
 protected:
     void onDraw(SDL_Renderer* renderer) override;
+    void onModifyOpacity(unsigned char opacity) override;
     void dirty() override;
 private:
     RenderCopyPtr _target;
