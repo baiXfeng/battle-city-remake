@@ -22,6 +22,7 @@
 #include "src/command.h"
 #include "src/const.h"
 #include "lutok3.h"
+#include "time.h"
 
 class MyGame : public Game::App {
 private:

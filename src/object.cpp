@@ -55,7 +55,7 @@ _type(TYPE_BEGIN) {
     _model.layer = 0;
     _model.visible = true;
     _model.type = Tile::TYPE_END;
-    _model.add_observer(this);
+    _model.add(this);
     setType(t);
 }
 
@@ -344,7 +344,7 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool
     _model.controller = c;
     _model.size = {Tile::SIZE, Tile::SIZE};
     _model.dir = Direction::MAX;
-    _model.add_observer(this);
+    _model.add(this);
 
     auto& attr = Tank::getAttribute(party, tier);
     _model.hp = attr.health;
@@ -663,7 +663,7 @@ ImageWidget(load_texture(get_dir(move))) {
         // 最高等级玩家坦克可以消除铁块
         _model.destroy_steel = true;
     }
-    _model.add_observer(this);
+    _model.add(this);
     this->setPosition(_model.position);
     this->setSize(ImageWidget::size());
     this->enableUpdate(true);
@@ -744,7 +744,7 @@ PropView::PropView(Tank::PowerUp type):ImageWidget(
     _model.bounds = {
             0, 0, Tile::SIZE, Tile::SIZE,
     };
-    _model.add_observer(this);
+    _model.add(this);
     enableUpdate(true);
 }
 

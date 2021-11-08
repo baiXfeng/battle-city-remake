@@ -8,6 +8,7 @@
 #include "common/audio.h"
 #include "object.h"
 #include "const.h"
+#include "assert.h"
 
 namespace Tank {
     template <typename T>
@@ -161,47 +162,47 @@ controller(Tank::AI) {
 }
 
 void TileModel::removeFromScreen() {
-    notify_observers(&Widget::removeFromParent);
+    notify(&Widget::removeFromParent);
 }
 
 void TileModel::modifyDisplay() {
-    notify_observers(&Widget::setVisible, visible);
+    notify(&Widget::setVisible, visible);
 }
 
 void TankModel::modifyPosition() {
-    notify_observers(&Widget::setPosition, position.x, position.y);
+    notify(&Widget::setPosition, position.x, position.y);
 }
 
 void TankModel::modifyDir(Tank::Direction dir) {
-    notify_observers(&TankView::move, dir, true);
+    notify(&TankView::move, dir, true);
 }
 
 void TankModel::modifyShield() {
-    notify_observers(&TankView::modify_shield);
+    notify(&TankView::modify_shield);
 }
 
 void TankModel::removeFromScreen() {
-    notify_observers(&Widget::removeFromParent);
+    notify(&Widget::removeFromParent);
 }
 
 void TankModel::createBullet() {
-    notify_observers(&TankView::createBullet);
+    notify(&TankView::createBullet);
 }
 
 void TankModel::createExplosion() {
-    notify_observers(&TankView::explosion);
+    notify(&TankView::explosion);
 }
 
 void TankModel::createScore() {
-    notify_observers(&TankView::show_score);
+    notify(&TankView::show_score);
 }
 
 void TankModel::openShield(float duration) {
-    notify_observers(&TankView::open_shield, duration);
+    notify(&TankView::open_shield, duration);
 }
 
 void TankModel::onIceFloor() {
-    notify_observers(&TankView::on_ice_floor);
+    notify(&TankView::on_ice_floor);
 }
 
 BulletModel::BulletModel():
@@ -211,23 +212,23 @@ wall_damage(0),
 destroy_steel(false) {}
 
 void BulletModel::modifyPosition() {
-    notify_observers(&Widget::setPosition, position.x, position.y);
+    notify(&Widget::setPosition, position.x, position.y);
 }
 
 void BulletModel::removeFromScreen() {
-    notify_observers(&Widget::removeFromParent);
+    notify(&Widget::removeFromParent);
 }
 
 void BulletModel::playExplosion() {
-    notify_observers(&BulletView::play_explosion);
+    notify(&BulletView::play_explosion);
 }
 
 void PropModel::createScore() {
-    notify_observers(&PropView::show_score);
+    notify(&PropView::show_score);
 }
 
 void PropModel::removeFromScreen() {
-    notify_observers(&Widget::removeFromParent);
+    notify(&Widget::removeFromParent);
 }
 
 WorldModel::WorldModel():
@@ -244,6 +245,10 @@ PlayerModel::PlayerModel():life(Tank::getDefaultLifeMax()), win(false), tier(Tan
 namespace res {
     std::string soundName(std::string const& key) {
         return std::string("assets/sounds/") + key + ".ogg";
+    }
+
+    std::string bgmName(std::string const& key) {
+        return std::string("assets/sounds/") + key + ".mp3";
     }
 
     std::string imageName(std::string const& key) {

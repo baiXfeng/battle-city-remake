@@ -21,7 +21,6 @@ file( GLOB
 		*.c*
 		src/*.c*
 		common/*.c*
-		third/obs/obs/*.c*
 		third/lua/*.c*
 		third/lutok3/src/lutok3/*.c*
 )

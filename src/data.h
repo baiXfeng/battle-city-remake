@@ -7,7 +7,7 @@
 
 #include "common/types.h"
 #include "common/quadtree.h"
-#include "obs.h"
+#include "common/observer.h"
 #include "lutok3.h"
 #include <vector>
 #include <string>
@@ -115,7 +115,7 @@ typedef std::vector<AddTank> AddTankList;
 // 对象数据
 
 class Widget;
-class TileModel: public obs::observable<Widget>  {
+class TileModel: public Observer<Widget>  {
 public:
     int id;
     int layer;
@@ -128,7 +128,7 @@ public:
 };
 
 class TankView;
-class TankModel : public obs::observable<TankView> {
+class TankModel : public Observer<TankView> {
 public:
     int id;
     int hp;
@@ -159,7 +159,7 @@ public:
 };
 
 class BulletView;
-class BulletModel : public obs::observable<BulletView> {
+class BulletModel : public Observer<BulletView> {
 public:
     int id;
     int sender_id;
@@ -177,7 +177,7 @@ public:
 };
 
 class PropView;
-class PropModel : public obs::observable<PropView> {
+class PropModel : public Observer<PropView> {
 public:
     int id;
     Tank::PowerUp type;
@@ -224,6 +224,7 @@ typedef Tank::Spawns EnemySpawns;
 
 namespace res {
     std::string soundName(std::string const& key);
+    std::string bgmName(std::string const& key);
     std::string imageName(std::string const& key);
     std::string fontName(std::string const& key);
     std::string levelName(std::string const& key);

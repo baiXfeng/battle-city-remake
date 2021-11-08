@@ -51,6 +51,22 @@ void SoundEffect::play() {
     _channel = Mix_PlayChannel(-1, _chunk, 0);
 }
 
+void SoundEffect::pause() {
+    Mix_Pause(_channel);
+}
+
+void SoundEffect::resume() {
+    Mix_Resume(_channel);
+}
+
+bool SoundEffect::paused() const {
+    return Mix_Paused(_channel) == 1;
+}
+
+int SoundEffect::channel() const {
+    return _channel;
+}
+
 void SoundEffect::free() {
     if (_chunk) {
         Mix_FreeChunk(_chunk);
@@ -61,6 +77,15 @@ void SoundEffect::free() {
 
 AudioSystem::AudioSystem() {
 
+}
+
+void AudioSystem::onChannelFinished(int channel) {
+    for (auto iter = _effectCache.begin(); iter != _effectCache.end(); iter++) {
+        if (iter->second->channel() == channel) {
+            iter->first;
+            return;
+        }
+    }
 }
 
 void AudioSystem::loadMusic(std::string const& name) {
@@ -117,4 +142,9 @@ void AudioSystem::playEffect(std::string const& name) {
 
 void AudioSystem::releaseEffect(std::string const& name) {
     _effectCache.erase(name);
+}
+
+SoundEffect& AudioSystem::se(std::string const& name) {
+    this->loadEffect(name);
+    return *_effectCache[name].get();
 }

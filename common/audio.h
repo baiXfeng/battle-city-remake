@@ -41,6 +41,10 @@ public:
 public:
     bool load(std::string const& name);
     void play();
+    void pause();
+    void resume();
+    bool paused() const;
+    int channel() const;
 private:
     void free();
 private:
@@ -66,6 +70,9 @@ public:
     void loadEffect(std::string const& name);
     void playEffect(std::string const& name);
     void releaseEffect(std::string const& name);
+    SoundEffect& se(std::string const& name);
+private:
+    void onChannelFinished(int channel);
 private:
     MusicCache _musicCache;
     EffectCache _effectCache;
