@@ -7,6 +7,7 @@
 
 #include "common/event.h"
 #include "common/behavior.h"
+#include "common/audio.h"
 #include "data.h"
 
 class TankSpawnBehavior : public SequenceBehavior {
@@ -25,14 +26,16 @@ private:
     WorldModel::TankList* _tanks;
 };
 
-class TankStandbyBehavior : public Behavior, public Event::Listener {
+class TankEventBehavior : public Behavior, public Event::Listener, public AudioSystem::Listener {
 public:
-    TankStandbyBehavior(WorldModel::TileTree* tiles);
-    ~TankStandbyBehavior();
+    TankEventBehavior(WorldModel::TileTree* tiles);
+    ~TankEventBehavior();
 private:
     Status tick(float delta) override;
     void onEvent(Event const& e) override;
+    void onMixFinished(std::string const& name) override;
 private:
+    bool _openingBgmFinished;
     WorldModel::TileTree* _tiles;
 };
 

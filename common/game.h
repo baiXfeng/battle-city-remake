@@ -13,6 +13,7 @@
 #define GAME_SCREEN_WIDTH 960
 #define GAME_SCREEN_HEIGHT 544
 
+class Action;
 class Game : public GameVariable {
 public:
     class Delegate {
@@ -48,6 +49,9 @@ public:
     void setDelegate(Delegate* p);
     void setRenderColor(SDL_Color const& c);
     int run();
+public:
+    typedef std::shared_ptr<Action> ActionPtr;
+    void runActionOnMainThread(ActionPtr const& action);
 private:
     Game();
     void input();

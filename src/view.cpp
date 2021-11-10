@@ -12,6 +12,7 @@
 #include "data.h"
 #include "lutok3.h"
 #include "battle.h"
+#include "sound_effect.h"
 #include <assert.h>
 
 std::string fontName = "assets/fonts/prstart.ttf";
@@ -518,10 +519,7 @@ BattleView::BattleView() {
 
     _game.setRenderColor({115, 115, 115, 255});
     this->performLayout();
-
-    auto sound = res::soundName("stage_start");
-    _game.audio().loadEffect(sound);
-    _game.audio().playEffect(sound);
+    _SE.playSE(_SE.OPENING_BGM);
 }
 
 void BattleView::onEvent(const Event &e) {
@@ -747,9 +745,7 @@ private:
         _number->setString(std::to_string(++_currCount));
         _ops->setString(std::to_string(_currCount * _oneScore));
 
-        auto sound = res::soundName("score");
-        _game.audio().loadEffect(sound);
-        _game.audio().playEffect(sound);
+        _SE.playSE(_SE.SCORE_SE);
 
         if (_currCount >= _killCount) {
             _callback();
@@ -908,8 +904,6 @@ void ScoreView::onNextScene() {
 
 //=====================================================================================
 
-auto game_over_sound = "assets/sounds/game_over.ogg";
-
 GameOverView::GameOverView() {
     _game.setRenderColor({0, 0, 0, 255});
     _game.gamepad().sleep(0.0f);
@@ -926,15 +920,14 @@ GameOverView::GameOverView() {
     view->setAnchor(0.5f, 0.5f);
     addChild(view);
 
-    _game.audio().loadEffect(game_over_sound);
-    _game.audio().playEffect(game_over_sound);
+    _SE.playSE(_SE.GAMEOVER_SE);
 
     performLayout();
 }
 
 void GameOverView::onButtonDown(int key) {
     if (key == KeyCode::START) {
-        _game.audio().releaseEffect(game_over_sound);
+        _SE.stopSE(_SE.GAMEOVER_SE);
         _game.screen().replace<StartView>();
     }
 }

@@ -16,6 +16,7 @@
 #include "const.h"
 #include "skin.h"
 #include "debug.h"
+#include "sound_effect.h"
 
 //=====================================================================================
 
@@ -29,6 +30,7 @@ BattleFieldView::~BattleFieldView() {
     _game.event().remove(EventID::GAME_OVER, this);
     _game.event().remove(EventID::PLAYER_DEAD, this);
     _game.event().remove(EventID::PLAYER_STOP_CONTROL, this);
+    _SE.stopTankSE();
 }
 
 BattleFieldView::BattleFieldView():
@@ -85,9 +87,9 @@ _world(nullptr) {
     auto prop_create = Behavior::Ptr(new PropCreateBehavior(_world, this));
     auto tank_powerup = Behavior::Ptr(new TankPowerUpBehavior(_world, this));
     auto tank_spawn = Behavior::Ptr(new TankSpawnBehavior(&_world->tanks));
-    auto tank_standby = Behavior::Ptr(new TankStandbyBehavior(&_world->tiles));
+    auto tank_event = Behavior::Ptr(new TankEventBehavior(&_world->tiles));
     auto base_reinforce = Behavior::Ptr(new BaseReinforceBehavior(_world, this));
-    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_powerup, tank_spawn, tank_standby,  base_reinforce}));
+    _behavior = Behavior::Ptr(new SequenceBehavior({prop_create, tank_powerup, tank_spawn, tank_event, base_reinforce}));
 }
 
 void BattleFieldView::onLoadLevel() {
@@ -281,6 +283,7 @@ void BattleFieldView::onEvent(Event const& e) {
     } else if (e.Id() == EventID::GAME_OVER) {
 
         _keylist.clear();
+        _SE.stopTankSE();
         this->gameOver();
 
     } else if (e.Id() == EventID::PLAYER_DEAD) {
@@ -295,6 +298,8 @@ void BattleFieldView::onEvent(Event const& e) {
     } else if (e.Id() == EventID::PLAYER_STOP_CONTROL) {
 
         _keylist.clear();
+        _SE.stopTankSE();
+
     }
 }
 
@@ -311,6 +316,9 @@ void BattleFieldView::procTankControl() {
     };
     if (_keylist.size()) {
         _player->move(TankView::Direction(keyMap[_keylist.back()]));
+        if (_keylist.size() != _keyCount) {
+            _game.event().notify(Event(EventID::PLAYER_MOVE));
+        }
     }
     if (_keylist.empty() and _keylist.size() != _keyCount) {
         _player->stop();

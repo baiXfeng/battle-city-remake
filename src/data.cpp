@@ -9,6 +9,7 @@
 #include "object.h"
 #include "const.h"
 #include "assert.h"
+#include "sound_effect.h"
 
 namespace Tank {
     template <typename T>
@@ -139,9 +140,7 @@ namespace Tank {
             // 到达2万分仅一次奖励一命
             auto& player = _game.get<PlayerModel>("player_model");
             _game.event().notify(EasyEvent<int>(EventID::PLAYER_LIFE_CHANGED, ++player.life));
-            auto sound = res::soundName("life");
-            _game.audio().loadEffect(sound);
-            _game.audio().playEffect(sound);
+            _SE.playSE(_SE.LIFEUP_SE);
             once = true;
         }
     }

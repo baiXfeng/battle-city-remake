@@ -6,12 +6,12 @@
 #include "common/collision.h"
 #include "common/game.h"
 #include "common/event.h"
-#include "common/audio.h"
 #include "common/action.h"
 #include "const.h"
 #include "view.h"
 #include "object.h"
 #include "debug.h"
+#include "sound_effect.h"
 
 typedef Behavior::Status Status;
 
@@ -60,20 +60,27 @@ Status PlayerSpawnBehavior::tick(float delta) {
 
 //=====================================================================================
 
-TankStandbyBehavior::TankStandbyBehavior(WorldModel::TileTree* tiles): _tiles(tiles) {
+TankEventBehavior::TankEventBehavior(WorldModel::TileTree* tiles): _tiles(tiles), _openingBgmFinished(false) {
     _game.event().add(EventID::PLAYER_STANDBY, this);
+    _game.event().add(EventID::PLAYER_MOVE, this);
+    _game.audio().addListener(res::soundName("stage_start"), this);
 }
 
-TankStandbyBehavior::~TankStandbyBehavior() {
+TankEventBehavior::~TankEventBehavior() {
     _game.event().remove(EventID::PLAYER_STANDBY, this);
+    _game.event().remove(EventID::PLAYER_MOVE, this);
+    _game.audio().removeListener(res::soundName("stage_start"), this);
 }
 
-Status TankStandbyBehavior::tick(float delta) {
+Status TankEventBehavior::tick(float delta) {
     return success;
 }
 
-void TankStandbyBehavior::onEvent(Event const& e) {
+void TankEventBehavior::onEvent(Event const& e) {
     if (e.Id() == EventID::PLAYER_STANDBY) {
+        if (_openingBgmFinished) {
+            _SE.playSE(_SE.TANK_IDLE_SE);
+        }
         auto tank = e.data<TankModel*>();
         WorldModel::TileTree::SquareList list;
         _tiles->retrieve(list, tank->bounds);
@@ -89,7 +96,21 @@ void TankStandbyBehavior::onEvent(Event const& e) {
                 return;
             }
         }
+    } else if (e.Id() == EventID::PLAYER_MOVE) {
+        if (_openingBgmFinished) {
+            _SE.playSE(_SE.TANK_MOVE_SE);
+        }
     }
+}
+
+void TankEventBehavior::onMixFinished(std::string const& name) {
+    auto& world = _game.get<WorldModel>("world_model");
+    if (world.player[0]->moving) {
+        _SE.playSE(_SE.TANK_MOVE_SE);
+    } else {
+        _SE.playSE(_SE.TANK_IDLE_SE);
+    }
+    _openingBgmFinished = true;
 }
 
 //=====================================================================================
@@ -248,9 +269,7 @@ void PropCreateBehavior::onEvent(Event const& e) {
         view->runAction(repeat);
 
         // 播放音效
-        auto sound = res::soundName("powerup_appear");
-        _game.audio().loadEffect(sound);
-        _game.audio().playEffect(sound);
+        _SE.playSE(_SE.POWERUP_APPEAR);
     }
 }
 
@@ -374,9 +393,7 @@ void TankPowerUpBehavior::onEvent(Event const& e) {
                 }
                 iter++;
             }
-            auto sound = res::soundName("explosion_1");
-            _game.audio().loadEffect(sound);
-            _game.audio().playEffect(sound);
+            _SE.playSE(_SE.TANK_EXPLOSION);
 
         } else if (type == Tank::HELMET) {
 
@@ -759,18 +776,10 @@ Status BulletMoveBehavior::tick(float delta) {
 
 //=====================================================================================
 
-std::string hit_wall = res::soundName("bullet_hit_1");
-std::string hit_brick = res::soundName("bullet_hit_2");
-std::string tank_explosion = res::soundName("explosion_1");
-std::string base_explosion = res::soundName("explosion_2");
-
 BaseBulletCollisionBehavior::BaseBulletCollisionBehavior(BulletModel* model, WorldModel* world):
 _model(model),
 _world(world) {
-    _game.audio().loadEffect(::hit_wall);
-    _game.audio().loadEffect(::hit_brick);
-    _game.audio().loadEffect(tank_explosion);
-    _game.audio().loadEffect(base_explosion);
+
 }
 
 void BaseBulletCollisionBehavior::remove_bullet() {
@@ -789,22 +798,22 @@ void BaseBulletCollisionBehavior::hit_wall() {
     if (_model->party == Tank::ENEMY) {
         return;
     }
-    _game.audio().playEffect(::hit_wall);
+    _SE.playSE(_SE.BULLET_HIT_WALL_SE);
 }
 
 void BaseBulletCollisionBehavior::hit_brick() {
     if (_model->party == Tank::ENEMY) {
         return;
     }
-    _game.audio().playEffect(::hit_brick);
+    _SE.playSE(_SE.BULLET_HIT_BRICK_SE);
 }
 
 void BaseBulletCollisionBehavior::hit_base() {
-    _game.audio().playEffect(base_explosion);
+    _SE.playSE(_SE.BASE_EXPLOSION);
 }
 
 void BaseBulletCollisionBehavior::hit_tank() {
-    _game.audio().playEffect(tank_explosion);
+    _SE.playSE(_SE.TANK_EXPLOSION);
 }
 
 //=====================================================================================
@@ -1114,7 +1123,5 @@ Status PropCollisionBehavior::tick(float delta) {
 }
 
 void PropCollisionBehavior::playEffect(Tank::PowerUp type) {
-    auto sound = res::soundName(type == Tank::TANK ? "life" : "powerup_pick");
-    _game.audio().loadEffect(sound);
-    _game.audio().playEffect(sound);
+    _SE.playSE(Tank::TANK == type ? _SE.LIFEUP_SE : _SE.POWERUP_PICK);
 }

@@ -57,6 +57,10 @@ void Game::input() {
     }
 }
 
+void Game::runActionOnMainThread(ActionPtr const& action) {
+    screen().runAction(action);
+}
+
 int initSDL(std::string const& title);
 void finiSDL();
 int Game::run() {

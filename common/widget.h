@@ -25,12 +25,12 @@ public:                          \
     }
 
 class Action;
-class ActionExecuter;
+class BaseActionExecuter;
 class Widget : public GamePadListener, public Event::Listener {
 public:
     typedef std::shared_ptr<Widget> WidgetPtr;
     typedef std::vector<WidgetPtr> WidgetArray;
-    typedef std::shared_ptr<ActionExecuter> ActionExecuterPtr;
+    typedef std::shared_ptr<BaseActionExecuter> ActionExecuterPtr;
     typedef std::shared_ptr<Action> ActionPtr;
     typedef WidgetPtr Ptr;
 public:
@@ -290,8 +290,6 @@ public:
     void runAction(ActionPtr const& action);
     void stopAction(ActionPtr const& action);
     void stopAction(std::string const& name);
-public:
-    void onEvent(SDL_Event& event);
 private:
     CurtainWidget* _curtain;
     WindowWidget* _root;

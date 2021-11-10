@@ -46,7 +46,7 @@ _visible(true),
 _update(false),
 _pause_action_when_hidden(false),
 _dirty(true),
-_action(std::make_shared<ActionExecuter>()),
+_action(ActionExecuterPtr(new ActionExecuter)),
 _rotation(0.0f),
 _position({0.0f, 0.0f}),
 _global_position({0.0f, 0.0f}),
@@ -724,6 +724,7 @@ ScreenWidget::ScreenWidget():_curtain(nullptr), _root(nullptr) {
 
     _root = window->to<WindowWidget>();
     _curtain = curtain->to<CurtainWidget>();
+    _action = ActionExecuterPtr(new SafeActionExecuter); // make action executer thread safe
 }
 
 void ScreenWidget::push(Widget::Ptr& widget) {
@@ -794,10 +795,6 @@ void ScreenWidget::stopAction(Action::Ptr const& action) {
 
 void ScreenWidget::stopAction(std::string const& name) {
     WindowWidget::stopAction(name);
-}
-
-void ScreenWidget::onEvent(SDL_Event& event) {
-
 }
 
 //=====================================================================================

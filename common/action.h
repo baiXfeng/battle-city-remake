@@ -41,24 +41,54 @@ private:
     State Step(float dt) override;
 };
 
+class BaseActionExecuter {
+public:
+    virtual ~BaseActionExecuter() {}
+public:
+    virtual void update(float dt) = 0;
+    virtual void add(Action::Ptr const& action) = 0;
+    virtual void remove(std::string const& name) = 0;
+    virtual void remove(Action::Ptr const& action) = 0;
+    virtual bool has(std::string const& name) const = 0;
+    virtual void clear() = 0;
+    virtual bool empty() const = 0;
+    virtual void pause(bool v) = 0;
+};
+
 class Widget;
-class ActionExecuter {
+class ActionExecuter : public BaseActionExecuter {
 public:
     typedef std::list<Action::Ptr> Actions;
 public:
     ActionExecuter();
 public:
-    void update(float dt);
-    void add(Action::Ptr const& action);
-    void remove(std::string const& name);
-    void remove(Action::Ptr const& action);
-    bool has(std::string const& name) const;
-    void clear();
-    bool empty() const;
-    void pause(bool v);
+    void update(float dt) override;
+    void add(Action::Ptr const& action) override;
+    void remove(std::string const& name) override;
+    void remove(Action::Ptr const& action) override;
+    bool has(std::string const& name) const override;
+    void clear() override;
+    bool empty() const override;
+    void pause(bool v) override;
 protected:
     bool _pause;
     Actions _actions;
+};
+
+class Mutex;
+class SafeActionExecuter : public ActionExecuter {
+public:
+    typedef std::shared_ptr<Mutex> MutexPtr;
+public:
+    SafeActionExecuter();
+public:
+    void add(Action::Ptr const& action) override;
+    void remove(std::string const& name) override;
+    void remove(Action::Ptr const& action) override;
+    bool has(std::string const& name) const override;
+    void clear() override;
+protected:
+    MutexPtr _mutex;
 };
 
 class CallBackVoid : public Action {

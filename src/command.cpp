@@ -11,6 +11,7 @@
 #include "view.h"
 #include "data.h"
 #include "const.h"
+#include "sound_effect.h"
 
 void GameOverCommand::onEvent(Event const& e) {
 
@@ -78,9 +79,7 @@ void PauseGameCommand::onEvent(Event const& e) {
     target->pauseAllActions();
     target->enableUpdate(false);
 
-    auto sound = res::soundName("pause");
-    _game.audio().loadEffect(sound);
-    _game.audio().playEffect(sound);
+    _SE.playSE(_SE.PAUSE_SE);
 }
 
 void ResumeGameCommand::onEvent(Event const& e) {
@@ -90,6 +89,5 @@ void ResumeGameCommand::onEvent(Event const& e) {
     target->resumeAllActions();
     target->enableUpdate(true);
 
-    auto sound = res::soundName("pause");
-    _game.audio().releaseEffect(sound);
+    _SE.stopSE(_SE.PAUSE_SE);
 }

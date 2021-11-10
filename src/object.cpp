@@ -6,11 +6,10 @@
 #include "common/action.h"
 #include "common/loadres.h"
 #include "common/game.h"
-#include "common/audio.h"
 #include "behaviors.h"
 #include "view.h"
 #include "skin.h"
-#include "const.h"
+#include "sound_effect.h"
 
 static int _objectCount = 0;
 
@@ -330,8 +329,6 @@ void PlayerTankAnimate::update(float delta) {
 
 //=====================================================================================
 
-std::string shot_sound = res::soundName("bullet_shot");
-
 TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop, Controller c) {
     _model.id = ++_objectCount;
     _model.fire = false;
@@ -351,7 +348,6 @@ TankView::TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool
 
     enableUpdate(true);
     setSize(Tile::SIZE, Tile::SIZE);
-    _game.audio().loadEffect(shot_sound);
 
     _tankAnimate[Tank::PLAYER] = TankAnimatePtr(new PlayerTankAnimate(&_model));
     _tankAnimate[Tank::ENEMY] = TankAnimatePtr(new EnemyTankAnimate(&_model));
@@ -405,7 +401,7 @@ void TankView::createBullet() {
 
     if (_model.party == Tank::PLAYER) {
         // 只有玩家的坦克才会播放子弹音效
-        _game.audio().playEffect(shot_sound);
+        _SE.playSE(_SE.TANK_FIRE_SE);
     }
     Vector2f offset[4] = {
             {size().x * 0.5f, 0.0f},

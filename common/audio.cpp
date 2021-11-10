@@ -4,6 +4,8 @@
 
 #include "audio.h"
 #include "loadres.h"
+#include "game.h"
+#include "action.h"
 #include <iostream>
 
 Music::Music():_music(nullptr) {
@@ -32,7 +34,7 @@ void Music::free() {
     }
 }
 
-SoundEffect::SoundEffect():_chunk(nullptr), _channel(0) {
+SoundEffect::SoundEffect():_chunk(nullptr), _channel(-0xA) {
 
 }
 
@@ -67,6 +69,10 @@ int SoundEffect::channel() const {
     return _channel;
 }
 
+void SoundEffect::resetChannel() {
+    _channel = -0xA;
+}
+
 void SoundEffect::free() {
     if (_chunk) {
         Mix_FreeChunk(_chunk);
@@ -74,18 +80,37 @@ void SoundEffect::free() {
     }
 }
 
+class ChannelCallBack : public Action {
+public:
+    typedef std::function<void(int)> Callback;
+    ChannelCallBack(Callback const& cb, int channel):_channel(channel), _call(cb) {}
+private:
+    State Step(float dt) override {
+        if (_call != nullptr) {
+            _call(_channel);
+        }
+        return FINISH;
+    }
+private:
+    int _channel;
+    Callback _call;
+};
 
-AudioSystem::AudioSystem() {
-
+void onMixChannelFinished(int channel) {
+    _game.runActionOnMainThread(Action::Ptr(
+            new ChannelCallBack(
+                    std::bind(&AudioSystem::onChannelFinished, &_game.audio(), std::placeholders::_1),
+                    channel
+            )
+    ));
 }
 
-void AudioSystem::onChannelFinished(int channel) {
-    for (auto iter = _effectCache.begin(); iter != _effectCache.end(); iter++) {
-        if (iter->second->channel() == channel) {
-            iter->first;
-            return;
-        }
-    }
+AudioSystem::AudioSystem() {
+    Mix_ChannelFinished(&onMixChannelFinished);
+}
+
+AudioSystem::~AudioSystem() {
+    Mix_ChannelFinished(nullptr);
 }
 
 void AudioSystem::loadMusic(std::string const& name) {
@@ -138,6 +163,17 @@ void AudioSystem::playEffect(std::string const& name) {
         iter = _effectCache.find(name);
     }
     iter->second->play();
+
+    // reset channel while overlap
+    int const channel = iter->second->channel();
+    for (auto& se : _effectCache) {
+        if (se.first == name) {
+            continue;
+        }
+        if (se.second->channel() == channel) {
+            se.second->resetChannel();
+        }
+    }
 }
 
 void AudioSystem::releaseEffect(std::string const& name) {
@@ -147,4 +183,38 @@ void AudioSystem::releaseEffect(std::string const& name) {
 SoundEffect& AudioSystem::se(std::string const& name) {
     this->loadEffect(name);
     return *_effectCache[name].get();
+}
+
+void AudioSystem::addListener(std::string const& name, Listener* p) {
+    auto iter = _observers.find(name);
+    if (iter == _observers.end()) {
+        _observers.insert(std::make_pair(name, std::make_shared<Observer<Listener>>()));
+        iter = _observers.find(name);
+    }
+    iter->second->add(p);
+}
+
+void AudioSystem::removeListener(std::string const& name, Listener* p) {
+    auto obs = _observers.find(name);
+    if (obs != _observers.end()) {
+        obs->second->remove(p);
+    }
+}
+
+void AudioSystem::onChannelFinished(int channel) {
+    auto& cache = _effectCache;
+    for (auto iter = cache.begin(); iter != cache.end(); iter++) {
+        if (iter->second->channel() == channel) {
+            int temp_channel = channel;
+            auto key = iter->first;
+            auto& observers = _observers;
+            auto obs = observers.find(iter->first);
+            if (obs != observers.end()) {
+                obs->second->each([&iter](AudioSystem::Listener* view) {
+                    view->onMixFinished(iter->first);
+                });
+            }
+            return;
+        }
+    }
 }

@@ -4,6 +4,7 @@
 
 #include "action.h"
 #include "widget.h"
+#include "mutex.h"
 #include <algorithm>
 
 typedef Action::State State;
@@ -94,6 +95,37 @@ void ActionExecuter::clear() {
 
 bool ActionExecuter::empty() const {
     return _actions.empty();
+}
+
+//=====================================================================================
+
+SafeActionExecuter::SafeActionExecuter():_mutex(std::make_shared<Mutex>()) {
+
+}
+
+void SafeActionExecuter::add(Action::Ptr const& action) {
+    Lock lock(*_mutex.get());
+    ActionExecuter::add(action);
+}
+
+void SafeActionExecuter::remove(std::string const& name) {
+    Lock lock(*_mutex.get());
+    ActionExecuter::remove(name);
+}
+
+void SafeActionExecuter::remove(Action::Ptr const& action) {
+    Lock lock(*_mutex.get());
+    ActionExecuter::remove(action);
+}
+
+bool SafeActionExecuter::has(std::string const& name) const {
+    Lock lock(*_mutex.get());
+    return ActionExecuter::has(name);
+}
+
+void SafeActionExecuter::clear() {
+    Lock lock(*_mutex.get());
+    ActionExecuter::clear();
 }
 
 //=====================================================================================
