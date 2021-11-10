@@ -163,10 +163,7 @@ int initSDL(std::string const& windowTitle) {
 
     sdl_renderer = SDL_CreateRenderer(sdl_window, -1, SDL_RENDERER_TARGETTEXTURE);
     SDL_SetRenderDrawBlendMode(sdl_renderer, SDL_BLENDMODE_BLEND);
-
-#if not defined(__vita__)
     SDL_RenderSetLogicalSize(sdl_renderer, sdl_screen_size.x, sdl_screen_size.y);
-#endif
 
     int result = Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, 2, 1024 );
     // Check load
