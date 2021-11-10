@@ -12,6 +12,7 @@
 #include "data.h"
 #include "const.h"
 #include "sound_effect.h"
+#include "skin.h"
 
 void GameOverCommand::onEvent(Event const& e) {
 
@@ -90,4 +91,17 @@ void ResumeGameCommand::onEvent(Event const& e) {
     target->enableUpdate(true);
 
     _SE.stopSE(_SE.PAUSE_SE);
+}
+
+void LoadResCommand::onEvent(Event const& e) {
+    skin::getShieldSkin();
+    skin::getTankAppearSkin();
+    for (int i = Tank::A; i < Tank::TIER_MAX; ++i) {
+        auto tier = Tank::Tier(i);
+        skin::getDEnemySkin(tier);
+        skin::getEnemySkin(tier, false);
+        skin::getEnemySkin(tier, true);
+        skin::getPlayerSkin(tier, Tank::P1);
+    }
+    _SE.load();
 }

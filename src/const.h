@@ -24,6 +24,7 @@ namespace EventID {
         PROP_GEN,       // 生成奖励
         BASE_REINFORCE_START,
         BASE_REINFORCE_FINISH,
+        LOAD_RES,
     };
 }
 

@@ -23,4 +23,8 @@ class ResumeGameCommand : public Command {
     void onEvent(Event const& e) override;
 };
 
+class LoadResCommand : public Command {
+    void onEvent(Event const& e) override;
+};
+
 #endif //BATTLE_CITY_SRC_COMMAND_H

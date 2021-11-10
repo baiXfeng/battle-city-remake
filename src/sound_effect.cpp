@@ -24,6 +24,9 @@ SingleSoundEffect::SingleSoundEffect(): _currType(TYPE_MAX) {
             "pause",
             "game_over",
     };
+}
+
+void SingleSoundEffect::load() {
     for (int i = 0; i < 2; ++i) {
         _game.audio().loadMusic( res::bgmName(_seNames[SETYPE(i)]) );
     }

@@ -6,6 +6,8 @@
 #define SDL2_UI_OBSERVER_H
 
 #include <list>
+#include <algorithm>
+#include <functional>
 
 template<class T>
 class Observer {

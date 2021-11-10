@@ -157,6 +157,9 @@ void LogoView::onEnter() {
     auto clickon = Action::New<CallBackVoid>([&]{
         this->_canClick = true;
     });
+    auto loadskin = Action::New<CallBackVoid>([]{
+        _game.event().notify(Event(EventID::LOAD_RES));
+    });
     auto delay2 = Action::Ptr(new Delay(1.0f));
     auto clickoff = Action::New<CallBackVoid>([&]{
         this->_canClick = false;
@@ -164,7 +167,7 @@ void LogoView::onEnter() {
     auto fadeout = Action::Ptr(new ProgressAction(std::bind(&LogoView::onFadeOut, this, std::placeholders::_1), 0.5f));
     auto delay3 = Action::New<Delay>(1.0f);
     auto callback = Action::Ptr(new CallBackVoid(_callback));
-    auto action = Action::Ptr(new Sequence({fadein, delay1, clickon, delay2, clickoff, fadeout, delay3, callback}));
+    auto action = Action::Ptr(new Sequence({fadein, delay1, loadskin, clickon, delay2, clickoff, fadeout, delay3, callback}));
     this->runAction(action);
 }
 

@@ -10,7 +10,7 @@ if (PSV)
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_FLAGS "-std=c++17")
 set(PROJECT_NAME "sdl2-ui")
 set(PROJECT_ELF ${PROJECT_NAME}.elf)
 project(${PROJECT_NAME})

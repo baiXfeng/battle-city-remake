@@ -28,6 +28,7 @@ public:
         GAMEOVER_SE,
         TYPE_MAX,
     };
+    void load();
     void playSE(SETYPE type);
     void stopSE(SETYPE type);
     void stopTankSE();

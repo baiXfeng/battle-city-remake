@@ -53,6 +53,7 @@ public:
         _game.command().add<PauseGameCommand>(EventID::PAUSE_GAME);
         _game.command().add<ResumeGameCommand>(EventID::RESUME_GAME);
         _game.command().add<PlayerWinCommand>(EventID::PLAYER_WIN);
+        _game.command().add<LoadResCommand>(EventID::LOAD_RES);
     }
     void init() override {
         LOG_INIT();
