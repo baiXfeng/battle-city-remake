@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 2.8.3)
 
 option(PSV "build vpk for psvita." OFF)
+option(SWITCH "build nro for Nintendo Switch." OFF)
 
 if (PSV)
 	set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
@@ -8,6 +9,10 @@ if (PSV)
 	include_directories($ENV{VITASDK}/arm-vita-eabi/include/SDL2)
 	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+elseif(SWITCH)
+	include("$ENV{DEVKITPRO}/cmake/Switch.cmake" REQUIRED)
+	include_directories($ENV{DEVKITPRO}/portlibs/switch/include/SDL2)
+	add_definitions("-D__NS__")
 endif()
 
 set(CMAKE_CXX_FLAGS "-std=c++17")
@@ -98,6 +103,42 @@ if (PSV)
         	FILE platform/psv/sce_sys/livearea/contents/template.xml sce_sys/livearea/contents/template.xml
         	${VPKFILES}
     	)
+elseif(NINTENDO_SWITCH)
+	add_definitions(-DLUA_C89_NUMBERS)
+	add_executable(${PROJECT_NAME} ${BASIC_SOURCE})
+	target_link_libraries(${PROJECT_NAME} PRIVATE
+			SDL2_image
+			SDL2_mixer
+			SDL2
+			SDL2_ttf
+			vorbisidec
+			freetype
+			flac
+			ogg
+			png
+			jpeg
+			webp
+			mpg123
+			modplug
+			opusfile
+			opus
+			nx
+			m
+			z
+			bz2
+			egl
+			glapi
+			drm_nouveau
+	)
+	nx_generate_nacp(${PROJECT_NAME}.nacp
+			NAME "Battle City"
+			AUTHOR "BAIFENG"
+			VERSION "1.0.0"
+	)
+	nx_create_nro(${PROJECT_NAME}
+			NACP ${PROJECT_NAME}.nacp
+			ICON "${PROJECT_SOURCE_DIR}/platform/switch/icon.jpg"
+	)
 elseif (PLATFORM_PSP)
 	include_directories($ENV{PSPDEV}/psp/include/SDL2)
 	add_definitions(-DLUA_C89_NUMBERS)

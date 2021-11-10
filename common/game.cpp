@@ -145,8 +145,6 @@ int initSDL(std::string const& windowTitle) {
         return 1;
     }
 
-    auto context = SDL_GL_CreateContext(sdl_window);
-
     for (int it = 0; it < SDL_GetNumRenderDrivers(); it++) {
         SDL_GetRenderDriverInfo(it, &info);
         strcat(rendername, info.name);
