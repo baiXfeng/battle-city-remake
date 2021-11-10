@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8.3)
 
 option(PSV "build vpk for psvita." OFF)
-option(SWITCH "build nro for Nintendo Switch." OFF)
+option(NS "build nro for Nintendo Switch." OFF)
 
 if (PSV)
 	set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "toolchain file")
@@ -9,7 +9,7 @@ if (PSV)
 	include_directories($ENV{VITASDK}/arm-vita-eabi/include/SDL2)
 	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
-elseif(SWITCH)
+elseif(NS)
 	include("$ENV{DEVKITPRO}/cmake/Switch.cmake" REQUIRED)
 	include_directories($ENV{DEVKITPRO}/portlibs/switch/include/SDL2)
 	add_definitions("-D__NS__")
@@ -130,6 +130,7 @@ elseif(NINTENDO_SWITCH)
 			glapi
 			drm_nouveau
 	)
+	file(COPY assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/romfs)
 	nx_generate_nacp(${PROJECT_NAME}.nacp
 			NAME "Battle City"
 			AUTHOR "BAIFENG"
@@ -137,7 +138,8 @@ elseif(NINTENDO_SWITCH)
 	)
 	nx_create_nro(${PROJECT_NAME}
 			NACP ${PROJECT_NAME}.nacp
-			ICON "${PROJECT_SOURCE_DIR}/platform/switch/icon.jpg"
+			ICON ${PROJECT_SOURCE_DIR}/platform/switch/icon.jpg
+			ROMFS ${CMAKE_CURRENT_BINARY_DIR}/romfs
 	)
 elseif (PLATFORM_PSP)
 	include_directories($ENV{PSPDEV}/psp/include/SDL2)

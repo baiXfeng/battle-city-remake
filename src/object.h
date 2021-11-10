@@ -26,7 +26,7 @@ protected:
     BattleField* _battlefield;
 };
 
-class TileView : public ImageWidget {
+class TileView : public mge::ImageWidget {
 public:
     enum TYPE {
         TYPE_BEGIN = 0x100,
@@ -54,17 +54,17 @@ public:
 private:
     void update(float delta) override;
     void draw(SDL_Renderer* renderer) override;
-    void onModifyPosition(Vector2f const& position) override;
-    void onModifySize(Vector2f const& size) override;
+    void onModifyPosition(mge::Vector2f const& position) override;
+    void onModifySize(mge::Vector2f const& size) override;
     void onVisible(bool visible) override;
 private:
     TYPE _type;
     TileModel _model;
 };
 
-class TankAnimate : public RenderCopy {
+class TankAnimate : public mge::RenderCopy {
 public:
-    typedef std::shared_ptr<Texture> TexturePtr;
+    typedef std::shared_ptr<mge::Texture> TexturePtr;
     typedef std::vector<TexturePtr> Textures;
     typedef std::vector<Textures> TexturesArray;
     typedef std::shared_ptr<TankAnimate> Ptr;
@@ -80,7 +80,7 @@ public:
     EnemyTankAnimate(TankModel* model);
 protected:
     void update(float delta) override;
-    void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0}) override;
+    void draw(SDL_Renderer* renderer, mge::Vector2i const& position = {0, 0}) override;
 protected:
     TankAnimate::Ptr _animate[2];
 };
@@ -128,12 +128,14 @@ protected:
     TexturesArray _animates;
 };
 
-class Behavior;
-class TankView : public Widget, public BattleFieldHolder {
+namespace mge {
+    class Behavior;
+}
+class TankView : public mge::Widget, public BattleFieldHolder {
 public:
     typedef Tank::Direction Direction;
     typedef Tank::Controller Controller;
-    typedef std::shared_ptr<Behavior> BehaviorPtr;
+    typedef std::shared_ptr<mge::Behavior> BehaviorPtr;
     typedef std::shared_ptr<TankAnimate> TankAnimatePtr;
 public:
     TankView(Tank::Party party, Tank::Tier tier, Tank::Direction dir, bool has_drop = false, Controller c = Tank::AI);
@@ -153,8 +155,8 @@ private:
     void onChangeDir(Direction dir);
     void onUpdate(float delta) override;
     void onDraw(SDL_Renderer* renderer) override;
-    void onModifyPosition(Vector2f const& position) override;
-    void onModifySize(Vector2f const& size) override;
+    void onModifyPosition(mge::Vector2f const& position) override;
+    void onModifySize(mge::Vector2f const& size) override;
     void onVisible(bool visible) override;
     void updateMoveSpeed();
 private:
@@ -165,40 +167,40 @@ private:
 
 class TileBuilder {
 public:
-    typedef std::vector<Widget::Ptr> Array;
+    typedef std::vector<mge::Widget::Ptr> Array;
     typedef TileView::TYPE TileType;
 public:
     TileBuilder(WorldModel* world);
     void gen(Array& r, AddTileList const& list);
 private:
-    void gen(Array& r, std::string const& type, Vector2i const& position);
-    void gen_tile(Array& r, TileType t, Vector2i const& position);
-    void get_block(Array& r, TileType begin, Vector2i const& position);
+    void gen(Array& r, std::string const& type, mge::Vector2i const& position);
+    void gen_tile(Array& r, TileType t, mge::Vector2i const& position);
+    void get_block(Array& r, TileType begin, mge::Vector2i const& position);
 private:
     WorldModel* _world;
 };
 
-class BulletView : public ImageWidget, public BattleFieldHolder {
+class BulletView : public mge::ImageWidget, public BattleFieldHolder {
 public:
-    typedef std::shared_ptr<Behavior> BehaviorPtr;
+    typedef std::shared_ptr<mge::Behavior> BehaviorPtr;
 public:
-    BulletView(TankModel const* tank, Vector2f const& position, Vector2f const& move);
+    BulletView(TankModel const* tank, mge::Vector2f const& position, mge::Vector2f const& move);
     void insert_to(WorldModel* world);
     void play_explosion();
 private:
-    Tank::Direction get_dir(Vector2f const& move) const;
+    Tank::Direction get_dir(mge::Vector2f const& move) const;
     TexturePtr load_texture(Tank::Direction dir) const;
     void onUpdate(float delta) override;
-    void onModifyPosition(Vector2f const& position) override;
-    void onModifySize(Vector2f const& size) override;
+    void onModifyPosition(mge::Vector2f const& position) override;
+    void onModifySize(mge::Vector2f const& size) override;
 private:
     BulletModel _model;
     BehaviorPtr _behavior;
 };
 
-class PropView : public ImageWidget, public BattleFieldHolder {
+class PropView : public mge::ImageWidget, public BattleFieldHolder {
 public:
-    typedef std::shared_ptr<Behavior> BehaviorPtr;
+    typedef std::shared_ptr<mge::Behavior> BehaviorPtr;
 public:
     PropView(Tank::PowerUp type);
 public:
@@ -206,8 +208,8 @@ public:
     void show_score();
     PropModel const* model() const;
 private:
-    void onModifyPosition(Vector2f const& position) override;
-    void onModifySize(Vector2f const& size) override;
+    void onModifyPosition(mge::Vector2f const& position) override;
+    void onModifySize(mge::Vector2f const& size) override;
     void onUpdate(float delta) override;
 private:
     PropModel _model;

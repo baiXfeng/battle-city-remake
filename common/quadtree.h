@@ -15,6 +15,8 @@
 #include "types.h"
 #include "render.h"
 
+mge_begin
+
 template<typename T>
 class QuadTree {
 public:
@@ -219,5 +221,7 @@ private:
         }
     }
 };
+
+mge_end
 
 #endif //SDL2_UI_QUADTREE_H

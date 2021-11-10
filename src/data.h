@@ -78,7 +78,7 @@ namespace Tank {
         Attribute(lutok3::State& table);
     };
 
-    typedef std::vector<Vector2f> Spawns;
+    typedef std::vector<mge::Vector2f> Spawns;
     typedef std::vector<Attribute> Attributes;
     typedef std::vector<Attributes> Config;
 
@@ -114,21 +114,24 @@ typedef std::vector<AddTank> AddTankList;
 //===================================================================
 // 对象数据
 
-class Widget;
-class TileModel: public Observer<Widget>  {
+namespace mge {
+    class Widget;
+}
+
+class TileModel: public mge::Observer<mge::Widget>  {
 public:
     int id;
     int layer;
     bool visible;       // 显示属性
     Tile::Type type;
-    RectI bounds;
+    mge::RectI bounds;
 public:
     void removeFromScreen();
     void modifyDisplay();
 };
 
 class TankView;
-class TankModel : public Observer<TankView> {
+class TankModel : public mge::Observer<TankView> {
 public:
     int id;
     int hp;
@@ -141,10 +144,10 @@ public:
     Tank::Tier tier;
     Tank::Direction dir;
     Tank::Controller controller;
-    Vector2f move;
-    Vector2f position;
-    Vector2i size;
-    RectI bounds;
+    mge::Vector2f move;
+    mge::Vector2f position;
+    mge::Vector2i size;
+    mge::RectI bounds;
 public:
     TankModel();
     void modifyDir(Tank::Direction dir);
@@ -159,16 +162,16 @@ public:
 };
 
 class BulletView;
-class BulletModel : public Observer<BulletView> {
+class BulletModel : public mge::Observer<BulletView> {
 public:
     int id;
     int sender_id;
     int wall_damage;
     bool destroy_steel;
     Tank::Party party;
-    Vector2f move;
-    Vector2f position;
-    RectI bounds;
+    mge::Vector2f move;
+    mge::Vector2f position;
+    mge::RectI bounds;
 public:
     BulletModel();
     void modifyPosition();
@@ -177,20 +180,19 @@ public:
 };
 
 class PropView;
-class PropModel : public Observer<PropView> {
+class PropModel : public mge::Observer<PropView> {
 public:
     int id;
     Tank::PowerUp type;
-    RectI bounds;
+    mge::RectI bounds;
 public:
     void createScore();
     void removeFromScreen();
 };
 
-class Widget;
 class WorldModel {
 public:
-    typedef DebugQuadTree<TileModel*> TileTree;
+    typedef mge::DebugQuadTree<TileModel*> TileTree;
     typedef std::list<TankModel*> TankList;
     typedef std::list<BulletModel*> BulletList;
     typedef std::list<PropModel*> PropList;
@@ -204,7 +206,7 @@ public:
     PropList props;
     TankModel* player[Tank::Controller::P1 + 1];
     TileModel* base;
-    RectI bounds;
+    mge::RectI bounds;
 };
 
 class PlayerModel {
@@ -222,16 +224,18 @@ typedef Tank::Spawns EnemySpawns;
 //===================================================================
 // 资源路径
 
-namespace res {
-    std::string soundName(std::string const& key);
-    std::string bgmName(std::string const& key);
-    std::string imageName(std::string const& key);
-    std::string fontName(std::string const& key);
-    std::string levelName(std::string const& key);
-    std::string levelName(int level);
-    std::string scriptName(std::string const& key);
-    std::string powerupName(Tank::PowerUp e);
-    std::string assetsName(std::string const& fileName);
+namespace mge {
+    namespace res {
+        std::string soundName(std::string const& key);
+        std::string bgmName(std::string const& key);
+        std::string imageName(std::string const& key);
+        std::string fontName(std::string const& key);
+        std::string levelName(std::string const& key);
+        std::string levelName(int level);
+        std::string scriptName(std::string const& key);
+        std::string powerupName(Tank::PowerUp e);
+        std::string assetsName(std::string const& fileName);
+    }
 }
 
 //===================================================================
@@ -244,7 +248,7 @@ public:
     Tank::Tier tier;
     Tank::Controller controller;
     Tank::Direction direction;
-    Vector2f position;
+    mge::Vector2f position;
 };
 
 class BulletHitTankInfo {

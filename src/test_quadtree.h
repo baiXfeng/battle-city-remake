@@ -5,13 +5,15 @@
 #ifndef BATTLE_CITY_TEST_QUADTREE_H
 #define BATTLE_CITY_TEST_QUADTREE_H
 
-class Object : public RenderFillRect {
+#include "common/render.h"
+
+class Object : public mge::RenderFillRect {
 public:
     Object():_visible(true), _blink(false), _timer(0.0f), _timer_max(0.15f) {
         setColor({255, 0, 0, 255});
         setSize(40, 40);
     }
-    void setMove(Vector2f const& move) {
+    void setMove(mge::Vector2f const& move) {
         _move = move;
     }
     void setMoveX(float v) {
@@ -20,10 +22,10 @@ public:
     void setMoveY(float v) {
         _move.y = v;
     }
-    void setPosition(Vector2f const& position) {
+    void setPosition(mge::Vector2f const& position) {
         _position = position;
     }
-    Vector2f const& position() const {
+    mge::Vector2f const& position() const {
         return _position;
     }
     void setBlink(bool blink) {
@@ -58,14 +60,14 @@ public:
             }
         }
     }
-    void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0}) override {
+    void draw(SDL_Renderer* renderer, mge::Vector2i const& position = {0, 0}) override {
         if (!_visible) {
             return;
         }
         RenderFillRect::draw(renderer, position + _position.to<int>());
     }
-    RectI rect() const {
-        return RectI{
+    mge::RectI rect() const {
+        return mge::RectI{
                 int(_position.x),
                 int(_position.y),
                 size().x,
@@ -76,18 +78,18 @@ private:
     bool _blink;
     bool _visible;
     float _timer, _timer_max;
-    Vector2f _position;
-    Vector2f _move;
+    mge::Vector2f _position;
+    mge::Vector2f _move;
 };
 
-RectI __getRect(std::shared_ptr<Object> const& obj) {
+mge::RectI __getRect(std::shared_ptr<Object> const& obj) {
     return obj->rect();
 }
 
-class MyScene : public GamePadWidget {
+class MyScene : public mge::GamePadWidget {
 private:
     typedef std::shared_ptr<Object> ObjectPtr;
-    typedef DebugQuadTree<ObjectPtr> DebugQuadTreeT;
+    typedef mge::DebugQuadTree<ObjectPtr> DebugQuadTreeT;
     typedef DebugQuadTreeT::Ptr _QuadTreePtr;
     std::list<ObjectPtr> _objects;
     ObjectPtr _player;
@@ -96,7 +98,7 @@ private:
 
 public:
     MyScene():_player(std::make_shared<Object>()), _quadtree(
-            std::make_shared<DebugQuadTreeT>(0, RectI{0, 0, 960, 544}, __getRect)) {
+            std::make_shared<DebugQuadTreeT>(0, mge::RectI{0, 0, 960, 544}, __getRect)) {
         _objects.push_back(_player);
         this->reset();
     }

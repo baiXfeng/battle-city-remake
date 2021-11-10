@@ -9,6 +9,8 @@
 #include "assert.h"
 #include <memory>
 
+mge_begin
+
 class Command {
 public:
     typedef std::shared_ptr<Command> Ptr;
@@ -67,5 +69,7 @@ protected:
 protected:
     std::unordered_map<int, Creater> _commandCreater;
 };
+
+mge_end
 
 #endif //SDL2_UI_COMMAND_H

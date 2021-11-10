@@ -12,6 +12,12 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 
+#if defined(__NS__)
+#include <switch.h>
+#endif
+
+mge_begin
+
 SDL_Window* sdl_window = nullptr;
 SDL_Renderer* sdl_renderer = nullptr;
 Vector2i sdl_screen_size{GAME_SCREEN_WIDTH, GAME_SCREEN_HEIGHT};
@@ -69,6 +75,10 @@ int Game::run() {
         printf("no delegate, app exiting...\n");
         return 1;
     }
+
+#if defined(__NS__)
+    romfsInit();
+#endif
 
     auto size = _delegate->screenSize();
     sdl_screen_size = {size.x, size.y};
@@ -183,3 +193,5 @@ Game::App::App() {
 int Game::App::run() {
     return _game.run();
 }
+
+mge_end

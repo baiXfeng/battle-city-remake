@@ -24,7 +24,7 @@
 #include "lutok3.h"
 #include "time.h"
 
-class MyGame : public Game::App {
+class MyGame : public mge::Game::App {
 private:
     lutok3::State* _state;
 public:
@@ -34,7 +34,7 @@ public:
         auto& state = *_state;
         state.openLibs();
         registerLuaFunctions(state);
-        state.doFile(res::scriptName("startup"));
+        state.doFile(mge::res::scriptName("startup"));
     }
     void initLevelMax() {
         // 记录最大关卡数

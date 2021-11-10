@@ -5,6 +5,8 @@
 #include "event.h"
 #include <algorithm>
 
+mge_begin
+
 void EventCenter::add(int event_id, Listener* listener) {
     this->remove(event_id, listener);
     this->_add(event_id, listener);
@@ -28,3 +30,5 @@ void EventCenter::notify(Event const& e) {
         target->onEvent(e);
     }
 }
+
+mge_end

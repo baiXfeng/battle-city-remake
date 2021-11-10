@@ -8,6 +8,8 @@
 #include "action.h"
 #include <iostream>
 
+mge_begin
+
 Music::Music():_music(nullptr) {
 
 }
@@ -218,3 +220,5 @@ void AudioSystem::onChannelFinished(int channel) {
         }
     }
 }
+
+mge_end

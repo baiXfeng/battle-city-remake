@@ -14,6 +14,8 @@
 #include "sound_effect.h"
 #include "skin.h"
 
+using namespace mge;
+
 void GameOverCommand::onEvent(Event const& e) {
 
     _game.gamepad().sleep(60.0f);

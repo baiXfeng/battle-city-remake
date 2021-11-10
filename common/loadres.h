@@ -9,6 +9,9 @@
 #include <SDL_image.h>
 #include "texture.h"
 #include "font.h"
+#include "types.h"
+
+mge_begin
 
 namespace res {
     std::string const& getAssetsPath();
@@ -22,5 +25,7 @@ namespace res {
     void free_ttf_font(TTFont::Ptr const& font);
     void free_all_ttf_font();
 };
+
+mge_end
 
 #endif //SDL2_UI_LOADRES_H

@@ -6,6 +6,8 @@
 #include "data.h"
 #include "common/game.h"
 
+using namespace mge;
+
 typedef int(*LuaCFunc)(lutok3::State& state);
 static void registerCFunction(lutok3::State& state, std::string const& tableName, std::string const& funcName, LuaCFunc func) {
     auto type = state.getGlobal(tableName);

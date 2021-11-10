@@ -28,8 +28,7 @@ brew install sdl2 sdl2_image sdl2_mixer sdl2_ttf sdl2_gfx
 
 ### Build for Linux and macOS:
 ```
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
 make
 ```
@@ -39,9 +38,18 @@ make
 
 ### Build for Psvita:
 ```
-mkdir build
-cd build
+mkdir build && cd build
 cmake -DPSV=ON ..
+make
+```
+
+### Nintendo Switch install depends:
+- Install [devkitPro](https://devkitpro.org/wiki/Getting_Started)
+
+### Build for Nintendo Switch:
+```
+mkdir build && cd build
+cmake -DNS=ON ..
 make
 ```
 

@@ -4,6 +4,8 @@
 
 #include "collision.h"
 
+mge_begin
+
 bool isCollision(RectI const& a, RectI const& b) {
     if (a.x >= b.x && a.x >= b.x + b.w) {
         return false;
@@ -16,3 +18,5 @@ bool isCollision(RectI const& a, RectI const& b) {
     }
     return true;
 }
+
+mge_end

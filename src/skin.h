@@ -9,9 +9,11 @@
 #include <memory>
 #include "data.h"
 
-class Texture;
+namespace mge {
+    class Texture;
+}
 namespace skin {
-    typedef std::shared_ptr<Texture> TexturePtr;
+    typedef std::shared_ptr<mge::Texture> TexturePtr;
     typedef std::vector<TexturePtr> Textures;
     typedef std::vector<Textures> TexturesArray;
 

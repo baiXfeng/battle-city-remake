@@ -7,6 +7,8 @@
 #include "mutex.h"
 #include <algorithm>
 
+mge_begin
+
 typedef Action::State State;
 
 static int _actionCount = 0;
@@ -354,3 +356,5 @@ void Blink::Reset() {
     _ticks = 0.0f;
     _timer = 0.0f;
 }
+
+mge_end

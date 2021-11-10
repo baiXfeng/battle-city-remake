@@ -5,6 +5,8 @@
 #include "font.h"
 #include "loadres.h"
 
+mge_begin
+
 TTFont::TTFont():
 _font(nullptr),
 _color({0, 0, 0, 255}),
@@ -137,5 +139,4 @@ TTFont::TexturePtr TTFont::createWithUNICODE(SDL_Renderer* renderer, Uint16 cons
     return ptr;
 }
 
-//=====================================================================================
-
+mge_end

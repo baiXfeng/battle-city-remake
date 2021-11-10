@@ -10,6 +10,8 @@
 #include "mouse.h"
 #include "command.h"
 
+mge_begin
+
 void GameVariable::initVariable() {
     _fps = std::make_shared<Fps>();
     _audio = std::make_shared<AudioSystem>();
@@ -57,3 +59,5 @@ EventCenter& GameVariable::event() {
 CommandCenter& GameVariable::command() {
     return *_command.get();
 }
+
+mge_end

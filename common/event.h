@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include "types.h"
 
+mge_begin
+
 class Event {
 public:
     class Listener {
@@ -69,5 +71,7 @@ protected:
 protected:
     EventMap _events;
 };
+
+mge_end
 
 #endif //SDL2_UI_EVENT_H

@@ -12,6 +12,8 @@
 #include <functional>
 #include "types.h"
 
+mge_begin
+
 class Action {
 public:
     enum State {
@@ -260,5 +262,7 @@ protected:
 private:
     TargetPtr _target;
 };
+
+mge_end
 
 #endif //SDL2_UI_ACTION_H

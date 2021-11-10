@@ -6,6 +6,9 @@
 #define SDL2_UI_MUTEX_H
 
 #include <SDL.h>
+#include "types.h"
+
+mge_begin
 
 class Mutex {
     friend class Lock;
@@ -30,5 +33,7 @@ public:
 protected:
     Mutex* _mutex;
 };
+
+mge_end
 
 #endif //SDL2_UI_MUTEX_H

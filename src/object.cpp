@@ -11,13 +11,15 @@
 #include "skin.h"
 #include "sound_effect.h"
 
+using namespace mge;
+
 static int _objectCount = 0;
 
 //=====================================================================================
 
 class FrameAnimationAction : public Action {
 public:
-    typedef std::vector<Texture::Ptr> Frames;
+    typedef std::vector<mge::Texture::Ptr> Frames;
 public:
     FrameAnimationAction(ImageWidget* target, Frames const& arr, float duration):
             _textures(arr),

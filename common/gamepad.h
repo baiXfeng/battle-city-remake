@@ -13,6 +13,8 @@
 #include <SDL.h>
 #include "types.h"
 
+mge_begin
+
 class GamePadListener {
 public:
     typedef enum {
@@ -73,5 +75,7 @@ private:
     Vector2i _joyValue[2];
     List _views;
 };
+
+mge_end
 
 #endif //SDL2_UI_GAMEPAD_H

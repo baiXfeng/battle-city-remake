@@ -9,8 +9,10 @@
 #include "common/quadtree.h"
 #include "data.h"
 
-class MaskWidget;
-class LogoView : public GamePadWidget {
+namespace mge {
+    class MaskWidget;
+}
+class LogoView : public mge::GamePadWidget {
     typedef std::function<void()> Callback;
 public:
     LogoView();
@@ -22,11 +24,11 @@ private:
     void onButtonDown(int key) override;
 private:
     bool _canClick;
-    MaskWidget* _mask;
+    mge::MaskWidget* _mask;
     Callback _callback;
 };
 
-class StartView : public GamePadWidget {
+class StartView : public mge::GamePadWidget {
 public:
     StartView();
 private:
@@ -36,10 +38,10 @@ private:
 private:
     bool _canSelect;
     int _index;
-    std::vector<Vector2f> _position;
+    std::vector<mge::Vector2f> _position;
 };
 
-class SelectLevelView : public GamePadWidget {
+class SelectLevelView : public mge::GamePadWidget {
 public:
     SelectLevelView();
 private:
@@ -51,34 +53,34 @@ private:
     void stopAutoAddLevel();
 private:
     int _level;
-    TTFLabel* _label;
-    CurtainWidget* _curtain;
+    mge::TTFLabel* _label;
+    mge::CurtainWidget* _curtain;
     float _duration;
 };
 
-class BattleView : public WindowWidget {
+class BattleView : public mge::WindowWidget {
 public:
     BattleView();
     ~BattleView();
 private:
-    void onEvent(Event const& e) override;
+    void onEvent(mge::Event const& e) override;
 };
 
-class BattleInfoView : public Widget {
+class BattleInfoView : public mge::Widget {
 public:
     BattleInfoView();
     ~BattleInfoView();
 private:
-    void onEvent(Event const& e) override;
+    void onEvent(mge::Event const& e) override;
     void onEnemyNumberChanged(int n);
     void onPlayerNumberChanged(int n);
 private:
-    ImageWidget* createEnemyIcon();
-    TTFLabel* _playerLife;
+    mge::ImageWidget* createEnemyIcon();
+    mge::TTFLabel* _playerLife;
     Widget::Ptr _enemy[20];
 };
 
-class ScoreView : public WindowWidget {
+class ScoreView : public mge::WindowWidget {
 public:
     enum Alignment {
         LEFT = 0,
@@ -90,17 +92,17 @@ private:
     void showTotal();
     void onNextScene();
 private:
-    TTFLabel* _total;
+    mge::TTFLabel* _total;
 };
 
-class GameOverView : public GamePadWidget {
+class GameOverView : public mge::GamePadWidget {
 public:
     GameOverView();
 private:
     void onButtonDown(int key) override;
 };
 
-class CheatView : public GamePadWidget {
+class CheatView : public mge::GamePadWidget {
 public:
     typedef std::function<void()> CallBack;
 public:
@@ -110,11 +112,11 @@ private:
 private:
     int _index;
     Ptr _icon;
-    Vector2f _position[2];
+    mge::Vector2f _position[2];
     CallBack _callback;
 };
 
-class BigExplosionView : public FrameAnimationWidget {
+class BigExplosionView : public mge::FrameAnimationWidget {
 public:
     typedef std::function<void()> FinishCall;
 public:
@@ -122,7 +124,7 @@ public:
     void play(FinishCall const& fc = nullptr);
 };
 
-class BulletExplosionView : public FrameAnimationWidget {
+class BulletExplosionView : public mge::FrameAnimationWidget {
 public:
     BulletExplosionView();
     void play();
@@ -132,9 +134,9 @@ class BattleFieldInterface {
 public:
     virtual ~BattleFieldInterface() {}
 public:
-    virtual void addToBottom(Widget::Ptr& widget) {}
-    virtual void addToMiddle(Widget::Ptr& widget) {}
-    virtual void addToTop(Widget::Ptr& widget) {}
+    virtual void addToBottom(mge::Widget::Ptr& widget) {}
+    virtual void addToMiddle(mge::Widget::Ptr& widget) {}
+    virtual void addToTop(mge::Widget::Ptr& widget) {}
 };
 
 #endif //BATTLE_CITY_VIEW_H

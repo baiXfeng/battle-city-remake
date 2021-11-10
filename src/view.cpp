@@ -15,6 +15,8 @@
 #include "sound_effect.h"
 #include <assert.h>
 
+using namespace mge;
+
 std::string fontName = "assets/fonts/prstart.ttf";
 
 class HelloWorld : public GamePadWidget {

@@ -8,6 +8,8 @@
 #include "action.h"
 #include "log.h"
 
+mge_begin
+
 typedef GamePadListener::KeyCode KeyCode;
 typedef GamePadListener::JOYIDX JOYIDX;
 
@@ -185,3 +187,5 @@ void GamePad::_remapKeyboardEvent(SDL_Event const& e) {
     this->onEvent(event);
     _keyboard_event = false;
 }
+
+mge_end

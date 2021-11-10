@@ -9,6 +9,8 @@
 #include <memory>
 #include "types.h"
 
+mge_begin
+
 template<typename T>
 class Proxy {
 public:
@@ -54,5 +56,7 @@ public:
 protected:
     DataCache _data;
 };
+
+mge_end
 
 #endif //SDL2_UI_PROXY_H

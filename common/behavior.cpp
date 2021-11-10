@@ -4,6 +4,8 @@
 
 #include "behavior.h"
 
+mge_begin
+
 SequenceBehavior::SequenceBehavior() {}
 
 SequenceBehavior::SequenceBehavior(Behaviors const& sequence):_sequence(sequence) {
@@ -23,3 +25,5 @@ Behavior::Status SequenceBehavior::tick(float delta) {
 void SequenceBehavior::add(Behavior::Ptr const& behavior) {
     _sequence.push_back(behavior);
 }
+
+mge_end

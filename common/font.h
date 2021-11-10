@@ -9,6 +9,9 @@
 #include <SDL_ttf.h>
 #include <memory>
 #include <string>
+#include "types.h"
+
+mge_begin
 
 class Texture;
 class TTFont {
@@ -50,5 +53,7 @@ protected:
     SDL_Color _color;
     std::string _fontPath;
 };
+
+mge_end
 
 #endif //SDL2_UI_FONT_H

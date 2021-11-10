@@ -6,6 +6,8 @@
 #include "common/loadres.h"
 #include "common/game.h"
 
+using namespace mge;
+
 namespace skin {
 
     Textures getShieldSkin() {

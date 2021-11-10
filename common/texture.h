@@ -10,6 +10,8 @@
 #include <memory>
 #include "types.h"
 
+mge_begin
+
 class Texture {
 public:
     typedef std::shared_ptr<Texture> Ptr;
@@ -44,5 +46,7 @@ protected:
     std::string _path;
     Vector2i _size;
 };
+
+mge_end
 
 #endif //SDL2_UI_TEXTURE_H

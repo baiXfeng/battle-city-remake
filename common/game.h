@@ -13,6 +13,8 @@
 #define GAME_SCREEN_WIDTH 960
 #define GAME_SCREEN_HEIGHT 544
 
+mge_begin
+
 class Action;
 class Game : public GameVariable {
 public:
@@ -60,6 +62,8 @@ private:
     SDL_Color _color;
 };
 
-#define _game Game::instance()
+mge_end
+
+#define _game mge::Game::instance()
 
 #endif //MGS_GAME_H

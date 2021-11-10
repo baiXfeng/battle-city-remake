@@ -4,6 +4,8 @@
 
 #include "render.h"
 
+mge_begin
+
 RenderCopy::RenderCopy():
 _texture(nullptr),
 _srcrect({0,0,0,0}),
@@ -161,3 +163,5 @@ void RenderDrawRect::draw(SDL_Renderer* renderer, Vector2i const& position) {
     };
     SDL_RenderDrawRect(renderer, &rect);
 }
+
+mge_end

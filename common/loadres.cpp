@@ -7,6 +7,8 @@
 #include <list>
 #include <algorithm>
 
+mge_begin
+
 namespace res {
 
     static std::map<std::string, Texture::Ptr> _textureCache;
@@ -16,6 +18,10 @@ namespace res {
 #if defined(__vita__)
         if (assets_path.empty()) {
             assets_path = "app0:";
+        }
+#elif defined(__NS__)
+        if (assets_path.empty()) {
+            assets_path = "romfs:/";
         }
 #endif
         return assets_path;
@@ -76,3 +82,5 @@ namespace res {
         _ttfFontCache.clear();
     }
 }
+
+mge_end

@@ -7,6 +7,11 @@
 
 #include "fix.hpp"
 
+#define mge_begin namespace mge {
+#define mge_end }
+
+mge_begin
+
 template<typename T>
 class Vector {
 public:
@@ -116,6 +121,8 @@ public:
 private:
     T _data;
 };
+
+mge_end
 
 #if defined(WIN32)
 #define GameApp WinMain

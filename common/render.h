@@ -8,6 +8,8 @@
 #include <SDL.h>
 #include "types.h"
 
+mge_begin
+
 class DrawColor {
 public:
     DrawColor(SDL_Renderer* r):_renderer(r) {
@@ -83,5 +85,7 @@ class RenderDrawRect : public RenderFillRect {
 public:
     void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0}) override;
 };
+
+mge_end
 
 #endif //SDL2_UI_RENDER_H

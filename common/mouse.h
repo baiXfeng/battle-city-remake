@@ -13,6 +13,8 @@
 #include <SDL.h>
 #include "types.h"
 
+mge_begin
+
 class Widget;
 class Mouse {
 public:
@@ -40,5 +42,7 @@ private:
     bool _sleep;
     bool _finger_downed;
 };
+
+mge_end
 
 #endif //SDL2_UI_MOUSE_H

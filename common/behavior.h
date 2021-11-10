@@ -7,6 +7,9 @@
 
 #include <memory>
 #include <vector>
+#include "types.h"
+
+mge_begin
 
 class Behavior {
 public:
@@ -37,5 +40,7 @@ protected:
 protected:
     Behaviors _sequence;
 };
+
+mge_end
 
 #endif //SDL2_UI_BEHAVIOR_H

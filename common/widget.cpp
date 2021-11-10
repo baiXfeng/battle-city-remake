@@ -10,6 +10,8 @@
 #include "action.h"
 #include "font.h"
 
+mge_begin
+
 static int _widgetCount = 0;
 
 void TestWidget() {
@@ -901,3 +903,5 @@ void FrameAnimationWidget::onAnimate(float delta) {
         setTexture(_frames[_index]);
     }
 }
+
+mge_end

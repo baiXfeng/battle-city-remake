@@ -14,7 +14,7 @@
 class TankView;
 class TileModel;
 class WorldModel;
-class BattleFieldView : public GamePadWidget, public BattleFieldInterface {
+class BattleFieldView : public mge::GamePadWidget, public BattleFieldInterface {
     typedef std::shared_ptr<WorldModel> WorldModelPtr;
 public:
     BattleFieldView();
@@ -27,7 +27,7 @@ private:
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
     void onJoyAxisMotion(JOYIDX joy_id, int x, int y) override;
-    void onEvent(Event const& e) override;
+    void onEvent(mge::Event const& e) override;
     void procTankControl();
     void gameOver();
     void pause(bool v);
@@ -48,7 +48,7 @@ private:
     TankView* _player;
     std::list<int> _keylist;
     WorldModel* _world;
-    Behavior::Ptr _behavior;
+    mge::Behavior::Ptr _behavior;
 };
 
 

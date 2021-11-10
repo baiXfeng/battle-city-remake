@@ -18,6 +18,8 @@
 #include "debug.h"
 #include "sound_effect.h"
 
+using namespace mge;
+
 //=====================================================================================
 
 static RectI tileRectCatcher(QuadTree<TileModel*>::Square const& square) {

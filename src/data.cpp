@@ -11,6 +11,8 @@
 #include "assert.h"
 #include "sound_effect.h"
 
+using namespace mge;
+
 namespace Tank {
     template <typename T>
     T getValue(lutok3::State& table, std::string const& name) {
@@ -241,49 +243,51 @@ PlayerModel::PlayerModel():life(Tank::getDefaultLifeMax()), win(false), tier(Tan
     memset(killCount, 0, sizeof(killCount));
 }
 
-namespace res {
-    std::string soundName(std::string const& key) {
-        return std::string("assets/sounds/") + key + ".ogg";
-    }
+namespace mge {
+    namespace res {
+        std::string soundName(std::string const& key) {
+            return std::string("assets/sounds/") + key + ".ogg";
+        }
 
-    std::string bgmName(std::string const& key) {
-        return std::string("assets/sounds/") + key + ".mp3";
-    }
+        std::string bgmName(std::string const& key) {
+            return std::string("assets/sounds/") + key + ".mp3";
+        }
 
-    std::string imageName(std::string const& key) {
-        return std::string("assets/images/") + key + ".png";
-    }
+        std::string imageName(std::string const& key) {
+            return std::string("assets/images/") + key + ".png";
+        }
 
-    std::string fontName(std::string const& key) {
-        return std::string("assets/fonts/") + key + ".ttf";
-    }
+        std::string fontName(std::string const& key) {
+            return std::string("assets/fonts/") + key + ".ttf";
+        }
 
-    std::string levelName(std::string const& key) {
-        return getAssetsPath() + "assets/levels/" + key + ".lua";
-    }
+        std::string levelName(std::string const& key) {
+            return getAssetsPath() + "assets/levels/" + key + ".lua";
+        }
 
-    std::string levelName(int level) {
-        return getAssetsPath() + "assets/levels/level_" + std::to_string(level) + ".lua";
-    }
+        std::string levelName(int level) {
+            return getAssetsPath() + "assets/levels/level_" + std::to_string(level) + ".lua";
+        }
 
-    std::string scriptName(std::string const& key) {
-        return getAssetsPath() + "assets/scripts/" + key + ".lua";
-    }
+        std::string scriptName(std::string const& key) {
+            return getAssetsPath() + "assets/scripts/" + key + ".lua";
+        }
 
-    std::string powerupName(Tank::PowerUp e) {
-        assert(e != Tank::POWER_MAX and "res::powerupName error.");
-        std::string name[Tank::POWER_MAX] = {
-                "powerup_grenade",
-                "powerup_helmet",
-                "powerup_shovel",
-                "powerup_star",
-                "powerup_tank",
-                "powerup_timer",
-        };
-        return imageName(name[e]);
-    }
+        std::string powerupName(Tank::PowerUp e) {
+            assert(e != Tank::POWER_MAX and "res::powerupName error.");
+            std::string name[Tank::POWER_MAX] = {
+                    "powerup_grenade",
+                    "powerup_helmet",
+                    "powerup_shovel",
+                    "powerup_star",
+                    "powerup_tank",
+                    "powerup_timer",
+            };
+            return imageName(name[e]);
+        }
 
-    std::string assetsName(std::string const& fileName) {
-        return getAssetsPath() + "assets/" + fileName;
+        std::string assetsName(std::string const& fileName) {
+            return getAssetsPath() + "assets/" + fileName;
+        }
     }
 }

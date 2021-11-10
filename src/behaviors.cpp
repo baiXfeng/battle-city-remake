@@ -13,7 +13,9 @@
 #include "debug.h"
 #include "sound_effect.h"
 
-typedef Behavior::Status Status;
+using namespace mge;
+
+typedef mge::Behavior::Status Status;
 
 //=====================================================================================
 

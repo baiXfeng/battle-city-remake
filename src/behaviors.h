@@ -10,14 +10,14 @@
 #include "common/audio.h"
 #include "data.h"
 
-class TankSpawnBehavior : public SequenceBehavior {
+class TankSpawnBehavior : public mge::SequenceBehavior {
 public:
     TankSpawnBehavior(WorldModel::TankList* tanks);
 private:
     Status tick(float delta) override;
 };
 
-class PlayerSpawnBehavior : public Behavior {
+class PlayerSpawnBehavior : public mge::Behavior {
 public:
     PlayerSpawnBehavior(WorldModel::TankList* tanks);
 private:
@@ -26,20 +26,20 @@ private:
     WorldModel::TankList* _tanks;
 };
 
-class TankEventBehavior : public Behavior, public Event::Listener, public AudioSystem::Listener {
+class TankEventBehavior : public mge::Behavior, public mge::Event::Listener, public mge::AudioSystem::Listener {
 public:
     TankEventBehavior(WorldModel::TileTree* tiles);
     ~TankEventBehavior();
 private:
     Status tick(float delta) override;
-    void onEvent(Event const& e) override;
+    void onEvent(mge::Event const& e) override;
     void onMixFinished(std::string const& name) override;
 private:
     bool _openingBgmFinished;
     WorldModel::TileTree* _tiles;
 };
 
-class EnemySpawnBehavior : public Behavior {
+class EnemySpawnBehavior : public mge::Behavior {
 public:
     EnemySpawnBehavior(WorldModel::TankList* tanks);
     ~EnemySpawnBehavior();
@@ -47,7 +47,7 @@ private:
     Status tick(float delta) override;
     int enemyCount() const;
     int enemyRemainCount() const;
-    bool is_overlap(RectI const& r) const;
+    bool is_overlap(mge::RectI const& r) const;
     void checkOverlap(int& index, int& overlapCount) const;
 private:
     int _index;
@@ -58,38 +58,38 @@ private:
 };
 
 class BattleFieldInterface;
-class PropCreateBehavior : public Behavior, public Event::Listener {
+class PropCreateBehavior : public mge::Behavior, public mge::Event::Listener {
 public:
     PropCreateBehavior(WorldModel* world, BattleFieldInterface* battlefield);
     ~PropCreateBehavior();
 private:
     Status tick(float delta) override;
-    void onEvent(Event const& e) override;
-    void randomPosition(Vector2i& position, int retryCount);
+    void onEvent(mge::Event const& e) override;
+    void randomPosition(mge::Vector2i& position, int retryCount);
 private:
     BattleFieldInterface* _battlefield;
     WorldModel* _world;
 };
 
-class TankPowerUpBehavior : public Behavior, public Event::Listener {
+class TankPowerUpBehavior : public mge::Behavior, public mge::Event::Listener {
 public:
     TankPowerUpBehavior(WorldModel* world, BattleFieldInterface* battlefield);
     ~TankPowerUpBehavior();
 private:
     Status tick(float delta) override;
-    void onEvent(Event const& e) override;
+    void onEvent(mge::Event const& e) override;
 private:
     WorldModel* _world;
     BattleFieldInterface* _battlefield;
 };
 
-class BaseReinforceBehavior : public Behavior, public Event::Listener {
+class BaseReinforceBehavior : public mge::Behavior, public mge::Event::Listener {
 public:
     BaseReinforceBehavior(WorldModel* world, BattleFieldInterface* battlefield);
     ~BaseReinforceBehavior();
 private:
     Status tick(float delta) override;
-    void onEvent(Event const& e) override;
+    void onEvent(mge::Event const& e) override;
     void onBlink();
     void onFinish();
     void onBlinkImp();
@@ -99,7 +99,7 @@ private:
     BattleFieldInterface* _battlefield;
 };
 
-class TankAI_Behavior : public Behavior {
+class TankAI_Behavior : public mge::Behavior {
 public:
     TankAI_Behavior(TankModel* model);
 private:
@@ -113,18 +113,18 @@ private:
     float _moveTicks;
 };
 
-class TankMoveBehavior : public Behavior {
+class TankMoveBehavior : public mge::Behavior {
 public:
-    TankMoveBehavior(TankModel* model, RectI const& bounds);
+    TankMoveBehavior(TankModel* model, mge::RectI const& bounds);
 private:
     Status tick(float delta) override;
 private:
     WorldModel* _world;
     TankModel* _model;
-    RectI _world_bounds;
+    mge::RectI _world_bounds;
 };
 
-class TankTileCollisionBehavior : public Behavior {
+class TankTileCollisionBehavior : public mge::Behavior {
 public:
     TankTileCollisionBehavior(TankModel* model, WorldModel::TileTree* tiles);
 private:
@@ -134,7 +134,7 @@ private:
     WorldModel::TileTree* _tiles;
 };
 
-class TankCollisionBehavior : public Behavior {
+class TankCollisionBehavior : public mge::Behavior {
 public:
     TankCollisionBehavior(TankModel* model, WorldModel::TankList* tanks);
 private:
@@ -142,10 +142,10 @@ private:
 private:
     TankModel* _model;
     WorldModel::TankList* _tanks;
-    RectI _world_bounds;
+    mge::RectI _world_bounds;
 };
 
-class TankFireBehavior : public Behavior {
+class TankFireBehavior : public mge::Behavior {
 public:
     TankFireBehavior(TankModel* model, WorldModel::BulletList* bullets);
 private:
@@ -155,7 +155,7 @@ private:
     WorldModel::BulletList* _bullets;
 };
 
-class BulletMoveBehavior : public Behavior {
+class BulletMoveBehavior : public mge::Behavior {
 public:
     BulletMoveBehavior(BulletModel* model);
 private:
@@ -164,7 +164,7 @@ private:
     BulletModel* _model;
 };
 
-class BaseBulletCollisionBehavior : public Behavior {
+class BaseBulletCollisionBehavior : public mge::Behavior {
 public:
     BaseBulletCollisionBehavior(BulletModel* model, WorldModel* world);
 protected:
@@ -191,8 +191,8 @@ public:
     BulletTileCollisionBehavior(BulletModel* model, WorldModel* world);
 private:
     Status tick(float delta) override;
-    RectI getBulletBounds() const;
-    RectI getBigBulletBounds() const;
+    mge::RectI getBulletBounds() const;
+    mge::RectI getBigBulletBounds() const;
 };
 
 class BulletTankCollisionBehavior : public BaseBulletCollisionBehavior {
@@ -210,7 +210,7 @@ private:
     Status tick(float delta) override;
 };
 
-class PropCollisionBehavior : public Behavior {
+class PropCollisionBehavior : public mge::Behavior {
 public:
     PropCollisionBehavior(PropModel* prop, WorldModel::TankList* tanks, WorldModel::PropList* props);
 private:

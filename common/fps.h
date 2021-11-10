@@ -6,6 +6,9 @@
 #define MGS_FPS_H
 
 #include <SDL.h>
+#include "types.h"
+
+mge_begin
 
 class Fps {
 public:
@@ -34,5 +37,7 @@ private:
     int _frameStart, _frameTime;
     float _frameDelay, _delta;
 };
+
+mge_end
 
 #endif //MGS_FPS_H

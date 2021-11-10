@@ -9,6 +9,8 @@
 #include <string>
 #include "proxy.h"
 
+mge_begin
+
 class Fps;
 class ScreenWidget;
 class GamePad;
@@ -37,5 +39,7 @@ protected:
     std::shared_ptr<EventCenter> _event;
     std::shared_ptr<CommandCenter> _command;
 };
+
+mge_end
 
 #endif //SDL2_UI_VARIABLE_H

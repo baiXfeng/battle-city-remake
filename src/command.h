@@ -7,24 +7,24 @@
 
 #include "common/command.h"
 
-class GameOverCommand : public Command {
-    void onEvent(Event const& e) override;
+class GameOverCommand : public mge::Command {
+    void onEvent(mge::Event const& e) override;
 };
 
-class PlayerWinCommand : public Command {
-    void onEvent(Event const& e) override;
+class PlayerWinCommand : public mge::Command {
+    void onEvent(mge::Event const& e) override;
 };
 
-class PauseGameCommand : public Command {
-    void onEvent(Event const& e) override;
+class PauseGameCommand : public mge::Command {
+    void onEvent(mge::Event const& e) override;
 };
 
-class ResumeGameCommand : public Command {
-    void onEvent(Event const& e) override;
+class ResumeGameCommand : public mge::Command {
+    void onEvent(mge::Event const& e) override;
 };
 
-class LoadResCommand : public Command {
-    void onEvent(Event const& e) override;
+class LoadResCommand : public mge::Command {
+    void onEvent(mge::Event const& e) override;
 };
 
 #endif //BATTLE_CITY_SRC_COMMAND_H

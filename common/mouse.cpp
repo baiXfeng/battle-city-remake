@@ -5,6 +5,8 @@
 #include "mouse.h"
 #include "game.h"
 
+mge_begin
+
 Mouse::Mouse() {
 
 }
@@ -65,3 +67,5 @@ void Mouse::onFingerUp(Vector2i const& postion) {
 void Mouse::onFingerMotion(Vector2i const& postion) {
 
 }
+
+mge_end

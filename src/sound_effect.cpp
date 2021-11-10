@@ -7,6 +7,8 @@
 #include "common/game.h"
 #include "data.h"
 
+using namespace mge;
+
 SingleSoundEffect::SingleSoundEffect(): _currType(TYPE_MAX) {
     _seNames = {
             "tank-idle",

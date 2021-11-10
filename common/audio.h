@@ -11,6 +11,9 @@
 #include <memory>
 #include <unordered_map>
 #include "observer.h"
+#include "types.h"
+
+mge_begin
 
 class Music {
 public:
@@ -94,5 +97,7 @@ private:
     EffectCache _effectCache;
     ObserverMap _observers;
 };
+
+mge_end
 
 #endif //SDL2_UI_AUDIO_H

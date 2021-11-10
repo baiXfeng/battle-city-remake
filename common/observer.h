@@ -8,6 +8,9 @@
 #include <list>
 #include <algorithm>
 #include <functional>
+#include "types.h"
+
+mge_begin
 
 template<class T>
 class Observer {
@@ -51,5 +54,7 @@ public:
 protected:
     std::list<View*> _views;
 };
+
+mge_end
 
 #endif //SDL2_UI_OBSERVER_H

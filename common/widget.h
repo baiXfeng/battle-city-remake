@@ -15,6 +15,8 @@
 #include "mouse.h"
 #include "event.h"
 
+mge_begin
+
 void TestWidget();
 
 #define WIDGET_CREATE_FUNC(TYPE) \
@@ -332,5 +334,7 @@ private:
     float _frame_time;
     FrameArray _frames;
 };
+
+mge_end
 
 #endif //SDL2_UI_WIDGET_H
