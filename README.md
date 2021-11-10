@@ -44,7 +44,13 @@ make
 ```
 
 ### Nintendo Switch install depends:
-- Install [devkitPro](https://devkitpro.org/wiki/Getting_Started)
+- Install [devkitPro](https://devkitpro.org/wiki/Getting_Started) and Install the following packages with devkitPro's [pacman](https://devkitpro.org/wiki/devkitPro_pacman):
+```
+switch-dev, switch-sdl2, switch-sdl2_gfx, switch-sdl2_image, switch-sdl2_ttf, switch-sdl2_mixer,
+switch-freetype, switch-opusfile, switch-libopus, switch-mpg123, switch-libwebp, switch-libvorbisidec,
+switch-libogg, switch-libpng, switch-libjpeg-turbo, switch-libmodplug, switch-flac, switch-glad,
+switch-libdrm_nouveau, switch-zlib, switch-bzip2
+```
 
 ### Build for Nintendo Switch:
 ```
