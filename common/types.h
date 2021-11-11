@@ -10,6 +10,14 @@
 #define mge_begin namespace mge {
 #define mge_end }
 
+#if defined(WIN32)
+#define GameApp WinMain
+#elif defined(__PSP__)
+#define GameApp SDL_main
+#else
+#define GameApp main
+#endif
+
 mge_begin
 
 template<typename T>
@@ -123,13 +131,5 @@ private:
 };
 
 mge_end
-
-#if defined(WIN32)
-#define GameApp WinMain
-#elif defined(__PSP__)
-#define GameApp SDL_main
-#else
-#define GameApp main
-#endif
 
 #endif //SDL2_UI_TYPES_H

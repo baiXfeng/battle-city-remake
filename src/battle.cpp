@@ -285,7 +285,6 @@ void BattleFieldView::onEvent(Event const& e) {
     } else if (e.Id() == EventID::GAME_OVER) {
 
         _keylist.clear();
-        _SE.stopTankSE();
         this->gameOver();
 
     } else if (e.Id() == EventID::PLAYER_DEAD) {
@@ -334,12 +333,15 @@ void BattleFieldView::pause(bool v) {
     if (_pause) {
         _keylist.clear();
         _game.event().notify(EasyEvent<Widget*>(EventID::PAUSE_GAME, this));
+        _game.audio().pauseMusic();
     } else {
         _game.event().notify(EasyEvent<Widget*>(EventID::RESUME_GAME, this));
+        _game.audio().resumeMusic();
     }
 }
 
 void BattleFieldView::gameOver() {
+    _SE.stopTankSE();
     _game.event().notify(EasyEvent<Widget*>(EventID::GAME_OVER_ANIMATION, this));
 }
 

@@ -40,7 +40,7 @@ include_directories(
 		third/eluna/eluna
 		third/lua
 		third/lutok3/src/lutok3
-		third/obs
+		third/entt/src
 )
 
 if (PSV)
