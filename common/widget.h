@@ -14,17 +14,11 @@
 #include "gamepad.h"
 #include "mouse.h"
 #include "event.h"
+#include "observer.h"
 
 mge_begin
 
 void TestWidget();
-
-#define WIDGET_CREATE_FUNC(TYPE) \
-public:                          \
-    template<typename... Args>   \
-    WidgetPtr Create(Args const&... args) { \
-        return Ptr(new TYPE(args...));      \
-    }
 
 class Action;
 class BaseActionExecuter;
@@ -35,6 +29,13 @@ public:
     typedef std::shared_ptr<BaseActionExecuter> ActionExecuterPtr;
     typedef std::shared_ptr<Action> ActionPtr;
     typedef WidgetPtr Ptr;
+    enum EVENT {
+        ON_ENTER = 0,
+        ON_EXIT,
+        EVENT_MAX,
+    };
+    typedef Signal<void(Widget*)> Signal;
+    typedef std::vector<Signal> Signals;
 public:
     template<typename T, typename... Args>
     static Ptr New(Args const&... args) {
@@ -64,6 +65,9 @@ public:
     virtual void removeFromParent();
     WidgetArray& children();
     WidgetArray const& children() const;
+public:
+    Signal::slot_type connect(EVENT type, Signal::observer_type const& obs);
+    void disconnect(EVENT type, Signal::slot_type const& obs);
 public:
     virtual void update(float delta);
     virtual void draw(SDL_Renderer* renderer);
@@ -147,6 +151,7 @@ protected:
     std::string _name;
     WidgetArray _children;
     ActionExecuterPtr _action;
+    Signals _signals;
 };
 
 class WindowWidget : public Widget {
@@ -172,9 +177,9 @@ protected:
 class GamePadWidget : public WindowWidget {
 public:
     typedef GamePad::KeyCode KeyCode;
+public:
+    GamePadWidget();
 protected:
-    void enter() override;
-    void exit() override;
     void sleep_gamepad(float seconds);
 };
 
@@ -310,8 +315,10 @@ public:
 public:
     void setString(std::string const& s);
     void setString(std::string const& s, SDL_Color const& color);
+    std::string const& str() const;
 private:
     TTFontPtr _font;
+    std::string _s;
 };
 
 class FrameAnimationWidget : public ImageWidget {

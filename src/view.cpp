@@ -13,6 +13,7 @@
 #include "lutok3.h"
 #include "battle.h"
 #include "sound_effect.h"
+#include "debug.h"
 #include <assert.h>
 
 using namespace mge;
@@ -138,7 +139,7 @@ LogoView::LogoView():_canClick(false) {
 }
 
 void LogoView::onButtonDown(int key) {
-    if (_canClick) {
+    if (_canClick and false) {
         this->stopAllActions();
         auto fadeout = Action::Ptr(new ProgressAction(std::bind(&LogoView::onFadeOut, this, std::placeholders::_1), 0.5f));
         auto delay1 = Action::New<Delay>(1.0f);
@@ -162,7 +163,7 @@ void LogoView::onEnter() {
     auto loadskin = Action::New<CallBackVoid>([]{
         _game.event().notify(Event(EventID::LOAD_RES));
     });
-    auto delay2 = Action::Ptr(new Delay(1.0f));
+    auto delay2 = Action::Ptr(new Delay(0.5f));
     auto clickoff = Action::New<CallBackVoid>([&]{
         this->_canClick = false;
     });
@@ -185,12 +186,12 @@ void LogoView::onFadeOut(float v) {
 
 StartView::StartView():_index(0), _canSelect(false) {
 
+    Tank::resetCheat();
     _game.setRenderColor({0, 0, 0, 255});
+    _game.gamepad().sleep(0.0f);
 
     auto font = res::load_ttf_font(fontName, 18);
     font->setColor({255, 255, 255, 255});
-
-    _game.gamepad().sleep(0.0f);
 
     auto root = Widget::New<WindowWidget>();
     root->setName("root");
@@ -957,9 +958,7 @@ CheatView::CheatView(CallBack const& cb):_index(0), _callback(cb == nullptr ? []
     root->setName("root");
     addChild(root);
 
-    int const TITLE_MAX = 1;
-    //std::string title[TITLE_MAX] = {"CHEAT LIST", "BACK TITLE"};
-    std::string title[TITLE_MAX] = {"BACK TITLE"};
+    std::string title[TITLE_MAX] = {"CHEAT LIST", "BACK TITLE"};
     auto font = res::load_ttf_font(res::fontName("prstart"), 18);
     font->setColor({255, 255, 255, 255});
     for (int i = 0; i < TITLE_MAX; ++i) {
@@ -996,15 +995,105 @@ void CheatView::onButtonDown(int key) {
         find("root")->setVisible(false);
         sleep_gamepad(0.33f);
     } else if (key == KeyCode::UP) {
-        //_index = --_index <= -1 ? 1 : _index;
+        _index = --_index <= -1 ? (TITLE_MAX-1) : _index;
         _icon->setPosition(_position[_index]);
     } else if (key == KeyCode::DOWN) {
-        //_index = ++_index >= 2 ? 0 : _index;
+        _index = ++_index >= TITLE_MAX ? 0 : _index;
         _icon->setPosition(_position[_index]);
     } else if (key == KeyCode::A or key == KeyCode::START) {
-        //if (_index == 1) {
+        if (_index == 0) {
+            auto view = Widget::New<CheatListView>();
+            view->setPosition(300, 0);
+            view->connect(ON_EXIT, [this](Widget* sender){
+                _icon->setVisible(true);
+            });
+            _icon->setVisible(false);
+            this->addChild(view);
+        } else if (_index == (TITLE_MAX - 1)) {
             _game.screen().replace<StartView>();
-        //}
+        }
+    }
+}
+
+//=====================================================================================
+
+CheatListView::CheatListView():_index(0) {
+    std::string title[TITLE_MAX] = {
+            "ALWAYS APPEAR POWERUP",
+            "PLAYER UNMATCHED",
+            "PLAYER LEVEL MAX",
+            "BASE UNMATCHED",
+    };
+    auto& cheat = Tank::getCheat();
+    bool tag[TITLE_MAX] = {
+            cheat.always_appear_powerup,
+            cheat.player_unmatched,
+            cheat.player_level_max,
+            cheat.base_unmatched,
+    };
+    auto font = res::load_ttf_font(res::fontName("prstart"), 18);
+    for (int i = 0; i < TITLE_MAX; ++i) {
+        if (tag[i]) {
+            font->setColor({255, 0, 0, 255});
+        } else {
+            font->setColor({255, 255, 255, 255});
+        }
+        auto label = TTFLabel::New(title[i], font, {0.0f, 0.5f});
+        label->setPosition(80, 60 + i * 40);
+        this->addChild(label);
+        _position[i] = label->position() - Vector2f{40, 0};
+        _labels.push_back(label->to<TTFLabel>());
+    }
+
+    auto widget = Widget::New<FrameAnimationWidget>();
+    auto animate = widget->to<FrameAnimationWidget>();
+    animate->setFrames({
+        res::load_texture(_game.renderer(), res::imageName("tank_player1_right_c0_t1")),
+        res::load_texture(_game.renderer(), res::imageName("tank_player1_right_c0_t2")),
+    });
+    animate->setAnchor(0.5f, 0.5f);
+    animate->setPosition(_position[0]);
+    animate->play(0.15f);
+    animate->setName("tank");
+    this->addChild(widget);
+    _icon = widget;
+}
+
+void CheatListView::onButtonDown(int key) {
+    if (key == KeyCode::UP) {
+        _index = --_index <= -1 ? (TITLE_MAX-1) : _index;
+        _icon->setPosition(_position[_index]);
+    } else if (key == KeyCode::DOWN) {
+        _index = ++_index >= TITLE_MAX ? 0 : _index;
+        _icon->setPosition(_position[_index]);
+    } else if (key == KeyCode::A) {
+        onCheat(_index);
+    } else if (key == KeyCode::B) {
+        this->removeFromParent();
+    }
+}
+
+void CheatListView::onCheat(int index) {
+    auto& cheat = Tank::getCheat();
+    bool* tag[TITLE_MAX] = {
+            &cheat.always_appear_powerup,
+            &cheat.player_unmatched,
+            &cheat.player_level_max,
+            &cheat.base_unmatched,
+    };
+    auto label = _labels[index];
+    auto& value = *tag[index];
+    value = !value;
+    label->setString(label->str(), value ? SDL_Color{255, 0, 0, 255} : SDL_Color{255, 255, 255, 255});
+    if (index == 2 and value) {
+        _SE.playSE(_SE.POWERUP_PICK);
+
+        // 升级玩家坦克到最大等级
+        auto& world = _game.get<WorldModel>("world_model");
+        auto tank = world.player[Tank::P1];
+        if (tank != nullptr) {
+            tank->tier = Tank::D;
+        }
     }
 }
 

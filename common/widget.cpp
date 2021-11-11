@@ -67,6 +67,7 @@ _opacity(255) {
     this->setSize(width, height);
 #endif
     _global_size = _size;
+    _signals.resize(EVENT_MAX);
 }
 
 Widget::~Widget() {
@@ -178,6 +179,14 @@ Widget::WidgetArray const& Widget::children() const {
     return _children;
 }
 
+Widget::Signal::slot_type Widget::connect(EVENT type, Signal::observer_type const& obs) {
+    return _signals[type].connect(obs);
+}
+
+void Widget::disconnect(EVENT type, Signal::slot_type const& obs) {
+    _signals[type].disconnect(obs);
+}
+
 void Widget::update(float delta) {
     bool update = _visible and _update;
     bool action_update = not _pause_action_when_hidden;
@@ -218,9 +227,11 @@ void Widget::dirty() {
 
 void Widget::enter() {
     onEnter();
+    _signals[ON_ENTER](this);
 }
 
 void Widget::exit() {
+    _signals[ON_EXIT](this);
     onExit();
 }
 
@@ -507,14 +518,13 @@ void RenderTargetWidget::draw(SDL_Renderer* renderer) {
 
 //=====================================================================================
 
-void GamePadWidget::enter() {
-    _game.gamepad().add(this->ptr());
-    onEnter();
-}
-
-void GamePadWidget::exit() {
-    onExit();
-    _game.gamepad().remove(this->ptr());
+GamePadWidget::GamePadWidget() {
+    connect(ON_ENTER, [](Widget* sender){
+        _game.gamepad().add(sender->ptr());
+    });
+    connect(ON_EXIT, [](Widget* sender){
+        _game.gamepad().remove(sender->ptr());
+    });
 }
 
 void GamePadWidget::sleep_gamepad(float seconds) {
@@ -824,6 +834,7 @@ void TTFLabel::setString(std::string const& s) {
         return;
     }
     setTexture(_font->createWithUTF8(_game.renderer(), s.c_str()));
+    _s = s;
 }
 
 void TTFLabel::setString(std::string const& s, SDL_Color const& color) {
@@ -831,6 +842,10 @@ void TTFLabel::setString(std::string const& s, SDL_Color const& color) {
         _font->setColor(color);
     }
     setString(s);
+}
+
+std::string const& TTFLabel::str() const {
+    return _s;
 }
 
 //=====================================================================================

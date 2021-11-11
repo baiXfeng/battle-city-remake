@@ -250,8 +250,9 @@ void PropCreateBehavior::onEvent(Event const& e) {
 
         // 创建奖励
         auto type = Tank::PowerUp(rand() % Tank::POWER_MAX);
-        if (Debug::appear_powerup_type != Tank::POWER_MAX) {
-            type = Debug::appear_powerup_type;
+        auto& cheat = Tank::getCheat();
+        if (cheat.appear_powerup_type != Tank::POWER_MAX) {
+            type = cheat.appear_powerup_type;
         }
         auto view = Widget::New<PropView>(type);
         auto prop = view->to<PropView>();
@@ -546,7 +547,8 @@ Status TankAI_Behavior::tick(float delta) {
     if (_model->party == Tank::ENEMY and _world->sleep) {
         return running;
     }
-    if (not Debug::enemy_misfire) {
+    auto& cheat = Tank::getCheat();
+    if (not cheat.enemy_misfire) {
         onAiShoot(delta);
     }
     onAiMove(delta);
@@ -701,6 +703,9 @@ _tanks(tanks) {
 Status TankCollisionBehavior::tick(float delta) {
     for (auto& tank : *_tanks) {
         if (tank->id == _model->id) {
+            continue;
+        }
+        if (!tank->visible) {
             continue;
         }
         if (isCollision({
@@ -933,7 +938,8 @@ Status BulletTileCollisionBehavior::tick(float delta) {
     bool steel_killed = false;
     for (auto& tile : result) {
         if (tile->type == Tile::BASE) {
-            if (Debug::base_unmatched) {
+            auto& cheat = Tank::getCheat();
+            if (cheat.base_unmatched) {
                 continue;
             }
             base_killed = true;
@@ -1006,18 +1012,19 @@ void BulletTankCollisionBehavior::bulletHitTank(TankModel* tank) {
     auto bullet = _model;
     auto world = _world;
 
+    auto& cheat = Tank::getCheat();
     if (not tank->shield) {
         --tank->hp;
 
-        if (tank->party == Tank::ENEMY and Debug::enemy_unmatched) {
+        if (tank->party == Tank::ENEMY and cheat.enemy_unmatched) {
             ++tank->hp;
-        } else if (tank->party == Tank::PLAYER and Debug::player_unmatched) {
+        } else if (tank->party == Tank::PLAYER and cheat.player_unmatched) {
             ++tank->hp;
         }
     }
 
     if (tank->party == Tank::ENEMY) {
-        if (tank->has_drop or Debug::always_appear_powerup) {
+        if (tank->has_drop or cheat.always_appear_powerup) {
             // 生成奖励
             tank->has_drop = false;
             _game.event().notify(Event(EventID::PROP_GEN));

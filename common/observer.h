@@ -55,6 +55,81 @@ protected:
     std::list<View*> _views;
 };
 
+namespace __private__ {
+    static int signal_func_id = 0;
+}
+
+template<typename T>
+class Signal {
+public:
+    typedef std::function<T> observer_type;
+private:
+    class Slot {
+        friend class Signal<T>;
+    public:
+        Slot(observer_type const& obs):_obs(obs), _id(++__private__::signal_func_id) {}
+        Slot(Slot const& slot) {
+            *this = slot;
+        }
+        Slot& operator=(Slot const& slot) {
+            _id = slot._id;
+            _obs = slot._obs;
+            return *this;
+        }
+        bool operator==(Slot const& slot) const {
+            return _id == slot._id;
+        }
+    private:
+        observer_type& get() {
+            return _obs;
+        }
+    private:
+        int _id;
+        observer_type _obs;
+    };
+public:
+    typedef Slot slot_type;
+    typedef std::list<slot_type> oberser_list;
+public:
+    virtual ~Signal() {}
+public:
+    template<typename... Args>
+    void operator()(Args const&... args) {
+        auto list = _list;
+        for (auto& obs : list) {
+            obs.get()(args...);
+        }
+    }
+    template<>
+    void operator()() {
+        auto list = _list;
+        for (auto& obs : list) {
+            obs.get()();
+        }
+    }
+    slot_type connect(observer_type const& obs) {
+        _list.push_back(obs);
+        return _list.back();
+    }
+    void disconnect(Slot const& target) {
+        auto iter = std::find(_list.begin(), _list.end(), target);
+        if (iter != _list.end()) {
+            _list.erase(iter);
+        }
+    }
+    void clear() {
+        _list.clear();
+    }
+    bool empty() const {
+        return _list.empty();
+    }
+    int size() const {
+        return _list.size();
+    }
+protected:
+    oberser_list _list;
+};
+
 mge_end
 
 #endif //SDL2_UI_OBSERVER_H

@@ -240,7 +240,8 @@ void BattleFieldView::onEvent(Event const& e) {
         auto tier = info.tier;
         if (info.controller == Tank::P1) {
             tier = _game.get<PlayerModel>("player_model").tier;
-            if (Debug::player_level_max) {
+            auto& cheat = Tank::getCheat();
+            if (cheat.player_level_max) {
                 tier = Tank::D;
             }
         }

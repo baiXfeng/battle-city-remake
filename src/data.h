@@ -30,6 +30,10 @@ namespace Tile {
     };
 }
 
+namespace Debug {
+    class Cheat;
+}
+
 namespace Tank {
     enum Party {
         PLAYER = 0,
@@ -95,6 +99,9 @@ namespace Tank {
 
     void resetPlayerScore();
     void playerScoreAdd(int score);
+
+    Debug::Cheat& getCheat();
+    void resetCheat();
 }
 
 typedef struct {

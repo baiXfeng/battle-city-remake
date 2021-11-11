@@ -10,6 +10,7 @@
 #include "const.h"
 #include "assert.h"
 #include "sound_effect.h"
+#include "debug.h"
 
 using namespace mge;
 
@@ -145,6 +146,12 @@ namespace Tank {
             _SE.playSE(_SE.LIFEUP_SE);
             once = true;
         }
+    }
+    Debug::Cheat& getCheat() {
+        return _game.force_get<Debug::Cheat>("debug:cheat");
+    }
+    void resetCheat() {
+        _game.set<Debug::Cheat>("debug:cheat");
     }
 }
 

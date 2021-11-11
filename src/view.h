@@ -105,6 +105,9 @@ private:
 class CheatView : public mge::GamePadWidget {
 public:
     typedef std::function<void()> CallBack;
+    enum {
+        TITLE_MAX = 2,
+    };
 public:
     CheatView(CallBack const& cb = nullptr);
 private:
@@ -112,8 +115,25 @@ private:
 private:
     int _index;
     Ptr _icon;
-    mge::Vector2f _position[2];
+    mge::Vector2f _position[TITLE_MAX];
     CallBack _callback;
+};
+
+class CheatListView : public mge::GamePadWidget {
+public:
+    enum {
+        TITLE_MAX = 4,
+    };
+public:
+    CheatListView();
+private:
+    void onButtonDown(int key) override;
+    void onCheat(int index);
+private:
+    int _index;
+    Ptr _icon;
+    mge::Vector2f _position[TITLE_MAX];
+    std::vector<mge::TTFLabel*> _labels;
 };
 
 class BigExplosionView : public mge::FrameAnimationWidget {
