@@ -3,15 +3,15 @@ import "levels/level_api.lua" -- use import for dofile
 
 --==============================================================================
 -- 最大关卡数
-LEVEL_MAX = 25
+LEVEL_MAX = 35
 -- 初始生命数
 DEFAULT_LIFE_MAX = 3
 
 --==============================================================================
 -- 玩家初始位置
 PLAYER_DEFAULT_SPAWN_POSITIONS = {
-    {x = tile.size * 4.5, y = tile.size * 12},
-    {x = tile.size * 7.5, y = tile.size * 12},
+    {x = tile.size * 4, y = tile.size * 12},
+    {x = tile.size * 8, y = tile.size * 12},
 }
 
 -- 敌人初始位置

@@ -107,6 +107,10 @@ int Game::run() {
     this->clear();
     finiSDL();
 
+#if defined(__NS__)
+    romfsExit();
+#endif
+
     return 0;
 }
 
