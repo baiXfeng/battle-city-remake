@@ -7,6 +7,10 @@
 
 #include "common/command.h"
 
+class BattleModeInitCommand : public mge::Command {
+    void onEvent(mge::Event const& e) override;
+};
+
 class GameOverCommand : public mge::Command {
     void onEvent(mge::Event const& e) override;
 };

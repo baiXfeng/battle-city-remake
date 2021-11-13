@@ -13,8 +13,29 @@
 #include "const.h"
 #include "sound_effect.h"
 #include "skin.h"
+#include "luafunc.h"
 
 using namespace mge;
+
+void BattleModeInitCommand::onEvent(mge::Event const& e) {
+
+    srand(time(nullptr));
+
+    // 初始化LUA虚拟机
+    auto& state = _game.force_get<lutok3::State>("lua");
+    state.openLibs();
+    registerLuaFunctions(state);
+    state.doFile(mge::res::scriptName("startup"));
+
+    // 记录最大关卡数
+    int level_max = Tank::getGlobalInt("LEVEL_MAX");
+    _game.force_get<int>("level_max") = level_max == 0 ? 1 : level_max;
+    _game.force_get<int>("level") = 1;
+
+    // 加载配置
+    Tank::loadTankSpawns();
+    Tank::loadAttributes();
+}
 
 void GameOverCommand::onEvent(Event const& e) {
 

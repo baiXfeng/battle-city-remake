@@ -7,6 +7,7 @@
 
 namespace EventID {
     enum {
+        BATTLE_CITY_INIT = 0x101,
         ENEMY_NUMBER_CHANGED = 0x1001,
         PLAYER_LIFE_CHANGED,
         GAME_OVER,
