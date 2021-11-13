@@ -201,9 +201,14 @@ StartView::StartView():_index(0), _canSelect(false) {
     Widget::Ptr widget;
 
     {
+        auto& hi_score = _game.force_get<int>("hi_score", 0);
         auto title = new TTFLabel;
         title->setFont(font);
-        title->setString("I-    00 HI- 20000");
+        if (hi_score == 0) {
+            title->setString("I-    00 HI- 20000");
+        } else {
+            title->setString(std::string("I- ") + std::to_string(hi_score) + " HI- 20000");
+        }
         title->setPosition(15, 15);
         widget.reset(title);
         root->addChild(widget);
@@ -925,6 +930,13 @@ GameOverView::GameOverView() {
     view->setPosition(size().x * 0.5f, size().y * 0.5f);
     view->setAnchor(0.5f, 0.5f);
     addChild(view);
+
+    // 保留最高分数
+    auto& score = _game.force_get<int>("player_score");
+    auto& hi_score = _game.force_get<int>("hi_score");
+    if (score >= hi_score) {
+        hi_score = score;
+    }
 
     _SE.playSE(_SE.GAMEOVER_SE);
 
