@@ -3,6 +3,7 @@
 //
 
 #include "render.h"
+#include "texture.h"
 
 mge_begin
 
@@ -12,19 +13,19 @@ _srcrect({0,0,0,0}),
 _size({0,0}),
 _opacity(255) {}
 
-void RenderCopy::setTexture(SDL_Texture* texture) {
+void RenderCopy::setTexture(TexturePtr const& texture) {
     _texture = texture;
-    if (_texture) {
+    if (_texture != nullptr and _texture->data()) {
         int width = 0;
         int height = 0;
-        SDL_QueryTexture(_texture, nullptr, nullptr, &width, &height);
+        SDL_QueryTexture(_texture->data(), nullptr, nullptr, &width, &height);
         _srcrect.w = width;
         _srcrect.h = height;
         _size = {width, height};
     }
 }
 
-void RenderCopy::setTexture(SDL_Texture* texture, SDL_Rect const& srcrect) {
+void RenderCopy::setTexture(TexturePtr const& texture, SDL_Rect const& srcrect) {
     _texture = texture;
     _srcrect = srcrect;
     _size = {srcrect.w, srcrect.h};
@@ -61,8 +62,8 @@ void RenderCopy::draw(SDL_Renderer* renderer, Vector2i const& position) {
         _size.x,
         _size.y
     };
-    SDL_SetTextureAlphaMod(_texture, _opacity);
-    SDL_RenderCopy(renderer, _texture, &_srcrect, &dstrect);
+    SDL_SetTextureAlphaMod(_texture->data(), _opacity);
+    SDL_RenderCopy(renderer, _texture->data(), &_srcrect, &dstrect);
 }
 
 RenderCopyEx::RenderCopyEx():
@@ -116,8 +117,8 @@ void RenderCopyEx::draw(SDL_Renderer* renderer, Vector2i const& position) {
     } else if (_scale.y < 0) {
         flip = SDL_RendererFlip::SDL_FLIP_VERTICAL;
     }
-    SDL_SetTextureAlphaMod(_texture, _opacity);
-    SDL_RenderCopyEx(renderer, _texture, &_srcrect, &dstrect, _angle, &center, flip);
+    SDL_SetTextureAlphaMod(_texture->data(), _opacity);
+    SDL_RenderCopyEx(renderer, _texture->data(), &_srcrect, &dstrect, _angle, &center, flip);
 }
 
 RenderFillRect::RenderFillRect(): _color({0, 0, 0, 255}) {

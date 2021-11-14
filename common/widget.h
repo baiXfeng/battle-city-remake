@@ -59,6 +59,7 @@ public:
     void performLayout();
 public:
     virtual void addChild(WidgetPtr& widget);
+    virtual void addChild(WidgetPtr& widget, int index);
     virtual void removeChild(WidgetPtr& widget);
     virtual void removeChild(Widget* widget);
     virtual void removeAllChildren();
@@ -183,10 +184,11 @@ protected:
     void sleep_gamepad(float seconds);
 };
 
-class RenderCopy;
+class RenderCopyEx;
 class ImageWidget : public Widget {
 public:
-    typedef std::shared_ptr<RenderCopy> RenderCopyPtr;
+    typedef RenderCopyEx Render;
+    typedef std::shared_ptr<Render> RenderPtr;
     typedef std::shared_ptr<Texture> TexturePtr;
 public:
     ImageWidget(TexturePtr const& texture);
@@ -197,10 +199,12 @@ public:
 protected:
     void onDraw(SDL_Renderer* renderer) override;
     void onModifyOpacity(unsigned char opacity) override;
-    void dirty() override;
+    void onModifyRotation(float rotation) override;
+    void onModifySize(Vector2f const& size) override;
+    void onModifyScale(Vector2f const& scale) override;
+    void onModifyAnchor(Vector2f const& anchor) override;
 private:
-    RenderCopyPtr _target;
-    TexturePtr _texture;
+    RenderPtr _target;
 };
 
 class ButtonWidget : public ImageWidget {

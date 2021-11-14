@@ -26,13 +26,16 @@ private:
     SDL_Color _back;
 };
 
+class Texture;
 class RenderCopy {
+public:
+    typedef std::shared_ptr<Texture> TexturePtr;
 public:
     RenderCopy();
     virtual ~RenderCopy() {}
 public:
-    void setTexture(SDL_Texture* texture);
-    void setTexture(SDL_Texture* texture, SDL_Rect const& srcrect);
+    void setTexture(TexturePtr const& texture);
+    void setTexture(TexturePtr const& texture, SDL_Rect const& srcrect);
     void setSize(int w, int h);
     void setSize(Vector2i const& size);
     Vector2i const& size() const;
@@ -42,7 +45,7 @@ public:
     virtual void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0});
 protected:
     int _opacity;
-    SDL_Texture* _texture;
+    TexturePtr _texture;
     SDL_Rect _srcrect;
     Vector2i _size;
 };

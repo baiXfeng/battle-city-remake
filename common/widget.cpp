@@ -131,11 +131,19 @@ void Widget::performLayout() {
 }
 
 void Widget::addChild(WidgetPtr& widget) {
+    addChild(widget, _children.size());
+}
+
+void Widget::addChild(WidgetPtr& widget, int index) {
     if (widget->_parent) {
         widget->_parent->removeChild(widget);
         widget->_parent = nullptr;
     }
-    _children.push_back(widget);
+    if (index >= _children.size()) {
+        _children.push_back(widget);
+    } else {
+        _children.insert(_children.begin() + (index <= 0 ? 0 : index), widget);
+    }
     widget->_parent = this;
     widget->enter();
 }
@@ -474,7 +482,7 @@ RenderTargetWidget::RenderTargetWidget(Vector2i const& textureSize) {
         //SDL_SetTextureScaleMode(texture, SDL_ScaleModeLinear);
     }
     _target = std::make_shared<RenderCopyEx>();
-    _target->setTexture(_texture->data());
+    _target->setTexture(_texture);
 }
 
 void RenderTargetWidget::draw(SDL_Renderer* renderer) {
@@ -533,11 +541,11 @@ void GamePadWidget::sleep_gamepad(float seconds) {
 
 //=====================================================================================
 
-ImageWidget::ImageWidget(TexturePtr const& texture):_target(std::make_shared<RenderCopy>()) {
+ImageWidget::ImageWidget(TexturePtr const& texture):_target(std::make_shared<Render>()) {
     this->setTexture(texture);
 }
 
-ImageWidget::ImageWidget(TexturePtr const& texture, SDL_Rect const& srcrect):_target(std::make_shared<RenderCopy>()) {
+ImageWidget::ImageWidget(TexturePtr const& texture, SDL_Rect const& srcrect):_target(std::make_shared<Render>()) {
     this->setTexture(texture, srcrect);
 }
 
@@ -546,8 +554,7 @@ void ImageWidget::setTexture(TexturePtr const& texture) {
         setSize(0.0f, 0.0f);
         return;
     }
-    _texture = texture;
-    _target->setTexture(_texture->data());
+    _target->setTexture(texture);
     this->setSize(_target->size().to<float>());
 }
 
@@ -555,22 +562,33 @@ void ImageWidget::setTexture(TexturePtr const& texture, SDL_Rect const& srcrect)
     if (texture == nullptr) {
         return;
     }
-    _texture = texture;
-    _target->setTexture(_texture->data(), srcrect);
+    _target->setTexture(texture, srcrect);
     this->setSize(_target->size().to<float>());
-}
-
-void ImageWidget::dirty() {
-    _target->setSize(_global_size.x, _global_size.y);
-    this->onDirty();
 }
 
 void ImageWidget::onModifyOpacity(unsigned char opacity) {
     _target->setOpacity(opacity);
 }
 
+void ImageWidget::onModifyRotation(float rotation) {
+    _target->setAngle(rotation);
+}
+
+void ImageWidget::onModifySize(Vector2f const& size) {
+    _target->setSize(size.to<int>());
+}
+
+void ImageWidget::onModifyScale(Vector2f const& scale) {
+    _target->setScale(scale);
+}
+
+void ImageWidget::onModifyAnchor(Vector2f const& anchor) {
+    _target->setAnchor(anchor);
+}
+
 void ImageWidget::onDraw(SDL_Renderer* renderer) {
-    _target->draw(renderer, global_position().to<int>());
+    auto position = _parent ? _parent->global_position() + _position : _position;
+    _target->draw(renderer, position.to<int>());
 }
 
 //=====================================================================================
