@@ -34,8 +34,8 @@ public:
         ON_EXIT,
         EVENT_MAX,
     };
-    typedef Signal<void(Widget*)> Signal;
-    typedef std::vector<Signal> Signals;
+    typedef Signal<void(Widget*)> SenderSignal;
+    typedef std::vector<SenderSignal> Signals;
 public:
     template<typename T, typename... Args>
     static Ptr New(Args const&... args) {
@@ -67,8 +67,8 @@ public:
     WidgetArray& children();
     WidgetArray const& children() const;
 public:
-    Signal::slot_type connect(EVENT type, Signal::observer_type const& obs);
-    void disconnect(EVENT type, Signal::slot_type const& obs);
+    SenderSignal::slot_type connect(EVENT type, SenderSignal::observer_type const& obs);
+    void disconnect(EVENT type, SenderSignal::slot_type const& obs);
 public:
     virtual void update(float delta);
     virtual void draw(SDL_Renderer* renderer);
@@ -165,14 +165,18 @@ class RenderCopyEx;
 class RenderTargetWidget : public WindowWidget {
 public:
     typedef std::shared_ptr<Texture> TexturePtr;
-    typedef std::shared_ptr<RenderCopyEx> RenderCopyExPtr;
-    static Ptr New(Vector2i const& textureSize);
+    typedef RenderCopyEx Render;
+    typedef std::shared_ptr<Render> RenderPtr;
+public:
+    void setRenderTargetSize(Vector2i const& size);
+    void setRenderTargetNull();
 protected:
-    RenderTargetWidget(Vector2i const& textureSize);
+    RenderTargetWidget();
     void draw(SDL_Renderer* renderer) override;
+    void drawRenderTarget(SDL_Renderer* renderer);
 protected:
-    TexturePtr _texture;
-    RenderCopyExPtr _target;
+    bool _hasRender;
+    RenderPtr _render;
 };
 
 class GamePadWidget : public WindowWidget {

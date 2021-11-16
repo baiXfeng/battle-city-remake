@@ -17,8 +17,8 @@ public:
     typedef std::shared_ptr<Texture> Ptr;
 public:
     Texture(SDL_Texture* texture):_texture(texture) {
-        SDL_SetTextureBlendMode(_texture, SDL_BLENDMODE_BLEND);
         if (_texture) {
+            SDL_SetTextureBlendMode(_texture, SDL_BLENDMODE_BLEND);
             SDL_QueryTexture(_texture, nullptr, nullptr, &_size.x, &_size.y);
         }
     }

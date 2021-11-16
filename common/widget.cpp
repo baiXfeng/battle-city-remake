@@ -187,11 +187,11 @@ Widget::WidgetArray const& Widget::children() const {
     return _children;
 }
 
-Widget::Signal::slot_type Widget::connect(EVENT type, Signal::observer_type const& obs) {
+Widget::SenderSignal::slot_type Widget::connect(EVENT type, SenderSignal::observer_type const& obs) {
     return _signals[type].connect(obs);
 }
 
-void Widget::disconnect(EVENT type, Signal::slot_type const& obs) {
+void Widget::disconnect(EVENT type, SenderSignal::slot_type const& obs) {
     _signals[type].disconnect(obs);
 }
 
@@ -461,31 +461,42 @@ WindowWidget::WindowWidget() {
 
 //=====================================================================================
 
-Widget::Ptr RenderTargetWidget::New(Vector2i const& textureSize) {
-    if (SDL_RenderTargetSupported(_game.renderer())) {
-        return Ptr(new RenderTargetWidget(textureSize));
-    }
-    return Ptr(new WindowWidget);
+RenderTargetWidget::RenderTargetWidget():_hasRender(false), _render(std::make_shared<Render>()) {
+
 }
 
-RenderTargetWidget::RenderTargetWidget(Vector2i const& textureSize) {
+void RenderTargetWidget::setRenderTargetSize(Vector2i const& size) {
+    assert(size.x > 0 and size.y > 0 and "RenderTargetWidget::setRenderTargetSize error.");
     auto texture = SDL_CreateTexture(
             _game.renderer(),
             SDL_PIXELFORMAT_RGBA8888,
             SDL_TEXTUREACCESS_TARGET,
-            textureSize.x,
-            textureSize.y
+            size.x,
+            size.y
     );
-    _texture = TexturePtr(new Texture(texture));
     if (texture) {
         //some problem on psvita
         //SDL_SetTextureScaleMode(texture, SDL_ScaleModeLinear);
     }
-    _target = std::make_shared<RenderCopyEx>();
-    _target->setTexture(_texture);
+    _render->setTexture(TexturePtr(new Texture(texture)));
+    _hasRender = true;
+}
+
+void RenderTargetWidget::setRenderTargetNull() {
+    _hasRender = false;
+    _render->setTexture(nullptr);
 }
 
 void RenderTargetWidget::draw(SDL_Renderer* renderer) {
+    if (_hasRender) {
+        drawRenderTarget(renderer);
+    } else {
+        WindowWidget::draw(renderer);
+    }
+}
+
+void RenderTargetWidget::drawRenderTarget(SDL_Renderer* renderer) {
+
     if (not _visible) {
         return;
     }
@@ -501,7 +512,7 @@ void RenderTargetWidget::draw(SDL_Renderer* renderer) {
     this->modifyLayout();
 
     auto render_target = SDL_GetRenderTarget(renderer);
-    SDL_SetRenderTarget(renderer, _texture->data());
+    SDL_SetRenderTarget(renderer, _render->texture()->data());
     SDL_RenderClear(renderer);
 
     this->onDraw(renderer);
@@ -516,12 +527,12 @@ void RenderTargetWidget::draw(SDL_Renderer* renderer) {
     _scale = scale;
     this->modifyLayout();
 
-    _target->setAnchor(_anchor);
-    _target->setScale(_scale);
-    _target->setSize(_size.to<int>());
-    _target->setOpacity(_opacity);
-    _target->setAngle(_rotation);
-    _target->draw(renderer, _position.to<int>());
+    _render->setAnchor(_anchor);
+    _render->setScale(_scale);
+    _render->setSize(_size.to<int>());
+    _render->setOpacity(_opacity);
+    _render->setAngle(_rotation);
+    _render->draw(renderer, _position.to<int>());
 }
 
 //=====================================================================================

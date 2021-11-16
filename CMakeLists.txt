@@ -15,7 +15,7 @@ elseif(NS)
 	add_definitions("-D__NS__")
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(PROJECT_NAME "sdl2-ui")
 set(PROJECT_ELF ${PROJECT_NAME}.elf)
 project(${PROJECT_NAME})
@@ -25,6 +25,7 @@ file( GLOB
 		BASIC_SOURCE
 		*.c*
 		src/*.c*
+		survival/*.c*
 		common/*.c*
 		third/lua/*.c*
 		third/lutok3/src/lutok3/*.c*

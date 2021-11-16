@@ -14,6 +14,7 @@
 #include "sound_effect.h"
 #include "skin.h"
 #include "luafunc.h"
+#include <time.h>
 
 using namespace mge;
 

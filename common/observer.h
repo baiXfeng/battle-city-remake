@@ -100,7 +100,6 @@ public:
             obs.get()(args...);
         }
     }
-    template<>
     void operator()() {
         auto list = _list;
         for (auto& obs : list) {

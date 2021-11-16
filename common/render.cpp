@@ -13,6 +13,14 @@ _srcrect({0,0,0,0}),
 _size({0,0}),
 _opacity(255) {}
 
+Texture::Ptr& RenderCopy::texture() {
+    return _texture;
+}
+
+Texture::Ptr const& RenderCopy::texture() const {
+    return _texture;
+}
+
 void RenderCopy::setTexture(TexturePtr const& texture) {
     _texture = texture;
     if (_texture != nullptr and _texture->data()) {

@@ -6,6 +6,7 @@
 #define SDL2_UI_RENDER_H
 
 #include <SDL.h>
+#include <memory>
 #include "types.h"
 
 mge_begin
@@ -34,6 +35,8 @@ public:
     RenderCopy();
     virtual ~RenderCopy() {}
 public:
+    TexturePtr& texture();
+    TexturePtr const& texture() const;
     void setTexture(TexturePtr const& texture);
     void setTexture(TexturePtr const& texture, SDL_Rect const& srcrect);
     void setSize(int w, int h);

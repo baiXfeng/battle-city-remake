@@ -233,7 +233,7 @@ void ABC_EnemyTankAnimate::update(float delta) {
         auto& frames = _animates[_model->dir];
         _frameTicks -= _maxFrameTicks;
         _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
-        setTexture(frames[_frameIndex]->data());
+        setTexture(frames[_frameIndex]);
     }
 }
 
@@ -272,7 +272,7 @@ void D_EnemyTankAnimate::update(float delta) {
         auto& frames = _animates[_model->dir];
         _frameTicks -= _maxFrameTicks;
         _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
-        setTexture(frames[_frameIndex]->data());
+        setTexture(frames[_frameIndex]);
     }
 }
 
@@ -283,7 +283,7 @@ void D_EnemyTankAnimate::tierC_update(float delta) {
             frames[ _frameIndex ],
             grays[ _frameIndex ],
     };
-    setTexture(texture[ _switchIndex = 1 - _switchIndex ]->data());
+    setTexture(texture[ _switchIndex = 1 - _switchIndex ]);
     if ((_frameTicks += delta) >= _maxFrameTicks) {
         _frameTicks -= _maxFrameTicks;
         _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
@@ -320,12 +320,12 @@ void PlayerTankAnimate::update(float delta) {
     if ((_frameTicks += delta) >= _maxFrameTicks) {
         auto& frames = _animates[_model->dir];
         if (not _model->moving) {
-            setTexture(frames[0]->data());
+            setTexture(frames[0]);
             return;
         }
         _frameTicks -= _maxFrameTicks;
         _frameIndex = ++_frameIndex >= frames.size() ? 0 : _frameIndex;
-        setTexture(frames[_frameIndex]->data());
+        setTexture(frames[_frameIndex]);
     }
 }
 
