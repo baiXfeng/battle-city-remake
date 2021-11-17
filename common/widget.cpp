@@ -130,11 +130,11 @@ void Widget::performLayout() {
     this->modifyLayout();
 }
 
-void Widget::addChild(WidgetPtr& widget) {
+void Widget::addChild(WidgetPtr const& widget) {
     addChild(widget, _children.size());
 }
 
-void Widget::addChild(WidgetPtr& widget, int index) {
+void Widget::addChild(WidgetPtr const& widget, int index) {
     if (widget->_parent) {
         widget->_parent->removeChild(widget);
         widget->_parent = nullptr;
@@ -148,7 +148,7 @@ void Widget::addChild(WidgetPtr& widget, int index) {
     widget->enter();
 }
 
-void Widget::removeChild(WidgetPtr& widget) {
+void Widget::removeChild(WidgetPtr const& widget) {
     this->removeChild(widget.get());
 }
 

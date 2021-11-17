@@ -12,6 +12,7 @@
 #include <functional>
 #include <unordered_map>
 #include <algorithm>
+#include <assert.h>
 #include "types.h"
 #include "render.h"
 
@@ -37,29 +38,10 @@ public:
     static Ptr New(int level, RectI const& bounds, RectCatcher const& catcher) {
         return Ptr(new QuadTree<T>(level, bounds, catcher));
     }
-    void unique(SquareList& result, Pointer const& get) {
-        std::map<void*, bool> flags;
-        for (auto iter = result.begin(); iter != result.end();) {
-            auto key = get(*iter);
-            auto& value = flags[key];
-            if (value) {
-                result.erase(iter++);
-            } else {
-                value = true;
-                ++iter;
-            }
-        }
-    }
-    void retrieve(SquareList& result, RectI const& rect) {
-        auto indexes = getIndexes(rect);
-        if (_nodes.size() and indexes.front() != -1) {
-            for (auto const& index : indexes) {
-                _nodes[index]->retrieve(result, rect);
-            }
-        }
-        for (auto& object : _objects) {
-            result.push_back(object);
-        }
+    void retrieve(SquareList& result, RectI const& rect, Pointer const& unique_func) {
+        assert(unique_func != nullptr && "QuadTree::retrieve call fail.");
+        retrieve_square(result, rect);
+        unique(result, unique_func);
     }
     void clear() {
         _objects.clear();
@@ -78,6 +60,30 @@ public:
         return _bounds;
     }
 protected:
+    void unique(SquareList& result, Pointer const& get) {
+        std::map<void*, bool> flags;
+        for (auto iter = result.begin(); iter != result.end();) {
+            auto key = get(*iter);
+            auto& value = flags[key];
+            if (value) {
+                result.erase(iter++);
+            } else {
+                value = true;
+                ++iter;
+            }
+        }
+    }
+    void retrieve_square(SquareList& result, RectI const& rect) {
+        auto indexes = getIndexes(rect);
+        if (_nodes.size() and indexes.front() != -1) {
+            for (auto const& index : indexes) {
+                _nodes[index]->retrieve_square(result, rect);
+            }
+        }
+        for (auto& object : _objects) {
+            result.push_back(object);
+        }
+    }
     void remove_square(Square const& sprite, RectI const& rect) {
         auto indexes = getIndexes(rect);
         if (_nodes.empty() or indexes.front() == -1) {

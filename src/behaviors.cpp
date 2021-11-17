@@ -85,8 +85,7 @@ void TankEventBehavior::onEvent(Event const& e) {
         }
         auto tank = e.data<TankModel*>();
         WorldModel::TileTree::SquareList list;
-        _tiles->retrieve(list, tank->bounds);
-        _tiles->unique(list, [](TileModel* m) {
+        _tiles->retrieve(list, tank->bounds, [](TileModel* m) {
             return m;
         });
         for (auto& tile : list) {
@@ -295,8 +294,7 @@ void PropCreateBehavior::randomPosition(Vector2i& position, int retryCount) {
         position.y,
         Tile::SIZE,
         Tile::SIZE,
-    });
-    tiles.unique(result, [](TileModel* m){
+    }, [](TileModel* m){
         return m;
     });
     Vector2i offset[4] = {
@@ -480,8 +478,7 @@ void BaseReinforceBehavior::onBlinkImp() {
             base->bounds.h + (Tile::SIZE >> 1),
     };
     WorldModel::TileTree::SquareList result;
-    tiles.retrieve(result, bounds);
-    tiles.unique(result, [](TileModel* m){
+    tiles.retrieve(result, bounds, [](TileModel* m){
         return m;
     });
     // 移除基地周围砖块
@@ -653,8 +650,7 @@ _tiles(tiles) {
 
 Status TankTileCollisionBehavior::tick(float delta) {
     WorldModel::TileTree::SquareList list;
-    _tiles->retrieve(list, _model->bounds);
-    _tiles->unique(list, [](TileModel* m) {
+    _tiles->retrieve(list, _model->bounds, [](TileModel* m) {
         return m;
     });
     for (auto& tile : list) {
@@ -899,8 +895,7 @@ Status BulletTileCollisionBehavior::tick(float delta) {
     WorldModel::TileTree::SquareList list;
     auto& tiles = _world->tiles;
     auto bullet_bounds = getBulletBounds();
-    tiles.retrieve(list, bullet_bounds);
-    tiles.unique(list, [](TileModel* m) {
+    tiles.retrieve(list, bullet_bounds, [](TileModel* m) {
         return m;
     });
 
@@ -927,8 +922,7 @@ Status BulletTileCollisionBehavior::tick(float delta) {
     if (_model->wall_damage > 1 and result.size()) {
         list.clear();
         bullet_bounds = getBigBulletBounds();
-        tiles.retrieve(list, bullet_bounds);
-        tiles.unique(list, [](TileModel* m) {
+        tiles.retrieve(list, bullet_bounds, [](TileModel* m) {
             return m;
         });
         result = collision();

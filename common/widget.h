@@ -58,9 +58,9 @@ public:
     void setVisible(bool visible);
     void performLayout();
 public:
-    virtual void addChild(WidgetPtr& widget);
-    virtual void addChild(WidgetPtr& widget, int index);
-    virtual void removeChild(WidgetPtr& widget);
+    virtual void addChild(WidgetPtr const& widget);
+    virtual void addChild(WidgetPtr const& widget, int index);
+    virtual void removeChild(WidgetPtr const& widget);
     virtual void removeChild(Widget* widget);
     virtual void removeAllChildren();
     virtual void removeFromParent();
@@ -234,7 +234,7 @@ public:
     void setClick(CallBack const& cb);
     void click();
 private:
-    void addChild(WidgetPtr& widget) override {}
+    void addChild(WidgetPtr const& widget) override {}
     void setState(State state);
 private:
     bool _enable;

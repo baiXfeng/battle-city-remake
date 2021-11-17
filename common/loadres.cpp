@@ -67,7 +67,9 @@ namespace res {
         if (ptr != nullptr) {
             return ptr;
         }
-        _ttfFontCache.push_back(ptr = TTFont::New(fileName, size));
+        ptr = TTFont::New(getAssetsPath() + fileName, size);
+        ptr->setFontPath(fileName);
+        _ttfFontCache.push_back(ptr);
         return ptr;
     }
 

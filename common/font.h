@@ -36,6 +36,7 @@ public:
     SDL_Color const& getColor() const;
     int fontSize() const;
     std::string const& fontPath() const;
+    void setFontPath(std::string const& path);
 public:
     void setStyle(int style);
     int getStyle() const;

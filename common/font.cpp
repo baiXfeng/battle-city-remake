@@ -18,10 +18,8 @@ TTFont::~TTFont() {
 
 void TTFont::open(std::string const& fileName, int fontSize) {
     this->close();
-    auto& assets = res::getAssetsPath();
-    _font = TTF_OpenFont((assets+fileName).c_str(), fontSize);
+    _font = TTF_OpenFont(fileName.c_str(), fontSize);
     _fontSize = fontSize;
-    _fontPath = fileName;
 }
 
 void TTFont::close() {
@@ -29,6 +27,10 @@ void TTFont::close() {
         TTF_CloseFont(_font);
         _font = nullptr;
     }
+}
+
+void TTFont::setFontPath(std::string const& path) {
+    _fontPath = path;
 }
 
 void TTFont::setColor(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
