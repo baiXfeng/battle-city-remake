@@ -46,6 +46,7 @@ _parent(nullptr),
 _userdata(nullptr),
 _visible(true),
 _update(false),
+_clip(false),
 _pause_action_when_hidden(false),
 _dirty(true),
 _action(ActionExecuterPtr(new ActionExecuter)),
@@ -119,6 +120,10 @@ void Widget::defer(Widget* sender, std::function<void(Widget*)> const& func, flo
 
 void Widget::enableUpdate(bool update) {
     _update = update;
+}
+
+void Widget::enableClip(bool clip) {
+    _clip = clip;
 }
 
 void Widget::setVisible(bool visible) {
@@ -223,9 +228,26 @@ void Widget::draw(SDL_Renderer* renderer) {
     if (not _visible) {
         return;
     }
-    this->onDraw(renderer);
-    for (auto& child : _children) {
-        child->draw(renderer);
+    if (_clip) {
+        SDL_Rect clip_copy;
+        SDL_Rect clip_rect{
+            int(_global_position.x),
+            int(_global_position.y),
+            int(_global_size.x),
+            int(_global_size.y),
+        };
+        SDL_RenderGetClipRect(renderer, &clip_copy);
+        SDL_RenderSetClipRect(renderer, &clip_rect);
+        this->onDraw(renderer);
+        for (auto& child : _children) {
+            child->draw(renderer);
+        }
+        SDL_RenderSetClipRect(renderer, &clip_copy);
+    } else {
+        this->onDraw(renderer);
+        for (auto& child : _children) {
+            child->draw(renderer);
+        }
     }
 }
 

@@ -9,7 +9,7 @@ mge_begin
 
 //=====================================================================================
 
-    TableWidget::TableWidget():_dir(Vertical), _dataSource(nullptr), _container(nullptr), _cursor(nullptr), _selectIndex(0), _scrolling(false) {
+    TableWidget::TableWidget(): _direction(Vertical), _dataSource(nullptr), _container(nullptr), _cursor(nullptr), _selectIndex(0), _scrolling(false) {
         addChild(Ptr(_container = new WindowWidget));
 
         auto mask = new MaskWidget({0, 0, 0, 200});
@@ -17,11 +17,11 @@ mge_begin
     }
 
     void TableWidget::setDirection(Direction dir) {
-        _dir = dir;
+        _direction = dir;
     }
 
     TableWidget::Direction TableWidget::getDirection() const {
-        return _dir;
+        return _direction;
     }
 
     void TableWidget::setDataSource(WidgetDataSource* data_source) {
@@ -32,52 +32,41 @@ mge_begin
         return _dataSource;
     }
 
-    void TableWidget::setCursorIndex(size_t index) {
-        if (index >= _dataSource->numberOfCellsInWidget(this)) {
-            return;
-        }
-        if (_cursor) {
-            auto cell = cellAtIndex(index);
-            if (isCursorIndexInBox(index, cell)) {
-                if (_dir == Vertical) {
-                    _cursor->setPositionY(_container->position().y + cell->position().y);
-                } else {
-                    _cursor->setPositionX(_container->position().x + cell->position().x);
-                }
-                _cursor->setSize(cell->size());
-                _selectIndex = index;
-            }
-        }
-    }
-
     size_t TableWidget::getCursorIndex() const {
         return _selectIndex;
     }
 
-    bool TableWidget::isCursorIndexInBox(size_t index, CellWidget* cell) const {
-        if (cell == nullptr) {
-            cell = cellAtIndex(index);
+    void TableWidget::startMoveCursor(MoveDirection dir, bool animate) {
+        static bool __animate = true;
+        Action::Ptr call;
+        __animate = animate;
+        if (dir == MOVE_NEXT) {
+            this->moveCursorNext(animate);
+            call = Action::New<CallBackVoid>([this]{
+                this->moveCursorNext(__animate, 0.045f);
+            });
+        } else if (dir == MOVE_PREV) {
+            this->moveCursorPrev(animate);
+            call = Action::New<CallBackVoid>([this]{
+                this->moveCursorPrev(__animate, 0.045f);
+            });
+        } else {
+            assert(false && "TableWidget::startMoveCursor error.");
         }
-        if (cell) {
-            if (_dir == Vertical) {
-                auto y = _container->position().y + cell->position().y;
-                auto h = cell->size().y;
-                if (y < 0 or y + h > size().y) {
-                    return false;
-                }
-            } else {
-                auto x = _container->position().x + cell->position().x;
-                auto w = cell->size().x;
-                if (x < 0 or x + w > size().x) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
+        auto delay = Action::New<Delay>(0.5f);
+        auto delay1 = Action::New<Delay>(0.05f);
+        auto sequence = Action::Ptr(new Sequence({call, delay1}));
+        auto repeat = Action::New<Repeat>(sequence);
+        auto action = Action::Ptr(new Sequence({delay, repeat}));
+        action->setName("TableWidget::MoveCursorAnimation");
+        runAction(action);
     }
 
-    TableWidget::Ptr TableWidget::dequeueCell() {
+    void TableWidget::stopMoveCursor() {
+        stopAction("TableWidget::MoveCursorAnimation");
+    }
+
+    Widget::Ptr TableWidget::dequeueCell() {
         if (_idleCells.empty()) {
             return nullptr;
         }
@@ -86,32 +75,57 @@ mge_begin
         return r;
     }
 
-    CellWidget* TableWidget::cellAtIndex(size_t index) const {
-        for (auto& w : _busyCells) {
-            auto r = w->to<CellWidget>();
-            if (r and r->getCellIndex() == index) {
-                return r;
+    void TableWidget::onUpdate(float delta) {
+        if (_busyCells.empty() or !_scrolling) {
+            return;
+        }
+        checkCells();
+    }
+
+    void TableWidget::checkCells() {
+        if (Vertical == _direction) {
+            int offset = int(_container->position().y - _prevPosition.y);
+            if (offset >= 1) {
+                insertCellAt(HEAD);
+                removeCellAt(TAIL);
+            } else if (offset <= -1) {
+                insertCellAt(TAIL);
+                removeCellAt(HEAD);
+            }
+        } else {
+            int offset = int(_container->position().x - _prevPosition.x);
+            if (offset >= 1) {
+                insertCellAt(HEAD);
+                removeCellAt(TAIL);
+            } else if (offset <= -1) {
+                insertCellAt(TAIL);
+                removeCellAt(HEAD);
             }
         }
-        return nullptr;
     }
 
     void TableWidget::reload_data() {
         assert(_dataSource != nullptr && "TableWidget::reload_data fail.");
 
+        _rectList.clear();
+        _idleCells.clear();
+        _busyCells.clear();
+        _container->removeAllChildren();
+
         Vector2f containerSize;
         for (int i = 0; i < _dataSource->numberOfCellsInWidget(this); ++i) {
             auto cellSize = _dataSource->cellSizeForIndex(this, i);
-            if (_dir == Vertical) {
+            _rectList.push_back({
+                int(containerSize.x),
+                int(containerSize.y),
+                int(cellSize.x),
+                int(cellSize.y),
+            });
+            if (_direction == Vertical) {
                 containerSize.y += cellSize.y;
             } else {
                 containerSize.x += cellSize.x;
             }
-        }
-        if (_dir == Vertical) {
-            containerSize.x = size().x;
-        } else {
-            containerSize.y = size().y;
         }
         _selectIndex = 0;
         _container->setSize(containerSize);
@@ -121,20 +135,18 @@ mge_begin
         Vector2f position;
         for (nextIndex = 0; nextIndex < _dataSource->numberOfCellsInWidget(this); ++nextIndex) {
             auto cellSize = _dataSource->cellSizeForIndex(this, nextIndex);
-            auto cell = this->dequeueCell();
-            if (cell == nullptr) {
-                _busyCells.push_back(cell = Ptr(_dataSource->cellWidgetAtIndex(this, nextIndex)));
-                _container->addChild(cell);
-            }
+            auto cell = Ptr(_dataSource->cellWidgetAtIndex(this, nextIndex));
             cell->setVisible(true);
             cell->setSize(cellSize.to<float>());
             cell->setPosition(position);
             cell->to<CellWidget>()->setCellIndex(nextIndex);
+            _busyCells.push_back(cell);
+            _container->addChild(cell);
             if (_selectIndex == nextIndex) {
                 _cursor->setPosition(position);
                 _cursor->setSize(cell->size());
             }
-            if (_dir == Vertical) {
+            if (_direction == Vertical) {
                 position.y += cellSize.y;
                 if (_container->position().y + position.y >= this->size().y) {
                     break;
@@ -154,58 +166,168 @@ mge_begin
         }
     }
 
-    void TableWidget::moveCursorNext(bool animate) {
+    void TableWidget::moveCursorNext(bool animate, float duration) {
         if (_selectIndex + 1 >= _dataSource->numberOfCellsInWidget(this) or this->_scrolling) {
             return;
         }
-        auto cell = cellAtIndex(_selectIndex+1);
-        if (cell == nullptr) {
-            return;
-        }
+        _prevPosition = _container->position();
+
+        auto const& rect = _rectList[ _selectIndex + 1 ];
         Vector2f offset;
-        if (Vertical == _dir) {
-            offset.y = cell->size().y;
+        bool in_box = false;
+        if (Vertical == _direction) {
+            int y = _container->position().y + rect.y;
+            if (y >= 0 and y + rect.h <= size().y) {
+                in_box = true;
+            }
+            offset.y = rect.h;
         } else {
-            offset.x = cell->size().x;
+            int x = _container->position().x + rect.x;
+            if (x >= 0 and x + rect.w <= size().x) {
+                in_box = true;
+            }
+            offset.x = rect.w;
         }
-        bool in_box = isCursorIndexInBox(_selectIndex+1, cell);
         auto sender = in_box ? _cursor : _container;
-        auto moveby = Action::New<MoveBy>(sender, offset * (in_box ? 1 : -1), 0.12f);
-        auto call = Action::New<CallBackVoid>([this]{
-            this->_scrolling = false;
+        if (animate) {
+            auto moveby = Action::New<MoveTo>(sender, sender->position() + offset * (in_box ? 1 : -1), duration);
+            auto call = Action::New<CallBackVoid>([this]{
+                this->_scrolling = false;
+                this->_selectIndex++;
+            });
+            auto action = Action::Ptr(new Sequence({moveby, call}));
+            action->setName("TableWidget::moveCursor");
+            this->runAction(action);
+            this->_scrolling = true;
+        } else {
+            sender->setPosition(sender->position() + offset * (in_box ? 1 : -1));
             this->_selectIndex++;
-        });
-        auto action = Action::Ptr(new Sequence({moveby, call}));
-        action->setName("TableWidget::moveCursor");
-        this->runAction(action);
-        this->_scrolling = true;
+            this->checkCells();
+        }
     }
 
-    void TableWidget::moveCursorPrev(bool animate) {
+    void TableWidget::moveCursorPrev(bool animate, float duration) {
         if (_selectIndex - 1 <= -1 or this->_scrolling) {
             return;
         }
-        auto cell = cellAtIndex(_selectIndex-1);
-        if (cell == nullptr) {
-            return;
-        }
+        _prevPosition = _container->position();
+
+        auto const& rect = _rectList[ _selectIndex - 1 ];
         Vector2f offset;
-        if (Vertical == _dir) {
-            offset.y = -cell->size().y;
+        bool in_box = false;
+        if (Vertical == _direction) {
+            int y = _container->position().y + rect.y;
+            if (y >= 0 and y + rect.h <= size().y) {
+                in_box = true;
+            }
+            offset.y = -rect.h;
         } else {
-            offset.x = -cell->size().x;
+            int x = _container->position().x + rect.x;
+            if (x >= 0 and x + rect.w <= size().x) {
+                in_box = true;
+            }
+            offset.x = -rect.w;
         }
-        bool in_box = isCursorIndexInBox(_selectIndex-1, cell);
         auto sender = in_box ? _cursor : _container;
-        auto moveby = Action::New<MoveBy>(sender, offset * (in_box ? 1 : -1), 0.12f);
-        auto call = Action::New<CallBackVoid>([this]{
-            this->_scrolling = false;
+        if (animate) {
+            auto moveby = Action::New<MoveTo>(sender, sender->position() + offset * (in_box ? 1 : -1), duration);
+            auto call = Action::New<CallBackVoid>([this] {
+                this->_scrolling = false;
+                this->_selectIndex--;
+            });
+            auto action = Action::Ptr(new Sequence({moveby, call}));
+            action->setName("TableWidget::moveCursor");
+            this->runAction(action);
+            this->_scrolling = true;
+        } else {
+            sender->setPosition(sender->position() + offset * (in_box ? 1 : -1));
             this->_selectIndex--;
-        });
-        auto action = Action::Ptr(new Sequence({moveby, call}));
-        action->setName("TableWidget::moveCursor");
-        this->runAction(action);
-        this->_scrolling = true;
+            this->checkCells();
+        }
+    }
+
+    void TableWidget::insertCellAt(CellPosition p) {
+        if (p == HEAD) {
+            auto& cell = _busyCells.front();
+            int firstIndex = cell->to<CellWidget>()->getCellIndex();
+            if (firstIndex == 0) {
+                return;
+            }
+            bool insert = false;
+            if (Vertical == _direction) {
+                insert = _container->position().y + cell->position().y >= 1;
+            } else {
+                insert = _container->position().x + cell->position().x >= 1;
+            }
+            if (insert) {
+                auto nextIndex = firstIndex - 1;
+                auto new_cell = _dataSource->cellWidgetAtIndex(this, nextIndex);
+                auto& rect = _rectList[nextIndex];
+                new_cell->setVisible(true);
+                new_cell->setSize({rect.w, rect.h});
+                new_cell->setPosition({rect.x, rect.y});
+                new_cell->to<CellWidget>()->setCellIndex(nextIndex);
+                _busyCells.push_front(new_cell);
+                if (new_cell->parent() == nullptr) {
+                    _container->addChild(new_cell);
+                }
+            }
+        } else {
+            auto& cell = _busyCells.back();
+            int firstIndex = cell->to<CellWidget>()->getCellIndex();
+            if (firstIndex + 1 >= _dataSource->numberOfCellsInWidget(this)) {
+                return;
+            }
+            bool insert = false;
+            if (Vertical == _direction) {
+                insert = size().y - (_container->position().y + cell->position().y + cell->size().y) >= 1;
+            } else {
+                insert = size().x - (_container->position().x + cell->position().x + cell->size().x) >= 1;
+            }
+            if (insert) {
+                auto nextIndex = firstIndex + 1;
+                auto new_cell = _dataSource->cellWidgetAtIndex(this, nextIndex);
+                auto& rect = _rectList[nextIndex];
+                new_cell->setVisible(true);
+                new_cell->setSize({rect.w, rect.h});
+                new_cell->setPosition({rect.x, rect.y});
+                new_cell->to<CellWidget>()->setCellIndex(nextIndex);
+                _busyCells.push_back(new_cell);
+                if (new_cell->parent() == nullptr) {
+                    _container->addChild(new_cell);
+                }
+            }
+        }
+    }
+
+    void TableWidget::removeCellAt(CellPosition p) {
+        if (p == HEAD) {
+            auto& cell = _busyCells.front();
+            bool remove = false;
+            if (Vertical == _direction) {
+                remove = _container->position().y + cell->position().y + cell->size().y <= -1;
+            } else {
+                remove = _container->position().x + cell->position().x + cell->size().x <= -1;
+            }
+            if (remove) {
+                cell->setVisible(false);
+                _busyCells.pop_front();
+                _idleCells.push_back(cell);
+            }
+        } else {
+            auto& cell = _busyCells.back();
+            bool remove = false;
+            if (Vertical == _direction) {
+                remove = int(_container->position().y + cell->position().y) >= int(size().y + 1);
+            } else {
+                remove = int(_container->position().x + cell->position().x) >= int(size().x + 1);
+            }
+            if (remove) {
+                cell->setVisible(false);
+                _busyCells.pop_back();
+                _idleCells.push_back(cell);
+            }
+        }
     }
 
 mge_end

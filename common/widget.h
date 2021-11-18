@@ -55,6 +55,7 @@ public:
     void defer(Widget* sender, std::function<void(Widget*)> const& func, float delay);
 public:
     void enableUpdate(bool update);
+    void enableClip(bool clip);
     void setVisible(bool visible);
     void performLayout();
 public:
@@ -137,6 +138,7 @@ protected:
 protected:
     bool _visible;
     bool _update;
+    bool _clip;
     bool _pause_action_when_hidden;
     bool _dirty;
     unsigned char _opacity;
