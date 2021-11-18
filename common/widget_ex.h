@@ -54,6 +54,7 @@ public:
     void startMoveCursor(MoveDirection dir, bool animate = true);
     void stopMoveCursor();
     void reload_data();
+    void reload_data(bool gen_all_cells);
     Widget::Ptr dequeueCell();
 protected:
     enum CellPosition {
@@ -70,6 +71,7 @@ protected:
     typedef std::list<Widget::Ptr> CellQueue;
     typedef std::vector<RectI> Rects;
     bool _scrolling;
+    bool _genAllCells;
     int _selectIndex;
     Direction _direction;
     WidgetDataSource* _dataSource;

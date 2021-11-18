@@ -4,16 +4,22 @@
 
 #include "widget_ex.h"
 #include "action.h"
+#include <assert.h>
 
 mge_begin
 
 //=====================================================================================
 
-    TableWidget::TableWidget(): _direction(Vertical), _dataSource(nullptr), _container(nullptr), _cursor(nullptr), _selectIndex(0), _scrolling(false) {
+    TableWidget::TableWidget():
+    _direction(Vertical),
+    _dataSource(nullptr),
+    _container(nullptr),
+    _cursor(nullptr),
+    _selectIndex(0),
+    _scrolling(false),
+    _genAllCells(false) {
         addChild(Ptr(_container = new WindowWidget));
-
-        auto mask = new MaskWidget({0, 0, 0, 200});
-        addChild(Ptr(_cursor = mask));
+        addChild(Ptr(_cursor = new MaskWidget({0, 0, 0, 200})));
     }
 
     void TableWidget::setDirection(Direction dir) {
@@ -76,7 +82,7 @@ mge_begin
     }
 
     void TableWidget::onUpdate(float delta) {
-        if (_busyCells.empty() or !_scrolling) {
+        if (_busyCells.empty() or !_scrolling or _genAllCells) {
             return;
         }
         checkCells();
@@ -105,12 +111,17 @@ mge_begin
     }
 
     void TableWidget::reload_data() {
+        reload_data(false);
+    }
+
+    void TableWidget::reload_data(bool gen_all_cells) {
         assert(_dataSource != nullptr && "TableWidget::reload_data fail.");
 
         _rectList.clear();
         _idleCells.clear();
         _busyCells.clear();
         _container->removeAllChildren();
+        _genAllCells = gen_all_cells;
 
         Vector2f containerSize;
         for (int i = 0; i < _dataSource->numberOfCellsInWidget(this); ++i) {
@@ -148,13 +159,17 @@ mge_begin
             }
             if (_direction == Vertical) {
                 position.y += cellSize.y;
-                if (_container->position().y + position.y >= this->size().y) {
-                    break;
+                if (!_genAllCells) {
+                    if (_container->position().y + position.y >= this->size().y) {
+                        break;
+                    }
                 }
             } else {
                 position.x += cellSize.x;
-                if (_container->position().x + position.x >= this->size().x) {
-                    break;
+                if (!_genAllCells) {
+                    if (_container->position().x + position.x >= this->size().x) {
+                        break;
+                    }
                 }
             }
         }
@@ -264,8 +279,8 @@ mge_begin
                 auto new_cell = _dataSource->cellWidgetAtIndex(this, nextIndex);
                 auto& rect = _rectList[nextIndex];
                 new_cell->setVisible(true);
-                new_cell->setSize({rect.w, rect.h});
-                new_cell->setPosition({rect.x, rect.y});
+                new_cell->setSize({float(rect.w), float(rect.h)});
+                new_cell->setPosition({float(rect.x), float(rect.y)});
                 new_cell->to<CellWidget>()->setCellIndex(nextIndex);
                 _busyCells.push_front(new_cell);
                 if (new_cell->parent() == nullptr) {
@@ -289,8 +304,8 @@ mge_begin
                 auto new_cell = _dataSource->cellWidgetAtIndex(this, nextIndex);
                 auto& rect = _rectList[nextIndex];
                 new_cell->setVisible(true);
-                new_cell->setSize({rect.w, rect.h});
-                new_cell->setPosition({rect.x, rect.y});
+                new_cell->setSize({float(rect.w), float(rect.h)});
+                new_cell->setPosition({float(rect.x), float(rect.y)});
                 new_cell->to<CellWidget>()->setCellIndex(nextIndex);
                 _busyCells.push_back(new_cell);
                 if (new_cell->parent() == nullptr) {

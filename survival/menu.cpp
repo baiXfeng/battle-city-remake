@@ -3,82 +3,92 @@
 //
 
 #include "menu.h"
-#include "common/widget_ex.h"
 #include "common/loadres.h"
+#include "common/game.h"
+#include "common/widget_ex.h"
 
 using namespace mge;
 
-class testCell : public CellWidget {
+int _colorIndex = 9;
+
+class WeaponIconCell : public CellWidget {
 public:
-    testCell() {
-        enum {MAX = 6};
-        SDL_Color color[MAX] = {
-                {255, 255, 255, 255},
-                {255, 0, 255, 255},
-                {0, 255, 255, 255},
-                {255, 255, 0, 255},
+    WeaponIconCell() {
+        SDL_Color color[7] = {
+                {255, 0, 0, 255},
                 {0, 255, 0, 255},
                 {0, 0, 255, 255},
+                {255, 255, 0, 255},
+                {0, 255, 255, 255},
+                {255, 0, 255, 255},
+                {0, 0, 0, 255},
         };
-        static int cIdx = 0;
-        int index = cIdx++ % MAX;
-        auto mask = Ptr(new MaskWidget(color[index]));
+        auto mask = Ptr(new mge::MaskWidget(color[_colorIndex++ % 7]));
         addChild(mask);
         _mask = mask->to<MaskWidget>();
-
-        auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 30);
-        auto label = TTFLabel::New("0", font);
-        label->setName("label");
-        addChild(label);
-    }
-    void setNumber(int i) {
-        auto label = find("label")->to<TTFLabel>();
-        label->setString(std::to_string(i), {0, 0, 0, 255});
     }
 private:
-    void onModifySize(Vector2f const& size) {
-        _mask->setSize(_mask->size().x, size.y);
+    void onModifySize(Vector2f const& size) override {
+        //_mask->setPositionX(10);
+        _mask->setSize(size-Vector2f{20, 0});
     }
 private:
     MaskWidget* _mask;
 };
 
-class testTable : public TableWidget, public WidgetDataSource {
+class WeaponListView : public TableWidget, public WidgetDataSource {
 public:
-    testTable() {
+    WeaponListView() {
+        auto icon_texture = res::load_texture(_game.renderer(), "assets/survival/icon-box.png");
+        auto image = New<ImageWidget>(icon_texture);
+        addChild(image);
+
+        setAnchor(0.5f, 0.5f);
+        setPosition(size().x * 0.5f, size().y * 0.35f);
+        setSize(80, 80);
+        setDirection(Horizontal);
         setDataSource(this);
-        reload_data();
+        reload_data(true);
+
+        _cursor->setVisible(false);
     }
-protected:
-    size_t numberOfCellsInWidget(Widget* sender) override {
-        return 100;
+private:
+    size_t numberOfCellsInWidget(TableWidget* sender) override {
+        return 10;
     }
-    CellWidget* cellWidgetAtIndex(Widget* sender, size_t index) override {
-        auto cell = new testCell;
-        cell->setNumber(index+1);
+    Vector2i cellSizeForIndex(TableWidget* sender, size_t index) override {
+        return {100, 80};
+    }
+    Widget::Ptr cellWidgetAtIndex(TableWidget* sender, size_t index) override {
+        auto cell = sender->dequeueCell();
+        if (cell == nullptr) {
+            cell.reset(new WeaponIconCell);
+        }
         return cell;
-    }
-    Vector2i cellSizeForIndex(Widget* sender, size_t index) override {
-        return {960, 100};
     }
 };
 
 WeaponSelectWidget::WeaponSelectWidget() {
-    auto mask = Ptr(new mge::MaskWidget({255, 0, 0, 255}));
+    auto mask = Ptr(new mge::MaskWidget({255, 255, 255, 255}));
     addChild(mask);
 
-    _tableView = new testTable;
-    addChild(Ptr(_tableView));
+    auto table = New<WeaponListView>();
+    addChild(table);
+    _weaponView = table->to<WeaponListView>();
 }
 
 void WeaponSelectWidget::onButtonDown(int key) {
-    if (key == KeyCode::UP) {
-        _tableView->moveCursorPrev();
-    } else if (key == KeyCode::DOWN) {
-        _tableView->moveCursorNext();
+    if (key == KeyCode::LEFT) {
+        _weaponView->startMoveCursor(_weaponView->MOVE_PREV);
+    } else if (key == KeyCode::RIGHT) {
+        _weaponView->startMoveCursor(_weaponView->MOVE_NEXT);
     }
 }
 
 void WeaponSelectWidget::onButtonUp(int key) {
-
+    if (key == KeyCode::LEFT) {
+        _weaponView->stopMoveCursor();
+    } else if (key == KeyCode::RIGHT) {
+        _weaponView->stopMoveCursor();
+    }
 }

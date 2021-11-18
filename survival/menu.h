@@ -7,7 +7,7 @@
 
 #include "common/widget.h"
 
-class testTable;
+class WeaponListView;
 class WeaponSelectWidget : public mge::GamePadWidget {
 public:
     WeaponSelectWidget();
@@ -15,7 +15,7 @@ private:
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
 private:
-    testTable* _tableView;
+    WeaponListView* _weaponView;
 };
 
 #endif //SDL2_UI_MENU_H
