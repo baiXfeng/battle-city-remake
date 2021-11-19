@@ -48,7 +48,7 @@ public:
         setSize(80, 80);
         setDirection(Horizontal);
         setDataSource(this);
-        reload_data(true);
+        //reload_data(true);
 
         _cursor->setVisible(false);
     }
@@ -75,6 +75,19 @@ WeaponSelectWidget::WeaponSelectWidget() {
     auto table = New<WeaponListView>();
     addChild(table);
     _weaponView = table->to<WeaponListView>();
+
+    auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 22);
+    font->setColor({0, 0, 0, 255});
+    auto label = TTFLabel::New("", font, {0.5f, 0.5f});
+    label->setPosition(size().x * 0.5f, size().y * 0.65f);
+    label->setName("label");
+    addChild(label);
+
+    _weaponView->connect(_weaponView->DID_SCROLL, [this](Widget* sender) {
+        auto label = this->find("label")->to<TTFLabel>();
+        label->setString(std::string("ITEM ") + std::to_string(_weaponView->getCursorIndex()+1));
+    });
+    _weaponView->reload_data(true);
 }
 
 void WeaponSelectWidget::onButtonDown(int key) {

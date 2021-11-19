@@ -67,6 +67,7 @@ private:
     class Slot {
         friend class Signal<T>;
     public:
+        Slot():_id(0) {}
         Slot(observer_type const& obs):_obs(obs), _id(++__private__::signal_func_id) {}
         Slot(Slot const& slot) {
             *this = slot;

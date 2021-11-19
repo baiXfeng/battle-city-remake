@@ -179,6 +179,8 @@ mge_begin
             _idleCells.push_back(cell);
             _container->addChild(cell);
         }
+
+        signal(DID_SCROLL)(this);
     }
 
     void TableWidget::moveCursorNext(bool animate, float duration) {
@@ -209,6 +211,7 @@ mge_begin
             auto call = Action::New<CallBackVoid>([this]{
                 this->_scrolling = false;
                 this->_selectIndex++;
+                this->signal(DID_SCROLL)(this);
             });
             auto action = Action::Ptr(new Sequence({moveby, call}));
             action->setName("TableWidget::moveCursor");
@@ -218,6 +221,7 @@ mge_begin
             sender->setPosition(sender->position() + offset * (in_box ? 1 : -1));
             this->_selectIndex++;
             this->checkCells();
+            this->signal(DID_SCROLL)(this);
         }
     }
 
@@ -249,6 +253,7 @@ mge_begin
             auto call = Action::New<CallBackVoid>([this] {
                 this->_scrolling = false;
                 this->_selectIndex--;
+                this->signal(DID_SCROLL)(this);
             });
             auto action = Action::Ptr(new Sequence({moveby, call}));
             action->setName("TableWidget::moveCursor");
@@ -258,6 +263,7 @@ mge_begin
             sender->setPosition(sender->position() + offset * (in_box ? 1 : -1));
             this->_selectIndex--;
             this->checkCells();
+            this->signal(DID_SCROLL)(this);
         }
     }
 

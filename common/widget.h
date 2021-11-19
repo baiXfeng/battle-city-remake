@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <unordered_map>
 #include <string>
 #include <SDL.h>
 #include "types.h"
@@ -30,12 +31,11 @@ public:
     typedef std::shared_ptr<Action> ActionPtr;
     typedef WidgetPtr Ptr;
     enum EVENT {
-        ON_ENTER = 0,
+        ON_ENTER = 0xEC001,
         ON_EXIT,
-        EVENT_MAX,
     };
     typedef Signal<void(Widget*)> SenderSignal;
-    typedef std::vector<SenderSignal> Signals;
+    typedef std::unordered_map<int, SenderSignal> SignalPool;
 public:
     template<typename T, typename... Args>
     static Ptr New(Args const&... args) {
@@ -68,8 +68,8 @@ public:
     WidgetArray& children();
     WidgetArray const& children() const;
 public:
-    SenderSignal::slot_type connect(EVENT type, SenderSignal::observer_type const& obs);
-    void disconnect(EVENT type, SenderSignal::slot_type const& obs);
+    SenderSignal::slot_type connect(int type, SenderSignal::observer_type const& obs);
+    void disconnect(int type, SenderSignal::slot_type const& obs);
 public:
     virtual void update(float delta);
     virtual void draw(SDL_Renderer* renderer);
@@ -135,6 +135,7 @@ public:
     void resumeAllActions();
 protected:
     void modifyLayout();
+    SenderSignal& signal(int key);
 protected:
     bool _visible;
     bool _update;
@@ -154,7 +155,7 @@ protected:
     std::string _name;
     WidgetArray _children;
     ActionExecuterPtr _action;
-    Signals _signals;
+    SignalPool _signal_pool;
 };
 
 class WindowWidget : public Widget {

@@ -68,7 +68,6 @@ _opacity(255) {
     this->setSize(width, height);
 #endif
     _global_size = _size;
-    _signals.resize(EVENT_MAX);
 }
 
 Widget::~Widget() {
@@ -192,12 +191,16 @@ Widget::WidgetArray const& Widget::children() const {
     return _children;
 }
 
-Widget::SenderSignal::slot_type Widget::connect(EVENT type, SenderSignal::observer_type const& obs) {
-    return _signals[type].connect(obs);
+Widget::SenderSignal::slot_type Widget::connect(int type, SenderSignal::observer_type const& obs) {
+    return _signal_pool[type].connect(obs);
 }
 
-void Widget::disconnect(EVENT type, SenderSignal::slot_type const& obs) {
-    _signals[type].disconnect(obs);
+void Widget::disconnect(int type, SenderSignal::slot_type const& obs) {
+    _signal_pool[type].disconnect(obs);
+}
+
+Widget::SenderSignal& Widget::signal(int key) {
+    return _signal_pool[key];
 }
 
 void Widget::update(float delta) {
@@ -257,11 +260,11 @@ void Widget::dirty() {
 
 void Widget::enter() {
     onEnter();
-    _signals[ON_ENTER](this);
+    _signal_pool[ON_ENTER](this);
 }
 
 void Widget::exit() {
-    _signals[ON_EXIT](this);
+    _signal_pool[ON_EXIT](this);
     onExit();
 }
 
@@ -884,7 +887,7 @@ void TTFLabel::setString(std::string const& s) {
     if (_font == nullptr) {
         return;
     }
-    setTexture(_font->createWithUTF8(_game.renderer(), s.c_str()));
+    setTexture(_font->createWithUTF8(_game.renderer(), s.empty() ? " " : s.c_str()));
     _s = s;
 }
 

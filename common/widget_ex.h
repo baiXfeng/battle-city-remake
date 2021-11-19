@@ -42,6 +42,9 @@ public:
         MOVE_NEXT = 0,
         MOVE_PREV,
     };
+    enum EVENT {
+        DID_SCROLL = 0xA01,
+    };
 public:
     TableWidget();
 public:
