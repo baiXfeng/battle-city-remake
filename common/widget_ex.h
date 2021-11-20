@@ -45,13 +45,14 @@ public:
     enum EVENT {
         DID_SCROLL = 0xA01,
     };
+    typedef WidgetDataSource DataSource;
 public:
     TableWidget();
 public:
     void setDirection(Direction dir);
     Direction getDirection() const;
-    void setDataSource(WidgetDataSource* data_source);
-    WidgetDataSource* getDataSource() const;
+    void setDataSource(DataSource* data_source);
+    DataSource* getDataSource() const;
 public:
     size_t getCursorIndex() const;
     void startMoveCursor(MoveDirection dir, bool animate = true);
@@ -75,9 +76,10 @@ protected:
     typedef std::vector<RectI> Rects;
     bool _scrolling;
     bool _genAllCells;
+    bool _moveAnimate;
     int _selectIndex;
     Direction _direction;
-    WidgetDataSource* _dataSource;
+    DataSource* _dataSource;
     WindowWidget* _container;
     Widget* _cursor;
     Rects _rectList;

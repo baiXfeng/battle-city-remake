@@ -8,7 +8,7 @@
 
 mge_begin
 
-//=====================================================================================
+    //=====================================================================================
 
     TableWidget::TableWidget():
     _direction(Vertical),
@@ -17,7 +17,8 @@ mge_begin
     _cursor(nullptr),
     _selectIndex(0),
     _scrolling(false),
-    _genAllCells(false) {
+    _genAllCells(false),
+    _moveAnimate(false) {
         addChild(Ptr(_container = new WindowWidget));
         addChild(Ptr(_cursor = new MaskWidget({0, 0, 0, 200})));
     }
@@ -30,11 +31,11 @@ mge_begin
         return _direction;
     }
 
-    void TableWidget::setDataSource(WidgetDataSource* data_source) {
+    void TableWidget::setDataSource(DataSource* data_source) {
         _dataSource = data_source;
     }
 
-    WidgetDataSource* TableWidget::getDataSource() const {
+    TableWidget::DataSource* TableWidget::getDataSource() const {
         return _dataSource;
     }
 
@@ -43,18 +44,17 @@ mge_begin
     }
 
     void TableWidget::startMoveCursor(MoveDirection dir, bool animate) {
-        static bool __animate = true;
         Action::Ptr call;
-        __animate = animate;
+        _moveAnimate = animate;
         if (dir == MOVE_NEXT) {
             this->moveCursorNext(animate);
             call = Action::New<CallBackVoid>([this]{
-                this->moveCursorNext(__animate, 0.045f);
+                this->moveCursorNext(_moveAnimate, 0.045f);
             });
         } else if (dir == MOVE_PREV) {
             this->moveCursorPrev(animate);
             call = Action::New<CallBackVoid>([this]{
-                this->moveCursorPrev(__animate, 0.045f);
+                this->moveCursorPrev(_moveAnimate, 0.045f);
             });
         } else {
             assert(false && "TableWidget::startMoveCursor error.");
@@ -65,6 +65,7 @@ mge_begin
         auto repeat = Action::New<Repeat>(sequence);
         auto action = Action::Ptr(new Sequence({delay, repeat}));
         action->setName("TableWidget::MoveCursorAnimation");
+        stopAction("TableWidget::MoveCursorAnimation");
         runAction(action);
     }
 

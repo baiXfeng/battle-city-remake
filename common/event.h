@@ -7,6 +7,7 @@
 
 #include <list>
 #include <unordered_map>
+#include "observer.h"
 #include "types.h"
 
 mge_begin
@@ -58,16 +59,13 @@ protected:
 class EventCenter {
 public:
     typedef Event::Listener Listener;
-    typedef std::list<Listener*> List;
-    typedef std::unordered_map<int, List> EventMap;
+    typedef std::unordered_map<int, Observer<Listener>> EventMap;
 public:
     virtual ~EventCenter() {}
 public:
     void add(int event_id, Listener* listener);
     void remove(int event_id, Listener* listener);
     void notify(Event const& e);
-protected:
-    void _add(int event_id, Listener* listener);
 protected:
     EventMap _events;
 };

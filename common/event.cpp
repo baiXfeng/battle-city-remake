@@ -8,27 +8,17 @@
 mge_begin
 
 void EventCenter::add(int event_id, Listener* listener) {
-    this->remove(event_id, listener);
-    this->_add(event_id, listener);
-}
-
-void EventCenter::_add(int event_id, Listener* listener) {
-    _events[event_id].push_back(listener);
+    auto& obs = _events[event_id];
+    obs.remove(listener);
+    obs.add(listener);
 }
 
 void EventCenter::remove(int event_id, Listener* listener) {
-    auto& list = _events[event_id];
-    auto iter = std::find(list.begin(), list.end(), listener);
-    if (iter != list.end()) {
-        list.erase(iter);
-    }
+    _events[event_id].remove(listener);
 }
 
 void EventCenter::notify(Event const& e) {
-    auto list = _events[e.Id()];
-    for (auto& target : list) {
-        target->onEvent(e);
-    }
+    _events[e.Id()].notify(&Listener::onEvent, e);
 }
 
 mge_end

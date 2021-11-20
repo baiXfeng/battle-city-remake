@@ -32,9 +32,42 @@ public:
     void notify(void (View::*method)(Args...), Args const&... args) {
         auto views = _views;
         for (auto& v : views) {
-            if (v) {
-                (v->*method)(args...);
-            }
+            (v->*method)(args...);
+        }
+    }
+    template<typename T1>
+    void notify(void (View::*method)(T1 const&), T1 const& arg1) {
+        auto views = _views;
+        for (auto& v : views) {
+            (v->*method)(arg1);
+        }
+    }
+    template<typename T1, typename T2>
+    void notify(void (View::*method)(T1 const&, T2 const&), T1 const& arg1, T2 const& arg2) {
+        auto views = _views;
+        for (auto& v : views) {
+            (v->*method)(arg1, arg2);
+        }
+    }
+    template<typename T1, typename T2, typename T3>
+    void notify(void (View::*method)(T1 const&, T2 const&, T3 const&), T1 const& arg1, T2 const& arg2, T3 const& arg3) {
+        auto views = _views;
+        for (auto& v : views) {
+            (v->*method)(arg1, arg2, arg3);
+        }
+    }
+    template<typename T1, typename T2, typename T3, typename T4>
+    void notify(void (View::*method)(T1 const&, T2 const&, T3 const&, T4 const&), T1 const& arg1, T2 const& arg2, T3 const& arg3, T4 const& arg4) {
+        auto views = _views;
+        for (auto& v : views) {
+            (v->*method)(arg1, arg2, arg3, arg4);
+        }
+    }
+    template<typename T1, typename T2, typename T3, typename T4, typename T5>
+    void notify(void (View::*method)(T1 const&, T2 const&, T3 const&, T4 const&, T5 const&), T1 const& arg1, T2 const& arg2, T3 const& arg3, T4 const& arg4, T5 const& arg5) {
+        auto views = _views;
+        for (auto& v : views) {
+            (v->*method)(arg1, arg2, arg3, arg4, arg5);
         }
     }
     void notify(void (View::*method)()) {
@@ -99,6 +132,41 @@ public:
         auto list = _list;
         for (auto& obs : list) {
             obs.get()(args...);
+        }
+    }
+    template<typename T1>
+    void notify(T1 const& arg1) {
+        auto list = _list;
+        for (auto& obs : list) {
+            obs.get()(arg1);
+        }
+    }
+    template<typename T1, typename T2>
+    void notify(T1 const& arg1, T2 const& arg2) {
+        auto list = _list;
+        for (auto& obs : list) {
+            obs.get()(arg1, arg2);
+        }
+    }
+    template<typename T1, typename T2, typename T3>
+    void notify(T1 const& arg1, T2 const& arg2, T3 const& arg3) {
+        auto list = _list;
+        for (auto& obs : list) {
+            obs.get()(arg1, arg2, arg3);
+        }
+    }
+    template<typename T1, typename T2, typename T3, typename T4>
+    void notify(T1 const& arg1, T2 const& arg2, T3 const& arg3, T4 const& arg4) {
+        auto list = _list;
+        for (auto& obs : list) {
+            obs.get()(arg1, arg2, arg3, arg4);
+        }
+    }
+    template<typename T1, typename T2, typename T3, typename T4, typename T5>
+    void notify(T1 const& arg1, T2 const& arg2, T3 const& arg3, T4 const& arg4, T5 const& arg5) {
+        auto list = _list;
+        for (auto& obs : list) {
+            obs.get()(arg1, arg2, arg3, arg4, arg5);
         }
     }
     void operator()() {
