@@ -31,7 +31,7 @@ public:
     typedef std::shared_ptr<Action> ActionPtr;
     typedef WidgetPtr Ptr;
     enum EVENT {
-        ON_ENTER = 0xEC001,
+        ON_ENTER = 0xABEF0001,
         ON_EXIT,
     };
     typedef Signal<void(Widget*)> SenderSignal;

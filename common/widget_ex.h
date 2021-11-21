@@ -43,7 +43,7 @@ public:
         MOVE_PREV,
     };
     enum EVENT {
-        DID_SCROLL = 0xA01,
+        DID_SCROLL = 0xABEF1001,
     };
     typedef WidgetDataSource DataSource;
 public:

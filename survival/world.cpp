@@ -8,7 +8,7 @@
 #include "components.h"
 #include "object_view.h"
 
-WorldView::WorldView() {
+SurvivalView::SurvivalView() {
     _c.rootView = this;
 
     auto tankView = New<survival::TankView>();
@@ -26,16 +26,16 @@ WorldView::WorldView() {
     _sys = entity::System::Ptr(new entity::SequenceSystem({input}));
 }
 
-void WorldView::onUpdate(float delta) {
+void SurvivalView::onUpdate(float delta) {
     _c.delta = delta;
     _c.dispatcher.update();
     _sys->update(_c);
 }
 
-void WorldView::onButtonDown(int key) {
+void SurvivalView::onButtonDown(int key) {
     _c.dispatcher.trigger(event::GamepadDown{key});
 }
 
-void WorldView::onButtonUp(int key) {
+void SurvivalView::onButtonUp(int key) {
     _c.dispatcher.trigger(event::GamepadUp{key});
 }

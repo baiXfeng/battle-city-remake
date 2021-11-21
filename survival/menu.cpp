@@ -6,6 +6,7 @@
 #include "common/loadres.h"
 #include "common/game.h"
 #include "common/widget_ex.h"
+#include "common/gridmap.h"
 
 using namespace mge;
 
@@ -68,7 +69,7 @@ private:
     }
 };
 
-WeaponSelectWidget::WeaponSelectWidget() {
+WeaponSelectView::WeaponSelectView() {
     auto mask = Ptr(new mge::MaskWidget({255, 255, 255, 255}));
     addChild(mask);
 
@@ -90,7 +91,7 @@ WeaponSelectWidget::WeaponSelectWidget() {
     _weaponView->reload_data(true);
 }
 
-void WeaponSelectWidget::onButtonDown(int key) {
+void WeaponSelectView::onButtonDown(int key) {
     if (key == KeyCode::LEFT) {
         _weaponView->startMoveCursor(_weaponView->MOVE_PREV);
     } else if (key == KeyCode::RIGHT) {
@@ -98,10 +99,109 @@ void WeaponSelectWidget::onButtonDown(int key) {
     }
 }
 
-void WeaponSelectWidget::onButtonUp(int key) {
+void WeaponSelectView::onButtonUp(int key) {
     if (key == KeyCode::LEFT) {
         _weaponView->stopMoveCursor();
     } else if (key == KeyCode::RIGHT) {
         _weaponView->stopMoveCursor();
+    }
+}
+
+//=====================================================================================
+
+class WorldTileCell : public TileWidget {
+public:
+    WorldTileCell() {
+        SDL_Color color[7] = {
+                {255, 0, 0, 255},
+                {0, 255, 0, 255},
+                {0, 0, 255, 255},
+                {255, 255, 0, 255},
+                {0, 255, 255, 255},
+                {255, 0, 255, 255},
+                {0, 0, 0, 255},
+        };
+        auto mask = Ptr(new mge::MaskWidget(color[_colorIndex++ % 7]));
+        addChild(mask);
+        _mask = mask->to<MaskWidget>();
+
+        auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 10);
+        auto label = TTFLabel::New("", font, {0.5f, 0.5f});
+        addChild(label);
+        _label = label->to<TTFLabel>();
+    }
+    void setPos(Vector2i const& p) {
+        _label->setString(std::to_string(p.x) + "," + std::to_string(p.y), {180, 180, 180, 255});
+    }
+private:
+    void onModifySize(Vector2f const& size) override {
+        _mask->setSize(size);
+        _label->setPosition(size.x*0.5f, size.y*0.5f);
+    }
+private:
+    MaskWidget* _mask;
+    TTFLabel* _label;
+};
+
+class WorldTileMap : public GridMapWidget, public GridMapDataSource {
+public:
+    WorldTileMap() {
+        setDataSource(this);
+    }
+private:
+    size_t numberOfLayersInWidget(GridMapWidget* sender) override {
+        return 1;
+    }
+    Vector2i sizeOfGridMap(GridMapWidget* sender) override {
+        return {100, 100};
+    }
+    Vector2i sizeOfGridTile(GridMapWidget* sender) override {
+        return {56, 56};
+    }
+    Widget::Ptr tileWidgetAtPosition(GridMapWidget* sender, int layerIndex, Vector2i const& position) override {
+        auto cell = sender->dequeueTile(layerIndex);
+        if (cell == nullptr) {
+            cell = Ptr(new WorldTileCell);
+        }
+        cell->to<WorldTileCell>()->setPos(position);
+        return cell;
+    }
+};
+
+BattleWorldView::BattleWorldView() {
+    addChild(Ptr(_worldMap = new WorldTileMap));
+    _worldMap->setAnchor(0.5f, 0.5f);
+    _worldMap->setSize(400, 400);
+    _worldMap->setPosition(480, 272);
+    _worldMap->reload_data();
+
+    auto mask = Ptr(new mge::MaskWidget({0, 0, 0, 140}));
+    mask->setSize(400, 400);
+    _worldMap->addChild(mask);
+
+    _game.setRenderColor({255, 255, 255, 255});
+}
+
+void BattleWorldView::onButtonDown(int key) {
+    if (key == KeyCode::UP) {
+        _worldMap->getCamera()->move({0.0f, -300.0f});
+    } else if (key == KeyCode::DOWN) {
+        _worldMap->getCamera()->move({0.0f, 300.0f});
+    } else if (key == KeyCode::LEFT) {
+        _worldMap->getCamera()->move({-300.0f, 0.0f});
+    } else if (key == KeyCode::RIGHT) {
+        _worldMap->getCamera()->move({300.0f, 0.0f});
+    }
+}
+
+void BattleWorldView::onButtonUp(int key) {
+    if (key == KeyCode::UP) {
+        _worldMap->getCamera()->move({});
+    } else if (key == KeyCode::DOWN) {
+        _worldMap->getCamera()->move({});
+    } else if (key == KeyCode::LEFT) {
+        _worldMap->getCamera()->move({});
+    } else if (key == KeyCode::RIGHT) {
+        _worldMap->getCamera()->move({});
     }
 }

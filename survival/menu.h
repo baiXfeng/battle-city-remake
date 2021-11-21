@@ -8,14 +8,25 @@
 #include "common/widget.h"
 
 class WeaponListView;
-class WeaponSelectWidget : public mge::GamePadWidget {
+class WeaponSelectView : public mge::GamePadWidget {
 public:
-    WeaponSelectWidget();
+    WeaponSelectView();
 private:
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
 private:
     WeaponListView* _weaponView;
+};
+
+class WorldTileMap;
+class BattleWorldView : public mge::GamePadWidget {
+public:
+    BattleWorldView();
+private:
+    void onButtonDown(int key) override;
+    void onButtonUp(int key) override;
+private:
+    WorldTileMap* _worldMap;
 };
 
 #endif //SDL2_UI_MENU_H

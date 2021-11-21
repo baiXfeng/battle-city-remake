@@ -11,11 +11,11 @@
 namespace entity {
     class System;
 }
-class WorldView : public mge::GamePadWidget {
+class SurvivalView : public mge::GamePadWidget {
 public:
     typedef std::shared_ptr<entity::System> SystemPtr;
 public:
-    WorldView();
+    SurvivalView();
 private:
     void onUpdate(float delta) override;
     void onButtonDown(int key) override;
