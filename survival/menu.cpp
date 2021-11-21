@@ -153,7 +153,7 @@ private:
         return 1;
     }
     Vector2i sizeOfGridMap(GridMapWidget* sender) override {
-        return {100, 100};
+        return {30, 30};
     }
     Vector2i sizeOfGridTile(GridMapWidget* sender) override {
         return {56, 56};
@@ -170,14 +170,18 @@ private:
 
 BattleWorldView::BattleWorldView() {
     addChild(Ptr(_worldMap = new WorldTileMap));
-    _worldMap->setAnchor(0.5f, 0.5f);
-    _worldMap->setSize(400, 400);
-    _worldMap->setPosition(480, 272);
-    _worldMap->reload_data();
 
-    auto mask = Ptr(new mge::MaskWidget({0, 0, 0, 140}));
-    mask->setSize(400, 400);
-    _worldMap->addChild(mask);
+    if (false) {
+        _worldMap->setAnchor(0.5f, 0.5f);
+        _worldMap->setSize(400, 400);
+        _worldMap->setPosition(480, 272);
+
+        auto mask = Ptr(new mge::MaskWidget({0, 0, 0, 140}));
+        mask->setSize(400, 400);
+        _worldMap->addChild(mask);
+    }
+
+    _worldMap->reload_data();
 
     _game.setRenderColor({255, 255, 255, 255});
 }
@@ -191,6 +195,14 @@ void BattleWorldView::onButtonDown(int key) {
         _worldMap->getCamera()->move({-300.0f, 0.0f});
     } else if (key == KeyCode::RIGHT) {
         _worldMap->getCamera()->move({300.0f, 0.0f});
+    } else if (key == KeyCode::A) {
+        _worldMap->getCamera()->move({300.0f, 300.0f});
+    } else if (key == KeyCode::B) {
+        _worldMap->getCamera()->move({-300.0f, 300.0f});
+    } else if (key == KeyCode::X) {
+        _worldMap->getCamera()->move({300.0f, -300.0f});
+    } else if (key == KeyCode::Y) {
+        _worldMap->getCamera()->move({-300.0f, -300.0f});
     }
 }
 
@@ -202,6 +214,14 @@ void BattleWorldView::onButtonUp(int key) {
     } else if (key == KeyCode::LEFT) {
         _worldMap->getCamera()->move({});
     } else if (key == KeyCode::RIGHT) {
+        _worldMap->getCamera()->move({});
+    } else if (key == KeyCode::A) {
+        _worldMap->getCamera()->move({});
+    } else if (key == KeyCode::B) {
+        _worldMap->getCamera()->move({});
+    } else if (key == KeyCode::X) {
+        _worldMap->getCamera()->move({});
+    } else if (key == KeyCode::Y) {
         _worldMap->getCamera()->move({});
     }
 }

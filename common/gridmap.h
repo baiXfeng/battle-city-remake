@@ -39,15 +39,27 @@ class GridMapLayer : public WindowWidget {
 public:
     typedef std::list<Widget::Ptr> TileQueue;
 public:
-    GridMapLayer();
+    GridMapLayer(GridMapWidget* gridmap, int layerIndex);
 protected:
     Widget::Ptr dequeueTile();
     void enqueueTile(Widget::Ptr const& widget);
     void tagTile(size_t tile_index, TileWidget* tile_view);
-    void checkTiles(GridMapWidget* gridmap);
+    void makeTile(Vector2i const& tile_pos);
+    void checkTiles();
+protected:
+    void removeTop();
+    void removeBottom();
+    void removeLeft();
+    void removeRight();
+    void insertTop();
+    void insertBottom();
+    void insertLeft();
+    void insertRight();
 protected:
     typedef std::unordered_map<int, TileWidget*> TilePool;
+    int _layerIndex;
     int _minIndex, _maxIndex;
+    GridMapWidget* _gridmap;
     TileQueue _idleTiles;
     TileQueue _busyTiles;
     TilePool _tiles;
@@ -69,6 +81,7 @@ public:
 public:
     void move(Vector2f const& speed);
     MoveDirs const& move_dirs() const;
+    bool inCamera(RectI const& r) const;
 protected:
     void onUpdate(float delta) override;
 protected:
