@@ -84,6 +84,10 @@ public:
     void setCameraPosition(Vector2f const& position);
 protected:
     void onUpdate(float delta) override;
+    void limitTop();
+    void limitRight();
+    void limitBottom();
+    void limitLeft();
 protected:
     Widget* _container;
     Vector2f _speed;

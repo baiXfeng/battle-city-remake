@@ -327,17 +327,73 @@ mge_begin
         int x = int(_speed.x);
         if (x >= 1) {
             _moveDirs.push_back(MOVE_LEFT);
+            limitLeft();
         } else if (x <= -1) {
             _moveDirs.push_back(MOVE_RIGHT);
+            limitRight();
         }
         int y = int(_speed.y);
         if (y >= 1) {
             _moveDirs.push_back(MOVE_UP);
+            limitTop();
         } else if (y <= -1) {
             _moveDirs.push_back(MOVE_DOWN);
+            limitBottom();
         }
         if (_moveDirs.size()) {
             signal(DID_SCROLL)(this);
+        }
+    }
+
+    void GridMapCamera::limitTop() {
+        if (int(_container->size().y) > int(size().y)) {
+            if (_container->position().y >= 0.0f) {
+                _container->setPositionY(0.0f);
+            }
+        } else {
+            int limit_y = size().y - _container->size().y;
+            if (_container->position().y >= limit_y) {
+                _container->setPositionY(limit_y);
+            }
+        }
+    }
+
+    void GridMapCamera::limitRight() {
+        if (int(_container->size().x) > int(size().x)) {
+            int limit_x = size().x - _container->size().x;
+            if (_container->position().x <= limit_x) {
+                _container->setPositionX(limit_x);
+            }
+        } else {
+            if (_container->position().x <= 0.0f) {
+                _container->setPositionX(0.0f);
+            }
+        }
+    }
+
+    void GridMapCamera::limitBottom() {
+        if (int(_container->size().y) > int(size().y)) {
+            int limit_y = size().y - _container->size().y;
+            if (_container->position().y <= limit_y) {
+                _container->setPositionY(limit_y);
+            }
+        } else {
+            if (_container->position().y <= 0.0f) {
+                _container->setPositionY(0.0f);
+            }
+        }
+    }
+
+    void GridMapCamera::limitLeft() {
+        if (int(_container->size().x) > int(size().x)) {
+            if (_container->position().x >= 0.0f) {
+                _container->setPositionX(0.0f);
+            }
+        } else {
+            int limit_x = size().x - _container->size().x;
+            if (_container->position().x >= limit_x) {
+                _container->setPositionX(limit_x);
+            }
         }
     }
 
