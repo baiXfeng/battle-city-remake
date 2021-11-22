@@ -37,8 +37,6 @@ class GridMapWidget;
 class GridMapLayer : public WindowWidget {
     friend class GridMapWidget;
 public:
-    typedef std::list<Widget::Ptr> TileQueue;
-public:
     GridMapLayer(GridMapWidget* gridmap, int layerIndex);
 protected:
     Widget::Ptr dequeueTile();
@@ -56,6 +54,7 @@ protected:
     void insertLeft();
     void insertRight();
 protected:
+    typedef std::list<Widget::Ptr> TileQueue;
     typedef std::unordered_map<int, TileWidget*> TilePool;
     int _layerIndex;
     int _minIndex, _maxIndex;
@@ -82,6 +81,7 @@ public:
     void move(Vector2f const& speed);
     MoveDirs const& move_dirs() const;
     bool inCamera(RectI const& r) const;
+    void setCameraPosition(Vector2f const& position);
 protected:
     void onUpdate(float delta) override;
 protected:

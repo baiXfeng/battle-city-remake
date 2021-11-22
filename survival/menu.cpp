@@ -156,7 +156,7 @@ private:
         return {30, 30};
     }
     Vector2i sizeOfGridTile(GridMapWidget* sender) override {
-        return {56, 56};
+        return {64, 64};
     }
     Widget::Ptr tileWidgetAtPosition(GridMapWidget* sender, int layerIndex, Vector2i const& position) override {
         auto cell = sender->dequeueTile(layerIndex);
@@ -181,6 +181,7 @@ BattleWorldView::BattleWorldView() {
         _worldMap->addChild(mask);
     }
 
+    //_worldMap->getCamera()->setCameraPosition({100, 100});
     _worldMap->reload_data();
 
     _game.setRenderColor({255, 255, 255, 255});

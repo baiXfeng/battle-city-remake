@@ -37,9 +37,13 @@ mge_begin
     }
 
     void GridMapLayer::makeTile(Vector2i const& tile_pos) {
+        auto cell = _gridmap->getDataSource()->tileWidgetAtPosition(_gridmap, _layerIndex, tile_pos);
+        if (cell == nullptr) {
+            return;
+        }
+
         auto map_size = _gridmap->getDataSource()->sizeOfGridMap(_gridmap);
         auto tile_size = _gridmap->getDataSource()->sizeOfGridTile(_gridmap);
-        auto cell = _gridmap->getDataSource()->tileWidgetAtPosition(_gridmap, _layerIndex, tile_pos);
         int x = tile_pos.x;
         int y = tile_pos.y;
 
@@ -79,8 +83,8 @@ mge_begin
                 insertLeft();
             }
         }
-        printf("idle = %d, busy = %d, child = %d\n", _idleTiles.size(), _busyTiles.size(), _children.size());
-        printf("min_index = %d, max_index = %d\n", _minIndex, _maxIndex);
+        //printf("idle = %d, busy = %d, child = %d\n", _idleTiles.size(), _busyTiles.size(), _children.size());
+        //printf("min_index = %d, max_index = %d\n", _minIndex, _maxIndex);
     }
 
     void GridMapLayer::removeTop() {
@@ -359,11 +363,15 @@ mge_begin
         });
     }
 
+    void GridMapCamera::setCameraPosition(Vector2f const& position) {
+        _container->setPosition(position * -1);
+    }
+
     //=====================================================================================
 
-    GridMapWidget::GridMapWidget():_dataSource(nullptr) {
-        addChild(Ptr(_container = new WindowWidget));
+    GridMapWidget::GridMapWidget():_dataSource(nullptr), _container(new WindowWidget) {
         addChild(Ptr(_camera = new GridMapCamera(_container)));
+        addChild(Ptr(_container));
         _camera->connect(_camera->DID_SCROLL, std::bind(&GridMapWidget::checkTiles, this, std::placeholders::_1));
     }
 
@@ -394,7 +402,6 @@ mge_begin
         auto tile_size = _dataSource->sizeOfGridTile(this);
         auto view_size = map_size * tile_size;
         _container->setSize(view_size.to<float>());
-        _container->setPosition(tile_size.x * -0.5f, tile_size.y * -5.5f);
 
         auto layer_number = _dataSource->numberOfLayersInWidget(this);
         for (int i = 0; i < layer_number; ++i) {
