@@ -7,6 +7,8 @@
 #include "common/game.h"
 #include "common/widget_ex.h"
 #include "common/gridmap.h"
+#include "common/collision.h"
+#include <math.h>
 
 using namespace mge;
 
@@ -112,60 +114,170 @@ void WeaponSelectView::onButtonUp(int key) {
 class WorldTileCell : public TileWidget {
 public:
     WorldTileCell() {
-        SDL_Color color[7] = {
-                {255, 0, 0, 255},
-                {0, 255, 0, 255},
-                {0, 0, 255, 255},
-                {255, 255, 0, 255},
-                {0, 255, 255, 255},
-                {255, 0, 255, 255},
-                {0, 0, 0, 255},
-        };
-        auto mask = Ptr(new mge::MaskWidget(color[_colorIndex++ % 7]));
+
+        auto mask = Ptr(new mge::MaskWidget({}));
         addChild(mask);
         _mask = mask->to<MaskWidget>();
 
         auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 10);
         auto label = TTFLabel::New("", font, {0.5f, 0.5f});
-        addChild(label);
-        _label = label->to<TTFLabel>();
+        //label->setVisible(false);
+        //addChild(label);
+        //_label = label->to<TTFLabel>();
     }
     void setPos(Vector2i const& p) {
-        _label->setString(std::to_string(p.x) + "," + std::to_string(p.y), {180, 180, 180, 255});
+        //_label->setString(std::to_string(p.x) + "," + std::to_string(p.y), {180, 180, 180, 255});
+    }
+    void setTile(int id) {
+        SDL_Color color[] = {
+                {65, 105, 225, 255},
+                {30, 144, 255, 255},
+                {175, 238, 238, 255},
+                {0, 250, 154, 255},
+        };
+        _mask->setColor(color[(id-1) % 4]);
     }
 private:
     void onModifySize(Vector2f const& size) override {
         _mask->setSize(size);
-        _label->setPosition(size.x*0.5f, size.y*0.5f);
+        //_label->setPosition(size.x*0.5f, size.y*0.5f);
     }
 private:
     MaskWidget* _mask;
     TTFLabel* _label;
 };
 
+class Cell {
+public:
+    enum Type {
+        NONE = 0,
+        ROOM,
+        AISLE,
+    };
+public:
+    Cell():_type(NONE) {}
+    virtual ~Cell() {}
+public:
+    void setType(Type t) {
+        _type = t;
+    }
+    Type getType() const {
+        return _type;
+    }
+protected:
+    Type _type;
+};
+
+class Room : public Cell {
+public:
+    Room() {
+        setType(ROOM);
+    }
+    Room(uint32_t id, RectI const& r):id(id), rect(r) {}
+public:
+    uint32_t id;
+    RectI rect;
+};
+
+class Aisle : public Cell {
+    typedef std::vector<Vector2i> Points;
+public:
+    Aisle() {
+        setType(AISLE);
+    }
+public:
+    uint32_t id;
+    Points points;
+};
+
+namespace dungeon {
+    float roundm(float n, float m) {
+        return floor((n + m - 1) / m) * m;
+    }
+    float random_normalized() {
+        return (rand() % 10000) * 0.0001f;
+    }
+    Vector2f getRandomPointInCircle(float radius, Vector2i const& size = {}) {
+        auto t = 2 * M_PI * random_normalized();
+        auto r = sqrt(random_normalized());
+        return {
+                roundm(radius * r * cos(t), 4),
+                roundm(radius * r * sin(t), 4),
+        };
+    }
+}
+
 class WorldTileMap : public GridMapWidget, public GridMapDataSource {
 public:
+    enum {
+        NONE = 0,
+        SEA,
+        RIVER,
+        LAND,
+        TREE,
+    };
     WorldTileMap() {
+        buildMap();
         setDataSource(this);
+    }
+    void buildMap() {
+        _map.resize(80, 80, 1);
+
+        for (int i = 0; i < 50; ++i) {
+            auto r = dungeon::getRandomPointInCircle(40);
+            printf("x = %f, y = %f\n", r.x, r.y);
+        }
+
+        std::map<uint32_t, Room> room_pool;
+        uint32_t room_id = 0;
+        for (int i = 0; i < 100; ++i) {
+            uint32_t width = rand() % 12 + 4;
+            uint32_t height = rand() % 12 + 4;
+            width += width % 2;
+            height += height % 2;
+            int x = rand() % _map.size().x + 4;
+            int y = rand() % _map.size().y + 4;
+            if (x + width >= _map.size().x - 4) {
+                x = _map.size().x - 4 - width - rand() % 30;
+            }
+            if (y + height >= _map.size().y - 4) {
+                y = _map.size().y - 4 - height - rand() % 30;
+            }
+            auto rect = RectI{x, y, width, height};
+            room_id++;
+            room_pool.insert(std::make_pair(room_id, Room{room_id, rect}));
+        }
+
+        for (auto& r : room_pool) {
+            for (int y = 0; y < r.second.rect.h; ++y) {
+                for (int x = 0; x < r.second.rect.w; ++x) {
+                    _map.set(r.second.rect.x + x, r.second.rect.y + y, 2);
+                }
+            }
+        }
     }
 private:
     size_t numberOfLayersInWidget(GridMapWidget* sender) override {
         return 1;
     }
     Vector2i sizeOfGridMap(GridMapWidget* sender) override {
-        return {30, 30};
+        return _map.size();
     }
     Vector2i sizeOfGridTile(GridMapWidget* sender) override {
-        return {64, 64};
+        return {16, 16};
     }
     Widget::Ptr tileWidgetAtPosition(GridMapWidget* sender, int layerIndex, Vector2i const& position) override {
         auto cell = sender->dequeueTile(layerIndex);
         if (cell == nullptr) {
             cell = Ptr(new WorldTileCell);
         }
-        cell->to<WorldTileCell>()->setPos(position);
+        auto tile = cell->to<WorldTileCell>();
+        //tile->setPos(position);
+        tile->setTile(_map.get(position));
         return cell;
     }
+private:
+    Grid<char> _map;
 };
 
 BattleWorldView::BattleWorldView() {
@@ -173,37 +285,31 @@ BattleWorldView::BattleWorldView() {
 
     if (false) {
         _worldMap->setAnchor(0.5f, 0.5f);
-        _worldMap->setSize(400, 400);
+        _worldMap->setSize(520, 460);
         _worldMap->setPosition(480, 272);
+        _worldMap->enableClip(true);
 
-        auto mask = Ptr(new mge::MaskWidget({0, 0, 0, 140}));
-        mask->setSize(400, 400);
-        _worldMap->addChild(mask);
+        //auto mask = Ptr(new mge::MaskWidget({0, 0, 0, 140}));
+        //mask->setSize(_worldMap->size());
+        //_worldMap->addChild(mask);
     }
 
     //_worldMap->getCamera()->setCameraPosition({100, 100});
     _worldMap->reload_data();
-
-    _game.setRenderColor({255, 255, 255, 255});
 }
 
 void BattleWorldView::onButtonDown(int key) {
     if (key == KeyCode::UP) {
-        _worldMap->getCamera()->move({0.0f, -300.0f});
+        _worldMap->getCamera()->move({0.0f, -600.0f});
     } else if (key == KeyCode::DOWN) {
-        _worldMap->getCamera()->move({0.0f, 300.0f});
+        _worldMap->getCamera()->move({0.0f, 600.0f});
     } else if (key == KeyCode::LEFT) {
-        _worldMap->getCamera()->move({-300.0f, 0.0f});
+        _worldMap->getCamera()->move({-600.0f, 0.0f});
     } else if (key == KeyCode::RIGHT) {
-        _worldMap->getCamera()->move({300.0f, 0.0f});
-    } else if (key == KeyCode::A) {
-        _worldMap->getCamera()->move({300.0f, 300.0f});
-    } else if (key == KeyCode::B) {
-        _worldMap->getCamera()->move({-300.0f, 300.0f});
-    } else if (key == KeyCode::X) {
-        _worldMap->getCamera()->move({300.0f, -300.0f});
-    } else if (key == KeyCode::Y) {
-        _worldMap->getCamera()->move({-300.0f, -300.0f});
+        _worldMap->getCamera()->move({600.0f, 0.0f});
+    }else if (key == KeyCode::X) {
+        _worldMap->buildMap();
+        _worldMap->reload_data();
     }
 }
 
@@ -215,14 +321,6 @@ void BattleWorldView::onButtonUp(int key) {
     } else if (key == KeyCode::LEFT) {
         _worldMap->getCamera()->move({});
     } else if (key == KeyCode::RIGHT) {
-        _worldMap->getCamera()->move({});
-    } else if (key == KeyCode::A) {
-        _worldMap->getCamera()->move({});
-    } else if (key == KeyCode::B) {
-        _worldMap->getCamera()->move({});
-    } else if (key == KeyCode::X) {
-        _worldMap->getCamera()->move({});
-    } else if (key == KeyCode::Y) {
         _worldMap->getCamera()->move({});
     }
 }

@@ -51,7 +51,7 @@ void ActionExecuter::pause(bool v) {
 }
 
 void ActionExecuter::update(float dt) {
-    if (_pause) {
+    if (_pause or _actions.empty()) {
         return;
     }
     auto list = _actions;

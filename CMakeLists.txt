@@ -15,7 +15,7 @@ elseif(NS)
 	add_definitions("-D__NS__")
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++17 ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 set(PROJECT_NAME "sdl2-ui")
 set(PROJECT_ELF ${PROJECT_NAME}.elf)
 project(${PROJECT_NAME})
@@ -26,6 +26,7 @@ file( GLOB
 		*.c*
 		src/*.c*
 		survival/*.c*
+		dungeon/*.c*
 		common/*.c*
 		third/lua/*.c*
 		third/lutok3/src/lutok3/*.c*
@@ -37,11 +38,11 @@ list(REMOVE_ITEM BASIC_SOURCE
 
 include_directories(
 		.
+		third/entt/src
 		third/cereal/include
 		third/eluna/eluna
 		third/lua
 		third/lutok3/src/lutok3
-		third/entt/src
 )
 
 if (PSV)
@@ -182,9 +183,11 @@ else()
 	find_package(SDL2_image REQUIRED)
 	find_package(SDL2_ttf REQUIRED)
 	find_package(SDL2_mixer REQUIRED)
-	include_directories(${SDL2_INCLUDE_DIRS})
-	include_directories(${SDL2_TTF_INCLUDE_DIRS})
-	include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
+	include_directories(
+			${SDL2_INCLUDE_DIRS}
+			${SDL2_TTF_INCLUDE_DIRS}
+			${SDL2_IMAGE_INCLUDE_DIRS}
+	)
 	target_link_libraries(
 		${PROJECT_NAME}
 		${SDL2_LIBRARY}

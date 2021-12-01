@@ -271,15 +271,15 @@ StartView::StartView():_index(0), _canSelect(false) {
     {
         auto title = new TTFLabel;
         title->setFont(font);
-        title->setString("README");
+        title->setString("SURVIVAL");
         title->setAnchor(0.5f, 0.0f);
         title->setPosition(size().x * 0.5f, size().y * 0.6f);
         widget.reset(title);
         root->addChild(widget);
 
         _position.push_back({
-                size().x * 0.39f,
-                title->position().y + title->size().y * 0.5f
+            size().x * 0.39f,
+            title->position().y + title->size().y * 0.5f
         });
     }
 
@@ -345,9 +345,12 @@ void StartView::onButtonDown(int key) {
 
 void StartView::onStart(int index) {
     if (index == 0) {
-        // 选关
+        // 副本模式
         auto widget = New<SelectLevelView>();
         addChild(widget);
+    } else if (index == 1) {
+        // 生存模式
+        
     }
 }
 
