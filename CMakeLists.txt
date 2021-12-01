@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.3)
+cmake_minimum_required (VERSION 3.5.0)
 
 option(PSV "build vpk for psvita." OFF)
 option(NS "build nro for Nintendo Switch." OFF)
@@ -9,6 +9,7 @@ if (PSV)
 	include_directories($ENV{VITASDK}/arm-vita-eabi/include/SDL2)
 	#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_DEBUG}")
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+	set(CMAKE_CXX_STANDARD 17)
 elseif(NS)
 	include("$ENV{DEVKITPRO}/cmake/Switch.cmake" REQUIRED)
 	include_directories($ENV{DEVKITPRO}/portlibs/switch/include/SDL2)
@@ -30,6 +31,10 @@ file( GLOB
 		common/*.c*
 		third/lua/*.c*
 		third/lutok3/src/lutok3/*.c*
+		third/box2d/src/collision/*.c*
+		third/box2d/src/common/*.c*
+		third/box2d/src/dynamics/*.c*
+		third/box2d/src/rope/*.c*
 )
 
 list(REMOVE_ITEM BASIC_SOURCE
@@ -43,6 +48,9 @@ include_directories(
 		third/eluna/eluna
 		third/lua
 		third/lutok3/src/lutok3
+		third/box2d/include
+		third/box2d/src
+		third/random/include
 )
 
 if (PSV)
@@ -53,6 +61,7 @@ if (PSV)
 			SDL2_ttf
 			SDL2_image
 			SDL2_mixer
+			SDL2_gfx
 			flac
 			mikmod
 			mpg123
@@ -113,6 +122,7 @@ elseif(NINTENDO_SWITCH)
 			SDL2_mixer
 			SDL2
 			SDL2_ttf
+			SDL2_gfx
 			vorbisidec
 			freetype
 			flac
@@ -153,6 +163,7 @@ elseif (PLATFORM_PSP)
 			SDL2main
 			SDL2
 			SDL2_ttf
+			SDL2_gfx
 			stdc++
 			freetype
 			jpeg
@@ -183,16 +194,19 @@ else()
 	find_package(SDL2_image REQUIRED)
 	find_package(SDL2_ttf REQUIRED)
 	find_package(SDL2_mixer REQUIRED)
+	find_package(SDL2_gfx REQUIRED)
 	include_directories(
 			${SDL2_INCLUDE_DIRS}
 			${SDL2_TTF_INCLUDE_DIRS}
 			${SDL2_IMAGE_INCLUDE_DIRS}
+			${SDL2GFX_INCLUDE_DIR}
 	)
 	target_link_libraries(
-		${PROJECT_NAME}
-		${SDL2_LIBRARY}
-		${SDL2_IMAGE_LIBRARIES}
-		${SDL2_TTF_LIBRARIES}
-		${SDL2_MIXER_LIBRARIES}
+			${PROJECT_NAME}
+			${SDL2_LIBRARY}
+			${SDL2_IMAGE_LIBRARIES}
+			${SDL2_TTF_LIBRARIES}
+			${SDL2_MIXER_LIBRARIES}
+			${SDL2GFX_LIBRARY}
 	)
 endif()

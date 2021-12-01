@@ -8,9 +8,14 @@
 #include "common/widget_ex.h"
 #include "common/gridmap.h"
 #include "common/collision.h"
+#include "common/render.h"
+#include "common/physics.h"
+#include "effolkronium/random.hpp"
 #include <math.h>
 
 using namespace mge;
+
+//=====================================================================================
 
 int _colorIndex = 9;
 
@@ -190,19 +195,21 @@ public:
     Points points;
 };
 
+using Random = effolkronium::random_static;
+
 namespace dungeon {
     float roundm(float n, float m) {
         return floor((n + m - 1) / m) * m;
     }
     float random_normalized() {
-        return (rand() % 10000) * 0.0001f;
+        return Random::get(0.0f, 1.0f);
     }
-    Vector2f getRandomPointInCircle(float radius, Vector2i const& size = {}) {
-        auto t = 2 * M_PI * random_normalized();
+    Vector2f getRandomPointInCircle(float radius, Vector2i const& size = {4, 4}) {
+        auto t = 2 * PI * random_normalized();
         auto r = sqrt(random_normalized());
-        return {
-                roundm(radius * r * cos(t), 4),
-                roundm(radius * r * sin(t), 4),
+        return Vector2f{
+                roundm(radius * r * cos(t), size.x),
+                roundm(radius * r * sin(t), size.y)
         };
     }
 }
@@ -231,8 +238,8 @@ public:
         std::map<uint32_t, Room> room_pool;
         uint32_t room_id = 0;
         for (int i = 0; i < 100; ++i) {
-            uint32_t width = rand() % 12 + 4;
-            uint32_t height = rand() % 12 + 4;
+            int width = rand() % 12 + 4;
+            int height = rand() % 12 + 4;
             width += width % 2;
             height += height % 2;
             int x = rand() % _map.size().x + 4;
@@ -323,4 +330,136 @@ void BattleWorldView::onButtonUp(int key) {
     } else if (key == KeyCode::RIGHT) {
         _worldMap->getCamera()->move({});
     }
+}
+
+//=====================================================================================
+
+static int const MAX_TIMES = 100;
+
+PhysicsView::PhysicsView():_world(nullptr), _box(nullptr), _physics(true), _addTicks(0), _addTimes(0.0f), _platform({0,0,0,0}) {
+    _world = new b2World({0.0f, 9.8f});
+    auto gB2Draw = new PhysicDrawner();
+    gB2Draw->SetFlags(b2Draw::e_shapeBit);
+    _world->SetDebugDraw(gB2Draw);
+    _box = res::load_texture(_game.renderer(), "assets/survival/box.png")->data();
+    if (_physics) {
+        _platform = {0, int(size().y-2), int(size().x), 2};
+        this->addPlatform();
+    }
+}
+
+void PhysicsView::addPlatform() {
+    auto body = b2BodySugar::CreateBody(_world, b2_staticBody);
+    b2BodySugar sugar(body);
+    sugar.addShape({_platform.w, _platform.h});
+    sugar.setTransform(Vector2i {_platform.x + (_platform.w >> 1), _platform.y + (_platform.h >> 1)}.to<float>());
+    sugar.setRestitution(0.3f);
+}
+
+void PhysicsView::addBox(mge::RectI const& r) {
+    auto body = b2BodySugar::CreateBody(_world, b2_dynamicBody);
+    //body->SetFixedRotation(true);
+    //body->SetBullet(true);
+
+    _bodies.push_back(body);
+    _rects[body] = {r.x, r.y, r.w, r.h};
+    auto& rect = _rects[body];
+
+    b2BodySugar sugar(body);
+    sugar.addShape({rect.w, rect.h});
+    sugar.setTransform(Vector2i{rect.x + (rect.w >> 1), rect.y + (rect.h >> 1)}.to<float>(), 45.0f);
+    sugar.setRestitution(0.3f);
+}
+
+void PhysicsView::reset() {
+    for (auto& body : _bodies) {
+        _world->DestroyBody(body);
+    }
+    _bodies.clear();
+    _rects.clear();
+}
+
+void PhysicsView::onButtonDown(int key) {
+    if (key == KeyCode::X) {
+        //_physics = true;
+        this->addBox(RectF(size().x*0.5f, size().y*0.2f, 32, 32).to<int>());
+    } else if (key == KeyCode::UP) {
+        this->reset();
+    }
+}
+
+void PhysicsView::addRandomRoom() {
+    auto pt = dungeon::getRandomPointInCircle(200);
+    int w = Random::get(4, 16);
+    int h = Random::get(4, 16);
+    this->addBox({
+        int(size().x * 0.5f + pt.x),
+        int(size().y * 0.5f + pt.y),
+        w * 6,
+        h * 6,
+    });
+}
+
+void PhysicsView::onUpdate(float delta) {
+    if (_addTimes < MAX_TIMES and false) {
+        if ((_addTicks += delta) >= 0.01f) {
+            _addTicks = 0.0f;
+            _addTimes++;
+            this->addRandomRoom();
+        }
+    }
+    if (_physics) {
+        _world->Step(delta, 6.0f, 2.0f);
+        b2BodySugar sugar;
+        std::list<int> drop;
+        for (auto iter = _bodies.begin(); iter != _bodies.end();) {
+            auto body = *iter;
+            auto& rect = _rects[body];
+            sugar.reset(body);
+            auto position = sugar.getPixelPosition();
+            rect.x = position.x - (rect.w >> 1);
+            rect.y = position.y - (rect.h >> 1);
+
+            if (rect.x < -rect.w or rect.x > size().x) {
+                _bodies.erase(iter++);
+                _rects.erase(body);
+                body->GetWorld()->DestroyBody(body);
+            } else {
+                iter++;
+            }
+        }
+    }
+}
+
+void PhysicsView::onDraw(SDL_Renderer* renderer) {
+    if (!_box) {
+        return;
+    }
+    if (false) {
+        _world->DebugDraw();
+    } else {
+        SDL_Color color[7] = {
+                {255, 0, 0, 255},
+                {0, 255, 0, 255},
+                {0, 0, 255, 255},
+                {255, 255, 0, 255},
+                {0, 255, 255, 255},
+                {255, 0, 255, 255},
+                {120, 255, 120, 255},
+        };
+        b2BodySugar sugar;
+        DrawColor dc(renderer);
+        for (auto iter = _bodies.begin(); iter != _bodies.end(); iter++) {
+            auto body = *iter;
+            auto& rect = _rects[body];
+            sugar.reset(body);
+            SDL_RenderCopyEx(renderer, _box, nullptr, &rect, sugar.getPixelAngle(), nullptr, SDL_FLIP_NONE);
+            //dc.setColor(color[i % 7]);
+            //SDL_RenderFillRect(renderer, &rect);
+        }
+        if (_platform.w and _platform.h) {
+            dc.setColor({255, 255, 255, 255});
+            SDL_RenderFillRect(renderer, &_platform);
+        }
+    };
 }

@@ -21,12 +21,15 @@ public:
     class Delegate {
         friend class Game;
     public:
+        virtual ~Delegate() {}
+    public:
+        virtual std::string windowTitle() = 0;
+        virtual Vector2i screenSize() = 0;
+    protected:
         virtual void init() = 0;
         virtual void fini() = 0;
         virtual void update(float delta) = 0;
         virtual void render(SDL_Renderer* renderer) = 0;
-        virtual std::string windowTitle() = 0;
-        virtual Vector2i screenSize() = 0;
     };
     class App : public Game::Delegate {
     public:
@@ -48,6 +51,7 @@ public:
     static Game& instance();
     SDL_Renderer* renderer() const;
     SDL_Window* window() const;
+    Delegate* delegate() const;
     void setDelegate(Delegate* p);
     void setRenderColor(SDL_Color const& c);
     int run();

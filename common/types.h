@@ -117,7 +117,7 @@ public:
     }
     template<typename TargetType>
     Rect<TargetType> to() const {
-        return {TargetType(x), TargetType(y)};
+        return {TargetType(x), TargetType(y), TargetType(w), TargetType(h)};
     }
 };
 

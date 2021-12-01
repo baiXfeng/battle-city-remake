@@ -60,13 +60,7 @@ _scale({1.0f, 1.0f}),
 _opacity(255) {
     _children.reserve(10);
     ++_widgetCount;
-#if defined(__vita__)
-    this->setSize(GAME_SCREEN_WIDTH, GAME_SCREEN_HEIGHT);
-#else
-    int width = 0, height = 0;
-    SDL_RenderGetLogicalSize(_game.renderer(), &width, &height);
-    this->setSize(width, height);
-#endif
+    setSize(_game.delegate()->screenSize().to<float>());
     _global_size = _size;
 }
 

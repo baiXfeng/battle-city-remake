@@ -39,6 +39,10 @@ SDL_Window* Game::window() const {
     return sdl_window;
 }
 
+Game::Delegate* Game::delegate() const {
+    return _delegate;
+}
+
 void Game::setDelegate(Delegate* p) {
     _delegate = p;
 }
