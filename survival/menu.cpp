@@ -334,26 +334,20 @@ void BattleWorldView::onButtonUp(int key) {
 
 //=====================================================================================
 
-static int const MAX_TIMES = 100;
-
-PhysicsView::PhysicsView():_world(nullptr), _box(nullptr), _physics(true), _addTicks(0), _addTimes(0.0f), _platform({0,0,0,0}) {
+PhysicsView::PhysicsView():_world(nullptr), _box(nullptr), _platform({0,0,0,0}) {
     _world = new b2World({0.0f, 9.8f});
     auto gB2Draw = new PhysicDrawner();
     gB2Draw->SetFlags(b2Draw::e_shapeBit);
     _world->SetDebugDraw(gB2Draw);
     _box = res::load_texture(_game.renderer(), "assets/survival/box.png")->data();
-    if (_physics) {
-        _platform = {0, int(size().y-2), int(size().x), 2};
-        this->addPlatform();
-    }
+    this->addPlatform();
 }
 
 void PhysicsView::addPlatform() {
     auto body = b2BodySugar::CreateBody(_world, b2_staticBody);
     b2BodySugar sugar(body);
-    sugar.addShape({_platform.w, _platform.h});
-    sugar.setTransform(Vector2i {_platform.x + (_platform.w >> 1), _platform.y + (_platform.h >> 1)}.to<float>());
-    sugar.setRestitution(0.3f);
+    sugar.addEdgeShape({0.0f, size().y-2}, {size().x, size().y-2});
+    _platform = {0, int(size().y-2), int(size().x), 1};
 }
 
 void PhysicsView::addBox(mge::RectI const& r) {
@@ -366,7 +360,7 @@ void PhysicsView::addBox(mge::RectI const& r) {
     auto& rect = _rects[body];
 
     b2BodySugar sugar(body);
-    sugar.addShape({rect.w, rect.h});
+    sugar.addBoxShape({rect.w, rect.h});
     sugar.setTransform(Vector2i{rect.x + (rect.w >> 1), rect.y + (rect.h >> 1)}.to<float>(), 45.0f);
     sugar.setRestitution(0.3f);
 }
@@ -388,45 +382,24 @@ void PhysicsView::onButtonDown(int key) {
     }
 }
 
-void PhysicsView::addRandomRoom() {
-    auto pt = dungeon::getRandomPointInCircle(200);
-    int w = Random::get(4, 16);
-    int h = Random::get(4, 16);
-    this->addBox({
-        int(size().x * 0.5f + pt.x),
-        int(size().y * 0.5f + pt.y),
-        w * 6,
-        h * 6,
-    });
-}
-
 void PhysicsView::onUpdate(float delta) {
-    if (_addTimes < MAX_TIMES and false) {
-        if ((_addTicks += delta) >= 0.01f) {
-            _addTicks = 0.0f;
-            _addTimes++;
-            this->addRandomRoom();
-        }
-    }
-    if (_physics) {
-        _world->Step(delta, 6.0f, 2.0f);
-        b2BodySugar sugar;
-        std::list<int> drop;
-        for (auto iter = _bodies.begin(); iter != _bodies.end();) {
-            auto body = *iter;
-            auto& rect = _rects[body];
-            sugar.reset(body);
-            auto position = sugar.getPixelPosition();
-            rect.x = position.x - (rect.w >> 1);
-            rect.y = position.y - (rect.h >> 1);
+    _world->Step(delta, 6.0f, 2.0f);
+    b2BodySugar sugar;
+    std::list<int> drop;
+    for (auto iter = _bodies.begin(); iter != _bodies.end();) {
+        auto body = *iter;
+        auto& rect = _rects[body];
+        sugar.reset(body);
+        auto position = sugar.getPixelPosition();
+        rect.x = position.x - (rect.w >> 1);
+        rect.y = position.y - (rect.h >> 1);
 
-            if (rect.x < -rect.w or rect.x > size().x) {
-                _bodies.erase(iter++);
-                _rects.erase(body);
-                body->GetWorld()->DestroyBody(body);
-            } else {
-                iter++;
-            }
+        if (rect.x < -rect.w or rect.x > size().x) {
+            _bodies.erase(iter++);
+            _rects.erase(body);
+            body->GetWorld()->DestroyBody(body);
+        } else {
+            iter++;
         }
     }
 }
@@ -438,15 +411,6 @@ void PhysicsView::onDraw(SDL_Renderer* renderer) {
     if (false) {
         _world->DebugDraw();
     } else {
-        SDL_Color color[7] = {
-                {255, 0, 0, 255},
-                {0, 255, 0, 255},
-                {0, 0, 255, 255},
-                {255, 255, 0, 255},
-                {0, 255, 255, 255},
-                {255, 0, 255, 255},
-                {120, 255, 120, 255},
-        };
         b2BodySugar sugar;
         DrawColor dc(renderer);
         for (auto iter = _bodies.begin(); iter != _bodies.end(); iter++) {
@@ -454,12 +418,162 @@ void PhysicsView::onDraw(SDL_Renderer* renderer) {
             auto& rect = _rects[body];
             sugar.reset(body);
             SDL_RenderCopyEx(renderer, _box, nullptr, &rect, sugar.getPixelAngle(), nullptr, SDL_FLIP_NONE);
-            //dc.setColor(color[i % 7]);
-            //SDL_RenderFillRect(renderer, &rect);
         }
         if (_platform.w and _platform.h) {
             dc.setColor({255, 255, 255, 255});
             SDL_RenderFillRect(renderer, &_platform);
         }
     };
+}
+
+//=====================================================================================
+
+/*
+    选点 + 房间挖洞
+    无法挖出一个最小房间的选点及覆盖范围需要移除掉
+ */
+
+RandomRoomView::RandomRoomView() {
+    _world = b2WorldSugar::CreateWorld();
+    this->rebuild();
+}
+
+RandomRoomView::~RandomRoomView() {
+    delete _world;
+}
+
+void RandomRoomView::rebuild() {
+
+    _grid.clear();
+    _room.clear();
+    _roomIdx.clear();
+
+    auto body = _world->GetBodyList();
+    while (body) {
+        auto next = body->GetNext();
+        _world->DestroyBody(body);
+        body = next;
+    }
+
+    // 限制地图尺寸
+    {
+        Vector2i grid_size{200, 200};
+        int grid_count = grid_size.x * 2;
+        _grid.resize(grid_size, 0);
+        _room.reserve(grid_count);
+    }
+
+    GenRoom(10, {16, 16}, {40, 40}, true);
+    GenRoom(50, {12, 12}, {24, 24});
+    GenRoom(100, {6, 6}, {16, 16});
+}
+
+void RandomRoomView::GenRoom(int room_size, mge::Vector2i const& min_size, mge::Vector2i const& max_size, bool check_overlap) {
+    auto tile_size = size().y / _grid.size().y * 0.8f;
+    auto begin_x = (size().x - _grid.size().x * tile_size) * 0.5f;
+    auto begin_y = (size().y - _grid.size().y * tile_size) * 0.5f;
+    int room_count = 0;
+    while (room_count < room_size) {
+        auto pos = dungeon::getRandomPointInCircle(_grid.size().x * 0.5f - 5);
+        int width = Random::get(min_size.x, max_size.x);
+        int height = Random::get(min_size.y, max_size.y);
+        int x = (_grid.size().x >> 1) + pos.x;
+        int y = (_grid.size().y >> 1) + pos.y;
+        RectI ret{
+                x - (width >> 1),
+                y - (height >> 1),
+                width, height,
+        };
+        if (ret.x <= -1) {
+            ret.x = 0;
+        } else if (ret.x + ret.w >= _grid.size().x) {
+            ret.x = _grid.size().x - ret.w;
+        }
+        if (ret.y <= -1) {
+            ret.y = 0;
+        } else if (ret.y + ret.h >= _grid.size().y) {
+            ret.y = _grid.size().y - ret.h;
+        }
+        RectI room = {
+                begin_x + ret.x * tile_size,
+                begin_y + ret.y * tile_size,
+                ret.w * tile_size,
+                ret.h * tile_size,
+        };
+        if (check_overlap) {
+            if (isRoomOverlap(room)) {
+                continue;
+            }
+        }
+        addRoom(room);
+        room_count++;
+    }
+}
+
+void RandomRoomView::addRoom(mge::RectI const& r) {
+    _room.push_back(r);
+
+    auto body = b2BodySugar::CreateBody(_world, b2_dynamicBody);
+    b2BodySugar sugar(body);
+    sugar.addBoxShape({r.w, r.h});
+    sugar.setTransform({
+        r.x + r.w * 0.5f,
+        r.y + r.h * 0.5f,
+    });
+    body->SetFixedRotation(true);
+    _roomIdx[body] = _room.size() - 1;
+}
+
+bool RandomRoomView::isRoomOverlap(mge::RectI const& r) const {
+    for (auto& room : _room) {
+        if (isCollision(room, r)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void RandomRoomView::onUpdate(float delta) {
+    //b2WorldSugar::update(_world, delta * 10.0f);
+    _world->Step(delta, 100.0f, 100.0f);
+    b2BodySugar sugar;
+    bool sleep = true;
+    for (auto body = _world->GetBodyList(); body; body = body->GetNext()) {
+        sugar.reset(body);
+        auto index = _roomIdx[body];
+        auto position = sugar.getPixelPosition();
+        auto& rect = _room[index];
+        rect.x = position.x - (rect.w >> 1);
+        rect.y = position.y - (rect.h >> 1);
+        if (body->IsAwake()) {
+            sleep = false;
+        }
+    }
+    //printf("物理休眠中: %s\n", sleep ? "true" : "false");
+}
+
+void RandomRoomView::onDraw(SDL_Renderer* renderer) {
+    SDL_Color color[7] = {
+            {255, 0, 0, 255},
+            {0, 255, 0, 255},
+            {0, 0, 255, 255},
+            {255, 255, 0, 255},
+            {0, 255, 255, 255},
+            {255, 0, 255, 255},
+            {128, 255, 128, 255},
+    };
+    int tile_size = size().y / _grid.size().y;
+    DrawColor dc(renderer);
+    for (int i = 0; i < _room.size(); ++i) {
+        dc.setColor(color[i % 7]);
+        auto& r = _room[i];
+        SDL_Rect dstrect{r.x, r.y, r.w, r.h};
+        SDL_RenderFillRect(renderer, &dstrect);
+    }
+}
+
+void RandomRoomView::onButtonDown(int key) {
+    if (key == KeyCode::X) {
+        this->rebuild();
+    }
 }

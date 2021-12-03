@@ -35,7 +35,6 @@ class PhysicsView : public mge::GamePadWidget {
 public:
     PhysicsView();
 private:
-    void addRandomRoom();
     void addBox(mge::RectI const& r);
     void addPlatform();
     void reset();
@@ -44,14 +43,33 @@ private:
     void onDraw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
 private:
-    bool _physics;
     b2World* _world;
     std::map<void*, SDL_Rect> _rects;
     std::list<b2Body*> _bodies;
     SDL_Texture* _box;
     SDL_Rect _platform;
-    int _addTimes;
-    float _addTicks;
+};
+
+class RandomRoomView : public mge::GamePadWidget {
+public:
+    RandomRoomView();
+    ~RandomRoomView();
+private:
+    void rebuild();
+private:
+    void GenRoom(int room_size, mge::Vector2i const& min_size, mge::Vector2i const& max_size, bool check_overlap = false);
+private:
+    void onUpdate(float delta) override;
+    void onDraw(SDL_Renderer* renderer) override;
+    void onButtonDown(int key) override;
+    void addRoom(mge::RectI const& r);
+    void setGridTag(mge::RectI const& r);
+    bool isRoomOverlap(mge::RectI const& r) const;
+private:
+    b2World* _world;
+    mge::Grid<char> _grid;
+    std::vector<mge::RectI> _room;
+    std::map<b2Body*, int> _roomIdx;
 };
 
 #endif //SDL2_UI_MENU_H

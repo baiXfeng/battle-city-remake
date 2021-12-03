@@ -35,10 +35,11 @@ mge_begin
         static b2Body* CreateBody(b2World* world, b2BodyType type);
         void destroy();
         void reset(b2Body* body);
-        void addShape(Vector2i const& screen_size);
-        void addShape(Vector2f const& screen_pos, Vector2i const& screen_size);
-        void addShape(float screen_radius);
-        void addShape(Vector2f const& screen_pos, float screen_radius);
+        void addBoxShape(Vector2i const& screen_size);
+        void addBoxShape(Vector2f const& screen_pos, Vector2i const& screen_size);
+        void addCircleShape(float screen_radius);
+        void addCircleShape(Vector2f const& screen_pos, float screen_radius);
+        void addEdgeShape(Vector2f const& start_pos, Vector2f const& end_pos);
         void setRestitution(float restitution);
         void setTransform(Vector2f const& screen_pos, float angle = 0.0f);
         Vector2f getPixelPosition() const;
@@ -46,6 +47,12 @@ mge_begin
         b2Body* body() const;
     private:
         b2Body* _body;
+    };
+
+    class b2WorldSugar {
+    public:
+        static b2World* CreateWorld(Vector2f const& g = {});
+        static void update(b2World* world, float delta);
     };
 
     class PhysicDrawner : public b2Draw {

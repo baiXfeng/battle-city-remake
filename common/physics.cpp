@@ -48,7 +48,7 @@ mge_begin
         _body = body;
     }
 
-    void b2BodySugar::addShape(Vector2i const& screen_size) {
+    void b2BodySugar::addBoxShape(Vector2i const& screen_size) {
         b2PolygonShape aRectShape;
         aRectShape.SetAsBox(getMetricFromPixel(screen_size.x) / 2.0f, getMetricFromPixel(screen_size.y) / 2.0f);
         b2FixtureDef def;
@@ -57,7 +57,7 @@ mge_begin
         _body->CreateFixture(&def);
     }
 
-    void b2BodySugar::addShape(Vector2f const& screen_pos, Vector2i const& screen_size) {
+    void b2BodySugar::addBoxShape(Vector2f const& screen_pos, Vector2i const& screen_size) {
         b2PolygonShape aRectShape;
         aRectShape.SetAsBox(
                 getMetricFromPixel(screen_size.x) / 2.0f,
@@ -71,7 +71,7 @@ mge_begin
         _body->CreateFixture(&def);
     }
 
-    void b2BodySugar::addShape(float screen_radius) {
+    void b2BodySugar::addCircleShape(float screen_radius) {
         b2CircleShape aCircleShape;
         aCircleShape.m_radius = getMetricFromPixel(screen_radius);
         b2FixtureDef def;
@@ -80,12 +80,21 @@ mge_begin
         _body->CreateFixture(&def);
     }
 
-    void b2BodySugar::addShape(Vector2f const& screen_pos, float screen_radius) {
+    void b2BodySugar::addCircleShape(Vector2f const& screen_pos, float screen_radius) {
         b2CircleShape aCircleShape;
         aCircleShape.m_radius = getMetricFromPixel(screen_radius);
         aCircleShape.m_p = getMetricPositionFromPixel(screen_pos);
         b2FixtureDef def;
         def.shape = &aCircleShape;
+        def.density = 1.0f;
+        _body->CreateFixture(&def);
+    }
+
+    void b2BodySugar::addEdgeShape(Vector2f const& start_pos, Vector2f const& end_pos) {
+        b2EdgeShape aEdgeShape;
+        aEdgeShape.SetTwoSided(getMetricPositionFromPixel(start_pos), getMetricPositionFromPixel(end_pos));
+        b2FixtureDef def;
+        def.shape = &aEdgeShape;
         def.density = 1.0f;
         _body->CreateFixture(&def);
     }
@@ -110,6 +119,16 @@ mge_begin
 
     b2Body* b2BodySugar::body() const {
         return _body;
+    }
+
+    //=====================================================================================
+
+    b2World* b2WorldSugar::CreateWorld(Vector2f const& g) {
+        return new b2World({g.x, g.y});
+    }
+
+    void b2WorldSugar::update(b2World* world, float delta) {
+        world->Step(delta, 6.0f, 2.0f);
     }
 
     //=====================================================================================
