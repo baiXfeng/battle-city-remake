@@ -35,6 +35,7 @@ file( GLOB
 		third/box2d/src/common/*.c*
 		third/box2d/src/dynamics/*.c*
 		third/box2d/src/rope/*.c*
+		third/delabella/delabella.cpp
 )
 
 list(REMOVE_ITEM BASIC_SOURCE
@@ -51,6 +52,7 @@ include_directories(
 		third/box2d/include
 		third/box2d/src
 		third/random/include
+		third/delabella
 )
 
 if (PSV)

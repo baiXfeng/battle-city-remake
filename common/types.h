@@ -8,6 +8,7 @@
 #include "fix.hpp"
 #include <functional>
 #include <vector>
+#include <math.h>
 #include <assert.h>
 
 #define mge_begin namespace mge {
@@ -87,6 +88,11 @@ public:
     template<typename TargetType>
     Vector<TargetType> to() const {
         return {TargetType(x), TargetType(y)};
+    }
+    double distance(Vector<T> const& vec) const {
+        Type temp_x = x - vec.x;
+        Type temp_y = y - vec.y;
+        return sqrt(temp_x*temp_x+temp_y*temp_y);
     }
 };
 
