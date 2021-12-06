@@ -56,6 +56,10 @@ public:
     ~RandomRoomView();
 private:
     void rebuild();
+    void queryMainRoom();
+    void makeGraph();
+    void makeMiniSpanTree();
+    void addSomeEdge();
 private:
     void GenRoom(int room_size, mge::Vector2i const& min_size, mge::Vector2i const& max_size, bool check_overlap = false);
 private:
@@ -63,13 +67,16 @@ private:
     void onDraw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
     void addRoom(mge::RectI const& r);
-    void setGridTag(mge::RectI const& r);
     bool isRoomOverlap(mge::RectI const& r) const;
+    int getTileSize() const;
 private:
+    int _step;
     b2World* _world;
     mge::Grid<char> _grid;
     std::vector<mge::RectI> _room;
+    std::vector<mge::RectI*> _mainRoom;
     std::map<b2Body*, int> _roomIdx;
+    std::vector<std::vector<mge::Vector2f>> _edges;
 };
 
 #endif //SDL2_UI_MENU_H
