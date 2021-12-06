@@ -27,13 +27,14 @@ typedef struct Edge {
 } Edge;
 
 typedef std::vector<Edge> EdgeGraph;
+typedef std::vector<Edge*> EdgeGraphNoCopy;
 typedef std::vector<mge::Vector2i> UVArray;
 typedef std::vector<int> WeightArray;
 typedef std::vector<int> VertexArray;
 typedef std::vector<VertexArray> VertexTree;
 
-EdgeGraph create_graph(UVArray const& lines, WeightArray const& weights) {
-    assert(lines.size() == weights.size() && "create_graph fail.");
+EdgeGraph create_edge_graph(UVArray const& lines, WeightArray const& weights) {
+    assert(lines.size() == weights.size() && "create_edge_graph fail.");
     EdgeGraph edges;
     edges.resize(lines.size());
     for (int i = 0; i < edges.size(); ++i) {
@@ -77,8 +78,8 @@ bool kruskal_find_tree(int start, int end, VertexTree& tree) {
     return false;
 }
 
-EdgeGraph mini_span_tree_kruskal(EdgeGraph& edges, int vertexCount) {
-    EdgeGraph ret;
+EdgeGraphNoCopy mini_span_tree_kruskal(EdgeGraph& edges, int vertexCount) {
+    EdgeGraphNoCopy ret;
     VertexTree tree(vertexCount);
     for (int i = 0; i < vertexCount; ++i) {
         tree[i].push_back(i);
@@ -88,10 +89,59 @@ EdgeGraph mini_span_tree_kruskal(EdgeGraph& edges, int vertexCount) {
     for (int i = 0; i < edges.size(); ++i) {
         auto& edge = edges[i];
         if (kruskal_find_tree(edge.start, edge.end, tree)) {
-            ret.push_back(edge);
+            ret.push_back(&edge);
         }
     }
     return ret;
+}
+
+EdgeGraph create_edge_graph_with_delaunay_triangulate(IDelaBella* idb, std::function<double(int start, int end)> const& cost) {
+    UVArray uvarr;
+    WeightArray weights;
+    std::map<int, bool> tag;
+    int const verts = idb->GetNumOutputVerts();
+    int const index_scale = idb->GetNumInputPoints() << 8;
+    if (verts >= 1) {
+        // 保存每条边
+        const DelaBella_Triangle* dela = idb->GetFirstDelaunayTriangle();
+        int tris = verts / 3;
+        for (int i = 0; i < tris; i++) {
+            auto v0 = dela->v[0];
+            auto v1 = dela->v[1];
+            auto v2 = dela->v[2];
+            int key0 = std::min(v0->i, v1->i) * index_scale + std::max(v0->i, v1->i);
+            if (not tag[key0]) {
+                auto first = v0->i < v1->i ? v0 : v1;
+                auto second = v1->i > v0->i ? v1 : v0;
+                tag[key0] = true;
+                uvarr.push_back({first->i, second->i});
+            }
+            int key1 = std::min(v1->i, v2->i) * index_scale + std::max(v1->i, v2->i);
+            if (not tag[key1]) {
+                auto first = v2->i < v1->i ? v2 : v1;
+                auto second = v1->i > v2->i ? v1 : v2;
+                tag[key1] = true;
+                uvarr.push_back({first->i, second->i});
+            }
+            int key2 = std::min(v2->i, v0->i) * index_scale + std::max(v2->i, v0->i);
+            if (not tag[key2]) {
+                auto first = v0->i < v2->i ? v0 : v2;
+                auto second = v2->i > v0->i ? v2 : v0;
+                tag[key2] = true;
+                uvarr.push_back({first->i, second->i});
+            }
+            dela = dela->next;
+        }
+        // 计算每条边的权重
+        weights.reserve(uvarr.size());
+        for (int i = 0; i < uvarr.size(); ++i) {
+            auto& uv = uvarr[i];
+            weights.push_back(cost(uv.x, uv.y));
+        }
+        // 生成连通图
+        return create_edge_graph(uvarr, weights);
+    }
+    return {};
 }
 
 class MyGame : public mge::Game::App {
@@ -100,19 +150,16 @@ private:
 public:
     MyGame():_state(&_game.force_get<lutok3::State>("lua")) {}
     void test_some() {
-        int POINTS = 5;
+        int POINTS = 6;
         struct MyPoint {
-            char something;
             float x;
-            int something_else;
             float y;
-            float foo[5];
         };
         MyPoint* cloud = new MyPoint[POINTS];
 
         srand(36341);
 
-        // gen some random input
+        printf("顶点: %d个\n", POINTS);
         for (int i = 0; i < POINTS; i++) {
             cloud[i].x = rand() % 200;
             cloud[i].y = rand() % 200;
@@ -122,89 +169,24 @@ public:
         printf("\n");
 
         IDelaBella* idb = IDelaBella::Create();
+        idb->Triangulate(POINTS, &cloud->x, &cloud->y, sizeof(MyPoint));
 
-        int verts = idb->Triangulate(POINTS, &cloud->x, &cloud->y, sizeof(MyPoint));
-
-        // if positive, all ok
-        if (verts>0) {
-            int tris = verts / 3;
-            const DelaBella_Triangle* dela = idb->GetFirstDelaunayTriangle();
-            for (int i = 0; i < tris; i++) {
-                // do something with dela triangle
-                // ...
-                for (int j = 0; j < 3; ++j) {
-                    printf("NO.%d-%d(%d) x = %d, y = %d\n", i + 1, j + 1, dela->v[j]->i + 1, int(dela->v[j]->x), int(dela->v[j]->y));
-                }
-                dela = dela->next;
-            }
-
-            printf("\n");
-
-            WeightArray weights;
-            UVArray uvarr;
-            int const INDEX_SCALE = POINTS * 100;
-            int edgeNumber = 0;
-            std::map<int, bool> tag;
-            dela = idb->GetFirstDelaunayTriangle();
-            for (int i = 0; i < tris; i++) {
-                auto v0 = dela->v[0];
-                auto v1 = dela->v[1];
-                auto v2 = dela->v[2];
-                int key0 = std::min(v0->i, v1->i) * INDEX_SCALE + std::max(v0->i, v1->i);
-                if (not tag[key0]) {
-                    auto first = v0->i < v1->i ? v0 : v1;
-                    auto second = v1->i > v0->i ? v1 : v0;
-                    printf("NO.%d(%d-%d) x0 = %d, y0 = %d, x1 = %d, y1 = %d\n", ++edgeNumber, first->i, second->i, int(first->x), int(first->y), int(second->x), int(second->y));
-                    tag[key0] = true;
-                    uvarr.push_back({first->i, second->i});
-                }
-                int key1 = std::min(v1->i, v2->i) * INDEX_SCALE + std::max(v1->i, v2->i);
-                if (not tag[key1]) {
-                    auto first = v2->i < v1->i ? v2 : v1;
-                    auto second = v1->i > v2->i ? v1 : v2;
-                    printf("NO.%d(%d-%d) x0 = %d, y0 = %d, x1 = %d, y1 = %d\n", ++edgeNumber, first->i, second->i, int(first->x), int(first->y), int(second->x), int(second->y));
-                    tag[key1] = true;
-                    uvarr.push_back({first->i, second->i});
-                }
-                int key2 = std::min(v2->i, v0->i) * INDEX_SCALE + std::max(v2->i, v0->i);
-                if (not tag[key2]) {
-                    auto first = v0->i < v2->i ? v0 : v2;
-                    auto second = v2->i > v0->i ? v2 : v0;
-                    printf("NO.%d(%d-%d) x0 = %d, y0 = %d, x1 = %d, y1 = %d\n", ++edgeNumber, first->i, second->i, int(first->x), int(first->y), int(second->x), int(second->y));
-                    tag[key2] = true;
-                    uvarr.push_back({first->i, second->i});
-                }
-                dela = dela->next;
-            }
-
-            printf("\n");
-
-            weights.reserve(uvarr.size());
-            for (int i = 0; i < uvarr.size(); ++i) {
-                auto& uv = uvarr[i];
-                auto& point1 = cloud[uv.x];
-                mge::Vector2f pt1{point1.x, point1.y};
-                auto& point2 = cloud[uv.y];
-                mge::Vector2f pt2{point2.x, point2.y};
-                weights.push_back(int(pt1.distance(pt2) * 10));
-            }
-
-            auto edges = create_graph(uvarr, weights);
-            auto result = mini_span_tree_kruskal(edges, POINTS);
-            printf("最小生成树: %d条边\n", (int)result.size());
-            for (int i = 0; i < result.size(); ++i) {
-                auto& edge = result[i];
-                auto v0 = &cloud[edge.start];
-                auto v1 = &cloud[edge.end];
-                auto first = v0;
-                auto second = v1;
-                printf("NO.%d(%d-%d-%d) x0 = %d, y0 = %d, x1 = %d, y1 = %d\n", i+1, edge.start, edge.end, edge.weight, int(first->x), int(first->y), int(second->x), int(second->y));
-            }
-            printf("\n");
-
-        } else {
-            // no points given or all points are colinear
-            // make emergency call ...
+        auto edges = create_edge_graph_with_delaunay_triangulate(idb, [&cloud](int start, int end){
+            auto& first = cloud[start];
+            auto& second = cloud[end];
+            mge::Vector2f pt1{first.x, first.y};
+            mge::Vector2f pt2{second.x, second.y};
+            return pt1.distance(pt2) * 10;
+        });
+        auto result = mini_span_tree_kruskal(edges, POINTS);
+        printf("最小生成树: %d条边(总边数%d条)\n", (int)result.size(), int(edges.size()));
+        for (int i = 0; i < result.size(); ++i) {
+            auto& edge = *result[i];
+            auto v0 = &cloud[edge.start];
+            auto v1 = &cloud[edge.end];
+            auto first = v0;
+            auto second = v1;
+            printf("NO.%d(%d-%d-%d) x0 = %d, y0 = %d, x1 = %d, y1 = %d\n", i+1, edge.start + 1, edge.end + 1, edge.weight, int(first->x), int(first->y), int(second->x), int(second->y));
         }
 
         delete[] cloud;
