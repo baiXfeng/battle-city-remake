@@ -70,6 +70,7 @@ public:
 public:
     SenderSignal::slot_type connect(int type, SenderSignal::observer_type const& obs);
     void disconnect(int type, SenderSignal::slot_type const& obs);
+    SenderSignal& signal(int key);
 public:
     virtual void update(float delta);
     virtual void draw(SDL_Renderer* renderer);
@@ -77,6 +78,7 @@ protected:
     virtual void dirty();
     virtual void onUpdate(float delta) {}
     virtual void onDraw(SDL_Renderer* renderer) {}
+    virtual void onChildrenDraw(SDL_Renderer* renderer);
     virtual void onDirty() {}
     virtual void onVisible(bool visible) {}
 protected:
@@ -135,7 +137,6 @@ public:
     void resumeAllActions();
 protected:
     void modifyLayout();
-    SenderSignal& signal(int key);
 protected:
     bool _visible;
     bool _update;
@@ -252,10 +253,16 @@ public:
 public:
     void setColor(SDL_Color const& c);
     SDL_Color const& color() const;
-private:
+protected:
     void onDraw(SDL_Renderer* renderer) override;
-private:
     SDL_Color _color;
+};
+
+class MaskBoxWidget : public MaskWidget {
+public:
+    MaskBoxWidget(SDL_Color const& c);
+protected:
+    void onDraw(SDL_Renderer* renderer) override;
 };
 
 class CurtainWidget : public Widget {

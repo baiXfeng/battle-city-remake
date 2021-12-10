@@ -102,6 +102,8 @@ typedef Vector<float> Vector2f;
 template<typename T>
 class Rect {
 public:
+    typedef T Type;
+public:
     T x;
     T y;
     T w;
@@ -119,11 +121,23 @@ public:
         return *this;
     }
     inline bool contain(Vector<T> const& point) const {
-        return point.x > x and point.x < x + w and point.y > y and point.y < y + h;
+        return horizontal_contain(point) and vertical_contain(point);
+    }
+    inline bool horizontal_contain(Vector<T> const& point) const {
+        return point.x > x and point.x < x + w;
+    }
+    inline bool vertical_contain(Vector<T> const& point) const {
+        return point.y > y and point.y < y + h;
     }
     template<typename TargetType>
     Rect<TargetType> to() const {
         return {TargetType(x), TargetType(y), TargetType(w), TargetType(h)};
+    }
+    Vector<T> center() const {
+        return {
+            x + (w / 2),
+            y + (h / 2),
+        };
     }
 };
 

@@ -428,32 +428,48 @@ void PhysicsView::onDraw(SDL_Renderer* renderer) {
 
 //=====================================================================================
 
-#include "dungeon/mini_span_tree.h"
+void RandomRoomView::Room::modify() {
+    notify(&Widget::setPosition, Vector2i{r.x, r.y}.to<float>());
+    notify(&Widget::setSize, Vector2i{r.w, r.h}.to<float>());
+}
 
-struct RoomVertex {
-    RectI* room;
-    float x, y;
-};
-RoomVertex* _roomVertex = nullptr;
-dungeon::EdgeGraph _edgeGraph;
-dungeon::EdgeGraphNoCopy _edgeMiniGraph;
+void RandomRoomView::Room::color(SDL_Color const& c) {
+    notify(&MaskWidget::setColor, c);
+}
 
-RandomRoomView::RandomRoomView() {
+RandomRoomView::RandomRoomView():_roomVertex(nullptr) {
+    addChild(Ptr(new MaskBoxWidget({255, 255, 255, 255})));
     _world = b2WorldSugar::CreateWorld();
+    _window = _children.front().get();
+    _window->setAnchor(0.5f, 0.5f);
+    _window->setPosition(size().x*0.5f, size().y*0.5f);
     this->rebuild();
+    _step = 0;
 }
 
 RandomRoomView::~RandomRoomView() {
     delete _world;
+    if (_roomVertex) {
+        delete [] _roomVertex;
+        _roomVertex = nullptr;
+    }
 }
 
 void RandomRoomView::rebuild() {
 
     _grid.clear();
-    _room.clear();
+    _rooms.clear();
     _mainRoom.clear();
+    _passRoom.clear();
+    _corridors.clear();
+
     _edges.clear();
     _roomIdx.clear();
+
+    _links.clear();
+    _corridorsRects.clear();
+
+    _window->removeAllChildren();
 
     auto body = _world->GetBodyList();
     while (body) {
@@ -463,29 +479,68 @@ void RandomRoomView::rebuild() {
     }
 
     // 限制地图尺寸
-    {
-        Vector2i grid_size{200, 200};
-        int grid_count = grid_size.x * 2;
-        _grid.resize(grid_size, 0);
-        _room.reserve(grid_count);
-    }
+    Vector2i grid_size{200, 200};
+    int grid_count = grid_size.x * 2;
+    _grid.resize(grid_size, 0);
+    _rooms.reserve(grid_count);
+    _window->setSize((_grid.size() * getTileSize()).to<float>());
 
-    GenRoom(20, {20, 20}, {38, 38}, true);
-    GenRoom(50, {12, 12}, {22, 22});
-    GenRoom(130, {6, 6}, {16, 16});
+    // 生成房间
+    int const big_room_num = 20;
+    int const middle_room_num = 50;
+    int const small_room_num = 130;
+
+    GenRoom(big_room_num, {20, 20}, {38, 38}, true);
+    queryMainRoom();
+    if (_mainRoom.size() < (big_room_num >> 1)) {
+        rebuild();
+        return;
+    }
+    GenRoom(middle_room_num, {12, 12}, {22, 22});
+    GenRoom(small_room_num, {6, 6}, {16, 16});
+}
+
+void RandomRoomView::alignRooms() {
+    Vector2i min, max;
+    auto tile_size = getTileSize();
+    for (int i = 0; i < _rooms.size(); ++i) {
+        auto& r = _rooms[i].r;
+        r.x = int(r.x / tile_size) * tile_size;
+        r.y = int(r.y / tile_size) * tile_size;
+        if (r.x <= min.x) {
+            min.x = r.x;
+        } else if (r.x + r.w >= max.x) {
+            max.x = r.x + r.w;
+        }
+        if (r.y <= min.y) {
+            min.y = r.y;
+        } else if (r.y + r.h >= max.y) {
+            max.y = r.y + r.h;
+        }
+    }
+    for (int i = 0; i < _rooms.size(); ++i) {
+        auto &r = _rooms[i].r;
+        r.x += abs(min.x);
+        r.y += abs(min.y);
+        _rooms[i].modify();
+    }
+    _window->setSize(max.x-min.x, max.y-min.y);
+    _window->performLayout();
 }
 
 void RandomRoomView::queryMainRoom() {
-    int const room_size = 20;
+    int const room_size = 16;
     float const scale = 1.25f;
     auto tile_size = getTileSize();
     int const target_size = room_size * scale * tile_size;
 
     _mainRoom.clear();
-    for (int i = 0; i < _room.size(); ++i) {
-        auto& r = _room[i];
+    for (int i = 0; i < _rooms.size(); ++i) {
+        auto& r = _rooms[i].r;
         if (r.w >= target_size + 1 or r.h >= target_size + 1) {
-            _mainRoom.push_back(&r);
+            auto room = &_rooms[i];
+            room->color({255, 0, 0, 255});
+            _mainRoom.push_back(room);
         }
     }
 }
@@ -500,27 +555,24 @@ void RandomRoomView::makeGraph() {
     }
     _roomVertex = new RoomVertex[_mainRoom.size()];
     for (int i = 0; i < _mainRoom.size(); ++i) {
-        auto& r = *_mainRoom[i];
-        _roomVertex[i].room = &r;
+        auto& r = _mainRoom[i]->r;
+        _roomVertex[i].room = _mainRoom[i];
         _roomVertex[i].x = r.x + (r.w >> 1);
         _roomVertex[i].y = r.y + (r.h >> 1);
     }
     auto idb = IDelaBella::Create();
     idb->Triangulate(_mainRoom.size(), &_roomVertex->x, &_roomVertex->y, sizeof(RoomVertex));
-    _edgeGraph = dungeon::create_edge_graph_with_delaunay_triangulate(idb, [](int start, int end){
+    _edgeGraph = dungeon::create_edge_graph_with_delaunay_triangulate(idb, [this](int start, int end){
         auto& first = _roomVertex[start];
         auto& second = _roomVertex[end];
         mge::Vector2f pt1{first.x, first.y};
         mge::Vector2f pt2{second.x, second.y};
         return pt1.distance(pt2) * 10;
     });
-    //auto result = dungeon::mini_span_tree_kruskal(edges, _mainRoom.size());
     for (int i = 0; i < _edgeGraph.size(); ++i) {
         auto& edge = _edgeGraph[i];
-        auto v0 = &_roomVertex[edge.start];
-        auto v1 = &_roomVertex[edge.end];
-        auto first = v0;
-        auto second = v1;
+        auto first = &_roomVertex[edge.start];
+        auto second = &_roomVertex[edge.end];
         _edges.push_back({
             {first->x, first->y},
             {second->x, second->y},
@@ -530,10 +582,10 @@ void RandomRoomView::makeGraph() {
 }
 
 void RandomRoomView::makeMiniSpanTree() {
-    _edgeMiniGraph = dungeon::mini_span_tree_kruskal(_edgeGraph, _mainRoom.size());
+    _edgePathGraph = dungeon::mini_span_tree_kruskal(_edgeGraph, _mainRoom.size());
     _edges.clear();
-    for (int i = 0; i < _edgeMiniGraph.size(); ++i) {
-        auto& edge = *_edgeMiniGraph[i];
+    for (int i = 0; i < _edgePathGraph.size(); ++i) {
+        auto& edge = *_edgePathGraph[i];
         auto v0 = &_roomVertex[edge.start];
         auto v1 = &_roomVertex[edge.end];
         _edges.push_back({
@@ -545,8 +597,8 @@ void RandomRoomView::makeMiniSpanTree() {
 
 void RandomRoomView::addSomeEdge() {
     std::map<int, bool> tag;
-    for (int i = 0; i < _edgeMiniGraph.size(); ++i) {
-        tag[_edgeMiniGraph[i]->id] = true;
+    for (int i = 0; i < _edgePathGraph.size(); ++i) {
+        tag[_edgePathGraph[i]->id] = true;
     }
     int const max_count = _edgeGraph.size() * 0.15f;
     int count = 0;
@@ -555,7 +607,7 @@ void RandomRoomView::addSomeEdge() {
         if (tag[e.id]) {
             continue;
         }
-        if (Random::get(0, 100) < 75) {
+        if (Random::get(0, 100) < 50) {
             continue;
         }
         auto v0 = &_roomVertex[e.start];
@@ -571,10 +623,77 @@ void RandomRoomView::addSomeEdge() {
     }
 }
 
+#include "common/quadtree.h"
+
+void RandomRoomView::makeCorridor() {
+
+    _edges.clear();
+
+    //QuadTree<Room*> quadtree(0);
+
+    auto tile_size = getTileSize();
+    for (auto& edge : _edgePathGraph) {
+        auto& first = _roomVertex[edge->start];
+        auto& second = _roomVertex[edge->end];
+
+        auto left_x = std::max(first.room->r.x, second.room->r.x);
+        auto right_x = std::min(first.room->r.x + first.room->r.w, second.room->r.x + second.room->r.w);
+        if ((right_x - left_x) / tile_size >= 3) {
+            auto r0 = first.room->r.y < second.room->r.y ? first.room : second.room;
+            auto r1 = first.room->r.y > second.room->r.y ? first.room : second.room;
+            float x = (right_x - left_x) * 0.5f + left_x;
+            float y0 = r0->r.y + r0->r.h;
+            float y1 = r1->r.y;
+            if (int(y1-y0) == 0) {
+                _links.push_back(NONE_LINE);
+                continue;
+            }
+            _links.push_back(VERTICAL_LINE);
+            _edges.push_back({
+                {x, y0},
+                {x, y1},
+            });
+            continue;
+        }
+
+        auto up_y = std::max(first.room->r.y, second.room->r.y);
+        auto down_y = std::min(first.room->r.y + first.room->r.h, second.room->r.y + second.room->r.h);
+        if ((down_y - up_y) / tile_size >= 3) {
+            auto r0 = first.room->r.x < second.room->r.x ? first.room : second.room;
+            auto r1 = first.room->r.x > second.room->r.x ? first.room : second.room;
+            float y = (down_y - up_y) * 0.5f + up_y;
+            float x0 = r0->r.x + r0->r.w;
+            float x1 = r1->r.x;
+            if (int(x1-x0) == 0) {
+                _links.push_back(NONE_LINE);
+                continue;
+            }
+            _links.push_back(HORIZONTAL_LINE);
+            _edges.push_back({
+                {x0, y},
+                {x1, y},
+            });
+            continue;
+        }
+
+        _links.push_back(TURNING_LINE);
+        Vector2i left_top{
+            (int)std::min(first.x, second.x),
+            (int)std::min(first.y, second.y),
+        };
+        Vector2i right_bottom{
+            (int)std::max(first.x, second.x),
+            (int)std::max(first.y, second.y),
+        };
+        _corridorsRects.push_back({
+            left_top.x, left_top.y,
+            right_bottom.x - left_top.x, right_bottom.y - left_top.y,
+        });
+    }
+}
+
 void RandomRoomView::GenRoom(int room_size, mge::Vector2i const& min_size, mge::Vector2i const& max_size, bool check_overlap) {
     auto tile_size = getTileSize();
-    auto begin_x = (size().x - _grid.size().x * tile_size) * 0.5f;
-    auto begin_y = (size().y - _grid.size().y * tile_size) * 0.5f;
     int room_count = 0;
     while (room_count < room_size) {
         auto pos = dungeon::getRandomPointInCircle(_grid.size().x * 0.5f - 5);
@@ -598,8 +717,8 @@ void RandomRoomView::GenRoom(int room_size, mge::Vector2i const& min_size, mge::
             ret.y = _grid.size().y - ret.h;
         }
         RectI room = {
-                begin_x + ret.x * tile_size,
-                begin_y + ret.y * tile_size,
+                ret.x * tile_size,
+                ret.y * tile_size,
                 ret.w * tile_size,
                 ret.h * tile_size,
         };
@@ -614,7 +733,23 @@ void RandomRoomView::GenRoom(int room_size, mge::Vector2i const& min_size, mge::
 }
 
 void RandomRoomView::addRoom(mge::RectI const& r) {
-    _room.push_back(r);
+    SDL_Color color[7] = {
+            {255, 128, 128, 255},
+            {0, 255, 0, 255},
+            {0, 0, 255, 255},
+            {255, 255, 0, 255},
+            {0, 255, 255, 255},
+            {255, 0, 255, 255},
+            {128, 255, 128, 255},
+    };
+
+    _rooms.push_back({(int)_rooms.size()+1, r});
+
+    auto& room = _rooms.back();
+    auto mask = Ptr(new MaskWidget(color[_rooms.size() % 7]));
+    _window->addChild(mask);
+    room.add(mask->to<MaskWidget>());
+    room.modify();
 
     auto body = b2BodySugar::CreateBody(_world, b2_dynamicBody);
     b2BodySugar sugar(body);
@@ -624,12 +759,12 @@ void RandomRoomView::addRoom(mge::RectI const& r) {
         r.y + r.h * 0.5f,
     });
     body->SetFixedRotation(true);
-    _roomIdx[body] = _room.size() - 1;
+    _roomIdx[body] = _rooms.size() - 1;
 }
 
 bool RandomRoomView::isRoomOverlap(mge::RectI const& r) const {
-    for (auto& room : _room) {
-        if (isCollision(room, r)) {
+    for (auto& room : _rooms) {
+        if (isCollision(room.r, r)) {
             return true;
         }
     }
@@ -641,53 +776,56 @@ int RandomRoomView::getTileSize() const {
 }
 
 void RandomRoomView::onUpdate(float delta) {
-    //b2WorldSugar::update(_world, delta * 10.0f);
+    if (_step != 0) {
+        return;
+    }
     _world->Step(delta, 100.0f, 100.0f);
     b2BodySugar sugar;
     bool sleep = true;
     for (auto body = _world->GetBodyList(); body; body = body->GetNext()) {
-        sugar.reset(body);
-        auto index = _roomIdx[body];
-        auto position = sugar.getPixelPosition();
-        auto& rect = _room[index];
-        rect.x = position.x - (rect.w >> 1);
-        rect.y = position.y - (rect.h >> 1);
         if (body->IsAwake()) {
             sleep = false;
         }
+        sugar.reset(body);
+        auto index = _roomIdx[body];
+        auto position = sugar.getPixelPosition();
+        auto& room = _rooms[index];
+        room.r.x = position.x - (room.r.w >> 1);
+        room.r.y = position.y - (room.r.h >> 1);
+        room.modify();
     }
-    //printf("物理休眠中: %s\n", sleep ? "true" : "false");
+    _window->performLayout();
 }
 
-void RandomRoomView::onDraw(SDL_Renderer* renderer) {
-    SDL_Color color[7] = {
-            {255, 128, 128, 255},
-            {0, 255, 0, 255},
-            {0, 0, 255, 255},
-            {255, 255, 0, 255},
-            {0, 255, 255, 255},
-            {255, 0, 255, 255},
-            {128, 255, 128, 255},
-    };
+void RandomRoomView::draw(SDL_Renderer* renderer) {
     DrawColor dc(renderer);
-    for (int i = 0; i < _room.size(); ++i) {
+    /*
+    for (int i = 0; i < _rooms.size(); ++i) {
         dc.setColor(color[i % 7]);
-        auto& r = _room[i];
+        auto& r = _rooms[i].r;
         SDL_Rect dstrect{r.x, r.y, r.w, r.h};
         SDL_RenderFillRect(renderer, &dstrect);
     }
     for (int i = 0; i < _mainRoom.size(); ++i) {
         dc.setColor({255, 0, 0, 255});
-        auto& r = *_mainRoom[i];
+        auto& r = _mainRoom[i]->r;
         SDL_Rect dstrect{r.x, r.y, r.w, r.h};
         SDL_RenderFillRect(renderer, &dstrect);
     }
+     */
+    this->onChildrenDraw(renderer);
+    auto& position = _window->global_position();
     for (int i = 0; i < _edges.size(); ++i) {
         auto& e = _edges[i];
         auto& pt0 = e[0];
         auto& pt1 = e[1];
         dc.setColor({255, 255, 0, 255});
-        SDL_RenderDrawLineF(renderer, pt0.x, pt0.y, pt1.x, pt1.y);
+        SDL_RenderDrawLineF(renderer, position.x + pt0.x, position.y + pt0.y, position.x + pt1.x, position.y + pt1.y);
+    }
+    for (auto& r: _corridorsRects) {
+        dc.setColor({0, 255, 0, 255});
+        SDL_Rect dstrect{int(position.x) + r.x, int(position.y) + r.y, r.w, r.h};
+        SDL_RenderDrawRect(renderer, &dstrect);
     }
 }
 
@@ -698,7 +836,7 @@ void RandomRoomView::onButtonDown(int key) {
     } else if (key == KeyCode::A) {
         switch (_step) {
             case 0:
-                this->queryMainRoom();
+                this->alignRooms();
                 break;
             case 1:
                 this->makeGraph();
@@ -708,6 +846,9 @@ void RandomRoomView::onButtonDown(int key) {
                 break;
             case 3:
                 this->addSomeEdge();
+                break;
+            case 4:
+                this->makeCorridor();
                 break;
             default:
                 return;

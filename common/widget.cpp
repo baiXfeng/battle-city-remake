@@ -211,6 +211,9 @@ void Widget::update(float delta) {
         return;
     }
     this->onUpdate(delta);
+    if (_children.empty()) {
+        return;
+    }
     auto list = _children;
     for (auto child : list) {
         if (child->parent() == nullptr) {
@@ -236,15 +239,17 @@ void Widget::draw(SDL_Renderer* renderer) {
         SDL_RenderGetClipRect(renderer, &clip_copy);
         SDL_RenderSetClipRect(renderer, &clip_rect);
         this->onDraw(renderer);
-        for (auto& child : _children) {
-            child->draw(renderer);
-        }
+        this->onChildrenDraw(renderer);
         SDL_RenderSetClipRect(renderer, &clip_copy);
     } else {
         this->onDraw(renderer);
-        for (auto& child : _children) {
-            child->draw(renderer);
-        }
+        this->onChildrenDraw(renderer);
+    }
+}
+
+void Widget::onChildrenDraw(SDL_Renderer* renderer) {
+    for (auto& child : _children) {
+        child->draw(renderer);
     }
 }
 
@@ -698,16 +703,30 @@ SDL_Color const& MaskWidget::color() const {
 
 void MaskWidget::onDraw(SDL_Renderer* renderer) {
     DrawColor dc(renderer);
-    auto const size = _size * _scale.self_abs();
     SDL_FRect dst{
         global_position().x,
         global_position().y,
-        size.x,
-        size.y
+        global_size().x,
+        global_size().y
     };
     _color.a = _opacity;
     dc.setColor(_color);
     SDL_RenderFillRectF(renderer, &dst);
+}
+
+MaskBoxWidget::MaskBoxWidget(SDL_Color const& c):MaskWidget(c) {}
+
+void MaskBoxWidget::onDraw(SDL_Renderer* renderer) {
+    DrawColor dc(renderer);
+    SDL_FRect dst{
+            global_position().x,
+            global_position().y,
+            global_size().x,
+            global_size().y
+    };
+    _color.a = _opacity;
+    dc.setColor(_color);
+    SDL_RenderDrawRectF(renderer, &dst);
 }
 
 //=====================================================================================
