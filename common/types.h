@@ -165,6 +165,13 @@ private:
     T _data;
 };
 
+template<typename T>
+T& to(Data* d) {
+    auto p = dynamic_cast<DataPack<T>*>(d);
+    assert(p && "to type error.");
+    return p->data();
+}
+
 template<class T>
 class Grid {
 public:

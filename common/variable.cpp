@@ -9,10 +9,12 @@
 #include "audio.h"
 #include "mouse.h"
 #include "command.h"
+#include "idmaker.h"
 
 mge_begin
 
 void GameVariable::initVariable() {
+    _id = std::make_shared<IdMaker>();
     _fps = std::make_shared<Fps>();
     _audio = std::make_shared<AudioSystem>();
     _event = std::make_shared<EventCenter>();
@@ -30,6 +32,7 @@ void GameVariable::finiVariable() {
     _event = nullptr;
     _audio = nullptr;
     _fps = nullptr;
+    _id = nullptr;
 }
 
 Fps& GameVariable::fps() {
@@ -58,6 +61,10 @@ EventCenter& GameVariable::event() {
 
 CommandCenter& GameVariable::command() {
     return *_command.get();
+}
+
+IdMaker& GameVariable::id() {
+    return *_id.get();
 }
 
 mge_end

@@ -85,9 +85,7 @@ void TankEventBehavior::onEvent(Event const& e) {
         }
         auto tank = e.data<TankModel*>();
         WorldModel::TileTree::SquareList list;
-        _tiles->retrieve(list, tank->bounds, [](TileModel* m) {
-            return m;
-        });
+        _tiles->retrieve(list, tank->bounds);
         for (auto& tile : list) {
             if (tile->type != Tile::ICE_FLOOR) {
                 continue;
@@ -650,9 +648,7 @@ _tiles(tiles) {
 
 Status TankTileCollisionBehavior::tick(float delta) {
     WorldModel::TileTree::SquareList list;
-    _tiles->retrieve(list, _model->bounds, [](TileModel* m) {
-        return m;
-    });
+    _tiles->retrieve(list, _model->bounds);
     for (auto& tile : list) {
         if (not tile->visible) {
             continue;

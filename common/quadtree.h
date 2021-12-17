@@ -26,7 +26,7 @@ public:
     typedef std::list<Square> SquareList;
     typedef std::vector<Ptr> QuadTreeList;
     typedef std::function<RectI(Square const&)> RectCatcher;
-    typedef std::function<void*(T const&)> Pointer;
+    typedef std::function<void*(Square const&)> Pointer;
     enum {
         MAX_LEVELS = 4,
         MAX_OBJECTS = 10,
@@ -38,10 +38,9 @@ public:
     static Ptr New(int level, RectI const& bounds, RectCatcher const& catcher) {
         return Ptr(new QuadTree<T>(level, bounds, catcher));
     }
-    void retrieve(SquareList& result, RectI const& rect, Pointer const& unique_func) {
-        assert(unique_func != nullptr && "QuadTree::retrieve call fail.");
+    void retrieve(SquareList& result, RectI const& rect, bool is_object = false) {
         retrieve_square(result, rect);
-        unique(result, unique_func);
+        unique(result, is_object);
     }
     void clear() {
         _objects.clear();
@@ -60,10 +59,10 @@ public:
         return _bounds;
     }
 protected:
-    void unique(SquareList& result, Pointer const& get) {
+    void unique(SquareList& result, bool is_object) {
         std::map<void*, bool> flags;
         for (auto iter = result.begin(); iter != result.end();) {
-            auto key = get(*iter);
+            auto key = is_object ? (void*)(&(*iter)) : (void*)(*iter);
             auto& value = flags[key];
             if (value) {
                 result.erase(iter++);
@@ -209,15 +208,14 @@ template<class T>
 class DebugQuadTree : public QuadTree<T> {
 public:
     typedef std::shared_ptr<DebugQuadTree<T>> Ptr;
-    typedef QuadTree<T> QuadTreeT;
     typedef typename QuadTree<T>::RectCatcher RectCatcher;
 public:
-    DebugQuadTree(int level, RectI const& bounds, RectCatcher const& catcher):QuadTreeT(level, bounds, catcher) {}
+    DebugQuadTree(int level, RectI const& bounds, RectCatcher const& catcher):QuadTree<T>(level, bounds, catcher) {}
     void draw(SDL_Renderer* renderer, Vector2i const& position = {0, 0}) {
         draw(renderer, *this, position);
     }
 private:
-    void draw(SDL_Renderer* renderer, QuadTreeT const& quadtree, Vector2i const& position) {
+    void draw(SDL_Renderer* renderer, QuadTree<T> const& quadtree, Vector2i const& position) {
         RenderDrawRect rect;
         rect.setColor({255, 255, 255, 255});
         rect.setSize(quadtree.bound().w-1, quadtree.bound().h-1);

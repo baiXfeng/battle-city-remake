@@ -78,7 +78,7 @@ public:
             }
         }
     }
-    void each(std::function<void(View* v)> catcher) {
+    void each(std::function<void(View* v)> const& catcher) {
         auto views = _views;
         for (auto& v : views) {
             catcher(v);

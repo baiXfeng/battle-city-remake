@@ -707,7 +707,7 @@ void MaskWidget::onDraw(SDL_Renderer* renderer) {
         global_position().x,
         global_position().y,
         global_size().x,
-        global_size().y
+        global_size().y,
     };
     _color.a = _opacity;
     dc.setColor(_color);
@@ -722,7 +722,7 @@ void MaskBoxWidget::onDraw(SDL_Renderer* renderer) {
             global_position().x,
             global_position().y,
             global_size().x,
-            global_size().y
+            global_size().y,
     };
     _color.a = _opacity;
     dc.setColor(_color);
