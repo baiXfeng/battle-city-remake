@@ -47,6 +47,19 @@ namespace dungeon {
             }
         }
 
+        void Data::worldUpdate(float delta) {
+            world->Step(delta, 100.0f, 100.0f);
+        }
+
+        bool Data::isWorldSleep() const {
+            for (auto body = world->GetBodyList(); body; body = body->GetNext()) {
+                if (body->IsAwake()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         using Random = effolkronium::random_static;
         class BuildRooms {
         public:

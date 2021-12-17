@@ -167,9 +167,9 @@ private:
 
 template<typename T>
 T& to(Data* d) {
-    auto p = dynamic_cast<DataPack<T>*>(d);
+    auto p = dynamic_cast<T*>(d);
     assert(p && "to type error.");
-    return p->data();
+    return *p;
 }
 
 template<class T>

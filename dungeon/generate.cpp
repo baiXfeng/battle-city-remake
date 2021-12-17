@@ -38,6 +38,8 @@ namespace dungeon {
         return *_builder->_data;
     }
 
+    Builder::Builder():_index(0), _data(nullptr) {}
+
     Builder::Builder(mge::Data& d):_index(0), _data(&d) {
 
     }
@@ -60,6 +62,11 @@ namespace dungeon {
             _steps[_index](c);
             _index++;
         }
+    }
+
+    void Builder::step(uint32_t index) {
+        Context c(this);
+        _steps[index](c);
     }
 
     void Builder::clear() {

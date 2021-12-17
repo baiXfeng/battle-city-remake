@@ -45,7 +45,11 @@ namespace dungeon {
         public:
             Data();
             ~Data();
+        public:
+            void worldUpdate(float delta);
+            bool isWorldSleep() const;
 
+        public:
             int buildRetryCount;
             int tile_size;
 

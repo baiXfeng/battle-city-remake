@@ -30,12 +30,14 @@ namespace dungeon {
         typedef std::function<void(Context&)> Step;
         typedef std::vector<Step> Steps;
     public:
+        Builder();
         Builder(mge::Data& d);
         Builder(mge::Data& d, Steps const& steps);
     public:
         void setData(mge::Data& d);
         void addStep(Step const& step);
         void execute();
+        void step(uint32_t index);
         void clear();
         void reset();
     private:
