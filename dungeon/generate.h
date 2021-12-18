@@ -38,6 +38,7 @@ namespace dungeon {
         void addStep(Step const& step);
         void execute();
         void step(uint32_t index);
+        uint32_t stepSize() const;
         void clear();
         void reset();
     private:

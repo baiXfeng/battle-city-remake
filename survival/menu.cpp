@@ -426,11 +426,10 @@ RandomRoomView::RandomRoomView():_builder(new dungeon::Builder), _data(new dunge
     _builder->addStep(dungeon::lasr::make_mini_span_tree);
     _builder->addStep(dungeon::lasr::add_edge);
     _builder->addStep(dungeon::lasr::make_corridor);
+    _builder->addStep(dungeon::lasr::check_corridor);
     _builder->addStep(dungeon::lasr::make_center);
     _builder->setData(*_data);
-
-    this->rebuild();
-    _step = 0;
+    _builder->step((_step = 0)++);
 }
 
 RandomRoomView::~RandomRoomView() {
@@ -438,39 +437,7 @@ RandomRoomView::~RandomRoomView() {
     delete _data;
 }
 
-void RandomRoomView::rebuild() {
-    _builder->step(0);
-}
-
-void RandomRoomView::alignRooms() {
-    _builder->step(1);
-}
-
-void RandomRoomView::makeGraph() {
-    _builder->step(2);
-}
-
-void RandomRoomView::makeMiniSpanTree() {
-    _builder->step(3);
-}
-
-void RandomRoomView::addSomeEdge() {
-    _builder->step(4);
-}
-
-void RandomRoomView::makeCorridor() {
-    _builder->step(5);
-}
-
-void RandomRoomView::makeCenter() {
-    _builder->step(6);
-}
-
-void RandomRoomView::onUpdate(float delta) {
-    if (_step != 0) {
-        return;
-    }
-    _data->worldUpdate(delta);
+void RandomRoomView::updateRoomLayout() {
     b2BodySugar sugar;
     for (auto body = _data->world->GetBodyList(); body; body = body->GetNext()) {
         sugar.reset(body);
@@ -482,6 +449,14 @@ void RandomRoomView::onUpdate(float delta) {
         room.modify();
     }
     _window->performLayout();
+}
+
+void RandomRoomView::onUpdate(float delta) {
+    if (_step != 1) {
+        return;
+    }
+    _data->worldUpdate(delta);
+    this->updateRoomLayout();
 }
 
 void RandomRoomView::draw(SDL_Renderer* renderer) {
@@ -519,10 +494,13 @@ void RandomRoomView::draw(SDL_Renderer* renderer) {
     this->onChildrenDraw(renderer);
 
     if (_step >= 5) {
-        return;
+        //return;
     }
     auto& position = _window->global_position();
     for (int i = 0; i < _data->edges.size(); ++i) {
+        if (_data->invalidEdge[i]) {
+            continue;
+        }
         auto& e = _data->edges[i];
         auto& pt0 = e[0];
         auto& pt1 = e[1];
@@ -534,47 +512,28 @@ void RandomRoomView::draw(SDL_Renderer* renderer) {
 void RandomRoomView::onButtonDown(int key) {
     if (key == KeyCode::X) {
         _data->buildRetryCount = 0;
-        this->rebuild();
-        _step = 0;
+        _builder->step((_step = 0)++);
     } else if (key == KeyCode::A) {
         switch (_step) {
-            case 0:
+            case 1:
                 if (!_data->isWorldSleep()) {
                     return;
                 }
-                this->alignRooms();
-                break;
-            case 1:
-                this->makeGraph();
-                break;
-            case 2:
-                this->makeMiniSpanTree();
-                break;
-            case 3:
-                this->addSomeEdge();
-                break;
-            case 4:
-                this->makeCorridor();
-                break;
-            case 5:
-                this->makeCenter();
+                _builder->step(_step++);
                 break;
             default:
-                return;
+                if (_step < _builder->stepSize()) {
+                    _builder->step(_step++);
+                }
+                break;
         }
-        _step++;
     } else if (key == KeyCode::Y) {
-        this->rebuild();
-        _step = 0;
-        while (!_data->isWorldSleep()) {
-            this->onUpdate(0.2f);
+        _builder->step((_step = 0)++);
+        dungeon::Context c(_builder);
+        dungeon::lasr::step_world(c);
+        this->updateRoomLayout();
+        while (_step < _builder->stepSize()) {
+            _builder->step(_step++);
         }
-        _step = 5;
-        this->alignRooms();
-        this->makeGraph();
-        this->makeMiniSpanTree();
-        this->addSomeEdge();
-        this->makeCorridor();
-        this->makeCenter();
     }
 }

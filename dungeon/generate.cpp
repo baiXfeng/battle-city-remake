@@ -69,6 +69,10 @@ namespace dungeon {
         _steps[index](c);
     }
 
+    uint32_t Builder::stepSize() const {
+        return _steps.size();
+    }
+
     void Builder::clear() {
         _data = nullptr;
         _steps.clear();

@@ -74,6 +74,7 @@ namespace dungeon {
                 d.edges.clear();
                 d.roomIdx.clear();
                 d.linkRoom.clear();
+                d.invalidEdge.clear();
 
                 d.window->removeAllChildren();
 
@@ -93,17 +94,17 @@ namespace dungeon {
 
                 // 生成房间
                 int const big_room_num = 15;
-                int const middle_room_num = 30;
-                int const small_room_num = 60;
+                int const middle_room_num = 40;
+                int const small_room_num = 80;
 
-                GenRoom(d.grid.size().x * 0.55f, big_room_num, {10, 10}, {20, 20});
+                GenRoom(d.grid.size().x * 0.5f, big_room_num, {10, 10}, {20, 20});
                 queryMainRoom();
                 if (d.mainRoom.size() < (big_room_num >> 1) and d.buildRetryCount <= 10) {
                     ++d.buildRetryCount;
                     build();
                     return;
                 }
-                GenRoom(d.grid.size().x * 0.6f, middle_room_num, {6, 6}, {16, 16});
+                GenRoom(d.grid.size().x * 0.65f, middle_room_num, {6, 6}, {16, 16});
                 GenRoom(d.grid.size().x * 0.75f, small_room_num, {4, 4}, {12, 12});
             }
             void queryMainRoom() {
@@ -217,6 +218,14 @@ namespace dungeon {
             br.build();
         }
 
+        void step_world(Context& c) {
+            auto& d = mge::to<Data>(&c.data());
+            auto const delta = 1 / 60.0f;
+            while (!d.isWorldSleep()) {
+                d.worldUpdate(delta);
+            }
+        }
+
         void align_rooms(Context& c) {
             auto& d = mge::to<Data>(&c.data());
             mge::Vector2i min, max;
@@ -311,7 +320,7 @@ namespace dungeon {
                 if (tag[e.id]) {
                     continue;
                 }
-                if (Random::get(0, 100) < 50) {
+                if (Random::get(0, 100) < 60) {
                     continue;
                 }
                 auto v0 = &d.roomVertex[e.start];
@@ -330,10 +339,10 @@ namespace dungeon {
 
         void make_corridor(Context& c) {
             auto& d = mge::to<Data>(&c.data());
-            int skin_count = 0;
             auto tile_size = d.tile_size;
             BuildRooms br(d);
-            for (auto& edge : d.edgePathGraph) {
+            for (int i = 0; i < d.edgePathGraph.size(); ++i) {
+                auto& edge = d.edgePathGraph[i];
                 auto& first = d.roomVertex[edge->start];
                 auto& second = d.roomVertex[edge->end];
 
@@ -344,18 +353,13 @@ namespace dungeon {
                     auto r1 = first.room->r.y > second.room->r.y ? first.room : second.room;
 
                     float x = (right_x - left_x) * 0.5f + left_x;
-                    float y0 = r0->r.y + r0->r.h;
-                    float y1 = r1->r.y;
-
-                    if (int(y1-y0) == 0) {
-                        ++skin_count;
-                        continue;
-                    }
+                    float y0 = r0->r.y + r0->r.h - tile_size;
+                    float y1 = r1->r.y + tile_size;
 
                     x = int(x / tile_size) * tile_size;
                     if (x - tile_size >= left_x and x + tile_size * 2 <= right_x) {
                         auto& room = br.addRoom({x-tile_size, std::min(y0, y1), tile_size*3, (int)abs(y1-y0)}, LINE_CORRIDOR, 0.6f, 0);
-                        d.linkRoom.push_back({&room});
+                        d.linkRoom.push_back({i, {&room}});
                         continue;
                     }
                 }
@@ -367,18 +371,13 @@ namespace dungeon {
                     auto r1 = first.room->r.x > second.room->r.x ? first.room : second.room;
 
                     float y = (down_y - up_y) * 0.5f + up_y;
-                    float x0 = r0->r.x + r0->r.w;
-                    float x1 = r1->r.x;
-
-                    if (int(x1-x0) == 0) {
-                        ++skin_count;
-                        continue;
-                    }
+                    float x0 = r0->r.x + r0->r.w - tile_size;
+                    float x1 = r1->r.x + tile_size;
 
                     y = int(y / tile_size) * tile_size;
                     if (y - tile_size >= up_y and y + tile_size * 2 <= down_y) {
                         auto& room = br.addRoom({std::min(x0, x1), y-tile_size, (int)abs(x1-x0), tile_size*3}, LINE_CORRIDOR, 0.6f, 0);
-                        d.linkRoom.push_back({&room});
+                        d.linkRoom.push_back({i, {&room}});
                         continue;
                     }
                 }
@@ -399,28 +398,32 @@ namespace dungeon {
                 int corridor_size = tile_size * 3;
                 RectI rect[4] = {
                         {
-                                left_top.x,
-                                left_top.y,
-                                right_bottom.x - corridor_size - left_top.x,
-                                corridor_size,
+                            // 上
+                            left_top.x,
+                            left_top.y,
+                            right_bottom.x - corridor_size - left_top.x,
+                            corridor_size,
                         },
                         {
-                                right_bottom.x - corridor_size,
-                                left_top.y,
-                                corridor_size,
-                                right_bottom.y - corridor_size - left_top.y,
+                            // 右
+                            right_bottom.x - corridor_size,
+                            left_top.y,
+                            corridor_size,
+                            right_bottom.y - corridor_size - left_top.y,
                         },
                         {
-                                left_top.x + corridor_size,
-                                right_bottom.y - corridor_size,
-                                right_bottom.x - corridor_size - left_top.x,
-                                corridor_size,
+                            // 下
+                            left_top.x + corridor_size,
+                            right_bottom.y - corridor_size,
+                            right_bottom.x - corridor_size - left_top.x,
+                            corridor_size,
                         },
                         {
-                                left_top.x,
-                                left_top.y + corridor_size,
-                                corridor_size,
-                                right_bottom.y - corridor_size - left_top.y,
+                            // 左
+                            left_top.x,
+                            left_top.y + corridor_size,
+                            corridor_size,
+                            right_bottom.y - corridor_size - left_top.y,
                         },
                 };
                 std::vector<Room*> room_list;
@@ -428,8 +431,180 @@ namespace dungeon {
                     auto& room = br.addRoom(rect[i], TURNING_CORRIDOR, 0.8f, 0);
                     room_list.push_back(&room);
                 }
-                d.linkRoom.push_back(room_list);
+                d.linkRoom.push_back({i, room_list});
             }
+            d.window->performLayout();
+        }
+
+        class check_line_corridor {
+        public:
+            check_line_corridor(Data& d, QuadTree<Room*>& qt):d(d), qt(qt) {}
+            void check(QuadTree<Room*>::SquareList& ret, Corridor& c) {
+                auto& room = c.rooms.back();
+                qt.retrieve(ret, room->r);
+                int main_room_count = 0;
+                for (auto& r : ret) {
+                    if (r->type == MAIN_ROOM and isCollision(r->r, room->r)) {
+                        main_room_count++;
+                    }
+                }
+                if (main_room_count >= 3) {
+                    // 放弃当前走廊
+                    d.invalidEdge[c.id] = true;
+                    return;
+                }
+                for (auto& r : ret) {
+                    if (r->type == MAIN_ROOM or r->type == LINE_CORRIDOR or r->type == TURNING_CORRIDOR) {
+                        continue;
+                    }
+                    if (isCollision(r->r, room->r)) {
+                        r->type = PASS_ROOM;
+                        d.passRoom[r->id] = r;
+                    }
+                }
+            }
+        private:
+            Data& d;
+            QuadTree<Room*>& qt;
+        };
+
+        class turning_corridor {
+        public:
+            typedef std::shared_ptr<turning_corridor> Ptr;
+            typedef std::vector<Ptr> Array;
+        public:
+            static Array Split(Corridor& c, Data& d, QuadTree<Room*>& qt) {
+                Array ret;
+                auto rooms = split_corridor(c, d);
+                for (int i = 0; i < 2; ++i) {
+                    auto p = std::make_shared<turning_corridor>(d, qt);
+                    p->parse(rooms[i]);
+                    ret.push_back(p);
+                }
+                return ret;
+            }
+            turning_corridor(Data& d, QuadTree<Room*>& qt):d(d), qt(qt) {}
+            int getPassRoomSize() const {
+                // 走廊上的小房间数量
+                if (_passingMainRoom or _hasBlankRoad) {
+                    // 经过主房间或者有空白路段，都算作无效走廊
+                    return 0;
+                }
+                return _passRoomSize;
+            }
+            std::vector<Room*> const& getCorridor() const {
+                return corridor;
+            }
+            std::vector<Room*> const& getPassRooms() const {
+                return pass_rooms;
+            }
+        private:
+            static std::vector<std::vector<Room*>> split_corridor(Corridor& c, Data& d) {
+                assert(c.rooms.size() == 4 && "turning_corridor split_corridor error.");
+                auto edge = d.edges[c.id];
+                auto pt1 = &edge[0];
+                auto pt2 = &edge[1];
+                if (pt2->x < pt1->x) {
+                    auto temp = pt1;
+                    pt1 = pt2;
+                    pt2 = temp;
+                }
+                std::vector<std::vector<Room*>> ret;
+                if (pt1->y < pt2->y) {
+                    ret.push_back({
+                        c.rooms[0],
+                        c.rooms[1],
+                    });
+                    ret.push_back({
+                        c.rooms[2],
+                        c.rooms[3],
+                    });
+                } else {
+                    ret.push_back({
+                        c.rooms[0],
+                        c.rooms[3],
+                    });
+                    ret.push_back({
+                        c.rooms[2],
+                        c.rooms[1],
+                    });
+                }
+                return ret;
+            }
+            void parse(std::vector<Room*> const& corridor) {
+                _passRoomSize = 0;
+                _passingMainRoom = false;
+                _hasBlankRoad = false;
+                int blank_road_count = 0;
+                QuadTree<Room*>::SquareList ret;
+                for (auto& room : corridor) {
+                    bool has_blank_road = true;
+                    int main_room_count = 0;
+                    qt.retrieve(ret, room->r);
+                    for (auto& r : ret) {
+                        if (r->type == MAIN_ROOM) {
+                            if (isCollision(r->r, room->r)) {
+                                main_room_count++;
+                                has_blank_road = false;
+                            }
+                            continue;
+                        }
+                        if (r->type == LINE_CORRIDOR or r->type == TURNING_CORRIDOR) {
+                            continue;
+                        }
+                        if (isCollision(r->r, room->r)) {
+                            // 小房间数量
+                            _passRoomSize++;
+                            has_blank_road = false;
+                            pass_rooms.push_back(r);
+                            continue;
+                        }
+                    }
+                    if (main_room_count >= 2) {
+                        _passingMainRoom = true;
+                    }
+                    if (has_blank_road) {
+                        blank_road_count++;
+                    }
+                }
+                if (blank_road_count >= 1) {
+                    _hasBlankRoad = true;
+                }
+                this->corridor = corridor;
+            }
+        private:
+            bool _passingMainRoom; // 是否经过主房间
+            bool _hasBlankRoad; // 是否存在空白路段(走廊上没有小房间)
+            int _passRoomSize;
+            Data& d;
+            QuadTree<Room*>& qt;
+            std::vector<Room*> corridor;
+            std::vector<Room*> pass_rooms;
+        };
+
+        class check_turning_corridor {
+        public:
+            check_turning_corridor(Data& d, QuadTree<Room*>& qt):d(d), qt(qt) {}
+            void check(QuadTree<Room*>::SquareList& ret, Corridor& c) {
+                auto paths = turning_corridor::Split(c, d, qt);
+                assert(paths.size() == 2 && "check_turning_corridor check error.");
+                if (paths[0]->getPassRoomSize() == 0 and paths[1]->getPassRoomSize() == 0) {
+                    d.invalidEdge[c.id] = true;
+                    return;
+                }
+                auto p = paths[0]->getPassRoomSize() > paths[1]->getPassRoomSize() ? paths[0].get() : paths[1].get();
+                for (auto& r : p->getPassRooms()) {
+                    d.passRoom[r->id] = r;
+                }
+                c.rooms = p->getCorridor();
+            }
+        private:
+            Data& d;
+            QuadTree<Room*>& qt;
+        };
+
+        void check_corridor(Context& c) {
+            auto& d = mge::to<Data>(&c.data());
 
             typedef QuadTree<Room*> MyQuadTree;
             MyQuadTree quadtree(0, {0, 0, d.window->size().x, d.window->size().y}, [](MyQuadTree::Square const& square){
@@ -440,36 +615,40 @@ namespace dungeon {
             }
 
             MyQuadTree::SquareList ret;
-            for (auto& arr : d.linkRoom) {
+            for (auto& corridor : d.linkRoom) {
                 ret.clear();
-                for (auto& room : arr) {
-                    quadtree.retrieve(ret, room->r);
-                    for (auto& r : ret) {
-                        if (r->type == MAIN_ROOM or r->type == LINE_CORRIDOR or r->type == TURNING_CORRIDOR) {
-                            continue;
-                        }
-                        if (isCollision(r->r, room->r)) {
-                            r->type = PASS_ROOM;
-                            d.passRoom[r->id] = r;
-                        }
-                    }
+                if (corridor.rooms.size() == 0) {
+                    // 房间紧挨没有走廊
+                    continue;
+                } else if (corridor.rooms.size() == 1) {
+                    // 如果只有一条走廊
+                    check_line_corridor clc(d, quadtree);
+                    clc.check(ret, corridor);
+                    continue;
                 }
+                // 处理拐角走廊
+                check_turning_corridor ctc(d, quadtree);
+                ctc.check(ret, corridor);
+                continue;
             }
 
-            std::map<int, bool> tag;
+            std::map<int, bool> display;
             for (auto& r : d.mainRoom) {
-                tag[r->id] = true;
+                display[r->id] = true;
             }
-            for (auto& arr : d.linkRoom) {
-                for (auto& r : arr) {
-                    tag[r->id] = true;
+            for (auto& corridor : d.linkRoom) {
+                if (d.invalidEdge[corridor.id]) {
+                    continue;
+                }
+                for (auto& r : corridor.rooms) {
+                    display[r->id] = true;
                 }
             }
             for (auto& kv : d.passRoom) {
-                tag[kv.second->id] = true;
+                display[kv.second->id] = true;
             }
             for (auto& room : d.rooms) {
-                if (not tag[room.id]) {
+                if (not display[room.id]) {
                     room.hide();
                 }
             }
@@ -486,8 +665,8 @@ namespace dungeon {
             for (auto& kv : d.passRoom) {
                 list.push_back(kv.second);
             }
-            for (auto& arr : d.linkRoom) {
-                for (auto& room : arr) {
+            for (auto& corridor : d.linkRoom) {
+                for (auto& room : corridor.rooms) {
                     list.push_back(room);
                 }
             }
@@ -513,6 +692,12 @@ namespace dungeon {
                 r.x -= abs(min.x);
                 r.y -= abs(min.y);
                 room->modify();
+            }
+            for (auto& edge : d.edges) {
+                for (auto& pt : edge) {
+                    pt.x -= abs(min.x);
+                    pt.y -= abs(min.y);
+                }
             }
             d.window->setSize(max.x-min.x, max.y-min.y);
             d.window->performLayout();

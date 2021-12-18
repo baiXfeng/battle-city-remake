@@ -58,17 +58,10 @@ public:
     RandomRoomView();
     ~RandomRoomView();
 private:
-    void rebuild();
-    void alignRooms();
-    void makeGraph();
-    void makeMiniSpanTree();
-    void addSomeEdge();
-    void makeCorridor();
-    void makeCenter();
-private:
     void onUpdate(float delta) override;
     void draw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
+    void updateRoomLayout();
 private:
     int _step;
     mge::Widget* _window;

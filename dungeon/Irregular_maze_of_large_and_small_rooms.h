@@ -40,6 +40,10 @@ namespace dungeon {
             Room* room;
             float x, y;
         };
+        struct Corridor {
+            int id; // for edgePathGraph index
+            std::vector<Room*> rooms;
+        };
 
         class Data : public mge::Data {
         public:
@@ -57,12 +61,13 @@ namespace dungeon {
             mge::Grid<char> grid;            // 房间网格
             std::vector<Room> rooms;         // 房间列表
             std::vector<Room*> mainRoom;     // 主房间列表
-            std::vector<std::vector<Room*>> linkRoom;     // 细长走廊
+            std::vector<Corridor> linkRoom;  // 细长走廊
             std::map<int, Room*> passRoom;   // 走廊房间
 
             RoomVertex* roomVertex;                    // 主房间顶点集
             dungeon::EdgeGraph edgeGraph;              // 三角剖分图
             dungeon::EdgeGraphNoCopy edgePathGraph;    // 最小生成树路径图
+            std::map<int, bool> invalidEdge;           // 无效路径
 
             b2World* world;
             std::map<b2Body*, int> roomIdx;
@@ -70,11 +75,13 @@ namespace dungeon {
         };
 
         void build_rooms(Context& c);
+        void step_world(Context& c);
         void align_rooms(Context& c);
         void make_graph(Context& c);
         void make_mini_span_tree(Context& c);
         void add_edge(Context& c);
         void make_corridor(Context& c);
+        void check_corridor(Context& c);
         void make_center(Context& c);
     }
 }
