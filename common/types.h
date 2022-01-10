@@ -172,6 +172,11 @@ T& to(Data* d) {
     return *p;
 }
 
+template<typename T>
+T* to_p(Data* d) {
+    return dynamic_cast<T*>(d);
+}
+
 template<class T>
 class Grid {
 public:

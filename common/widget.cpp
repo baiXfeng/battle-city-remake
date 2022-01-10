@@ -897,7 +897,7 @@ TTFont::Ptr const& TTFLabel::font() const {
 }
 
 void TTFLabel::setString(std::string const& s) {
-    if (_font == nullptr) {
+    if (_font == nullptr or _s == s) {
         return;
     }
     setTexture(_font->createWithUTF8(_game.renderer(), s.empty() ? " " : s.c_str()));

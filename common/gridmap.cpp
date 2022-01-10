@@ -397,6 +397,10 @@ mge_begin
         }
     }
 
+    void GridMapCamera::follow(Vector2f const& position) {
+        setCameraPosition(position - size() * 0.5f);
+    }
+
     void GridMapCamera::move(Vector2f const& speed) {
         _speed = speed * -1;
     }
@@ -421,6 +425,17 @@ mge_begin
 
     void GridMapCamera::setCameraPosition(Vector2f const& position) {
         _container->setPosition(position * -1);
+    }
+
+    Vector2f GridMapCamera::getCameraPosition() const {
+        return _container->position() * -1;
+    }
+
+    void GridMapCamera::limitCamera() {
+        limitTop();
+        limitRight();
+        limitBottom();
+        limitLeft();
     }
 
     //=====================================================================================
@@ -458,6 +473,7 @@ mge_begin
         auto tile_size = _dataSource->sizeOfGridTile(this);
         auto view_size = map_size * tile_size;
         _container->setSize(view_size.to<float>());
+        _camera->limitCamera();
 
         auto layer_number = _dataSource->numberOfLayersInWidget(this);
         for (int i = 0; i < layer_number; ++i) {

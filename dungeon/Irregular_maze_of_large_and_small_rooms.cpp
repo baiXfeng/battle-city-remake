@@ -35,8 +35,182 @@ namespace dungeon {
             });
         }
 
-        Data::Data():world(mge::b2WorldSugar::CreateWorld()), buildRetryCount(0), roomVertex(nullptr), window(nullptr), tile_size(8) {
+        class RoomPathFinding {
+        public:
+            class Node {
+            public:
+                typedef std::shared_ptr<Node> p;
+                typedef p Nodep;
+                static Nodep New() {
+                    auto p = new Node;
+                    p->value = 0;
+                    return Nodep(p);
+                }
+            public:
+                int value;
+                Nodep prev;
+                std::vector<Nodep> next;
+            public:
+                void clear() {
+                    prev = nullptr;
+                    for (auto& n : next) {
+                        n->clear();
+                    }
+                    next.clear();
+                }
+            };
+        public:
+            RoomPathFinding(Data& d): d(d) {
 
+            }
+            ~RoomPathFinding() {
+                clear();
+            }
+        public:
+            void init() {
+                clear();
+                initScore();
+                initNode();
+            }
+            float get(int first, int second) {
+                float ret = 0.0f;
+                auto path = findPath(first, second);
+                for (int i = 0; i < path.size() - 1; ++i) {
+                    ret += getScore(path[i], path[i+1]);
+                }
+                return ret;
+            }
+            std::vector<int> findPath(int first, int second) {
+                class TempNode {
+                public:
+                    typedef std::shared_ptr<TempNode> p;
+                    TempNode(TempNode* parent, Node* node, int score):parent(parent), node(node), score(score) {}
+                    static p New(TempNode* parent, Node* node, int score = 0) {
+                        return p(new TempNode(parent, node, score));
+                    }
+                public:
+                    TempNode* parent;
+                    Node* node;
+                    int score;
+                };
+                std::vector<TempNode::p> open_list;
+                std::vector<TempNode::p> closed_list;
+                TempNode* current = nullptr;
+
+                open_list.reserve(_nodeCache.size());
+                closed_list.reserve(_nodeCache.size());
+                auto has_value = [](std::vector<TempNode::p> const& list, int value) {
+                    for (auto& n : list) {
+                        if (n->node->value == value) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+                // A* find path
+                open_list.push_back(TempNode::New(nullptr, _nodeCache[first].get()));
+                while (!open_list.empty()) {
+                    auto current_it = open_list.begin();
+                    current = current_it->get();
+                    for (auto iter = open_list.begin(); iter != open_list.end(); iter++) {
+                        // 获取离终点最近的节点
+                        if (iter->get()->score <= current->score) {
+                            current_it = iter;
+                            current = current_it->get();
+                        }
+                    }
+                    if (current->node->value == second) {
+                        break;
+                    }
+                    closed_list.push_back(*current_it);
+                    open_list.erase(current_it);
+                    // 加入邻近节点供下次查找
+                    if (current->node->prev.get() and !has_value(closed_list, current->node->prev->value)) {
+                        open_list.push_back(TempNode::New(
+                                current,
+                                current->node->prev.get(),
+                                getNodeDistance(current->node->prev->value, second))
+                        );
+                    }
+                    for (auto& n : current->node->next) {
+                        if (!has_value(closed_list, n->value)) {
+                            open_list.push_back(TempNode::New(current, n.get(), getNodeDistance(n->value, second)));
+                        }
+                    }
+                }
+
+                std::vector<int> ret;
+                // 获取路径
+                while (current != nullptr) {
+                    ret.push_back(current->node->value);
+                    current = current->parent;
+                }
+                // 路径倒序
+                for (int i = 0; i < (ret.size() >> 1); ++i) {
+                    int temp = ret[i];
+                    ret[i] = ret[ret.size() - i - 1];
+                    ret[ret.size() - i - 1] = temp;
+                }
+                return ret;
+            }
+        private:
+            void clear() {
+                if (_root != nullptr) {
+                    _root->clear();
+                    _root = nullptr;
+                }
+                _nodeCache.clear();
+                _scoreCache.clear();
+            }
+            int getNodeDistance(int start, int end) {
+                auto& first = d.roomVertex[start];
+                auto& second = d.roomVertex[end];
+                return Vector2f{first.x, first.y}.distance({second.x, second.y}) * 1000;
+            }
+            int getScore(int curr, int next) {
+                return _scoreCache[std::min(curr, next) * 10000 + std::max(curr, next)];
+            }
+            void initScore() {
+                for (auto& edge : d.edgeMiniPathGraph) {
+                    int curr = edge->start;
+                    int next = edge->end;
+                    _scoreCache[std::min(curr, next) * 10000 + std::max(curr, next)] = edge->weight;
+                }
+            }
+            void initNode() {
+                _root = Node::New();
+                _nodeCache[0] = _root;
+                addNode(_root);
+            }
+            void addNode(Node::p const& prev) {
+                for (auto& edge : d.edgeMiniPathGraph) {
+                    if (prev->value == edge->start or prev->value == edge->end) {
+                        int next = prev->value == edge->start ? edge->end : edge->start;
+                        if (_nodeCache.find(next) != _nodeCache.end()) {
+                            continue;
+                        }
+                        auto n = Node::New();
+                        n->value = next;
+                        n->prev = prev;
+                        prev->next.push_back(n);
+                        _nodeCache[next] = n;
+                        addNode(n);
+                    }
+                }
+            }
+        private:
+            Data& d;
+            Node::p _root;
+            std::map<int, Node::p> _nodeCache;
+            std::map<int, float> _scoreCache;
+        };
+
+        Data::Data():
+            world(mge::b2WorldSugar::CreateWorld()),
+            buildRetryCount(0), roomVertex(nullptr),
+            window(nullptr), tile_size(8),
+            start_room(0), end_room(0), path_finding(new RoomPathFinding(*this)) {
         }
 
         Data::~Data() {
@@ -220,7 +394,7 @@ namespace dungeon {
 
         void step_world(Context& c) {
             auto& d = mge::to<Data>(&c.data());
-            auto const delta = 1 / 60.0f;
+            auto const delta = 1 / 60.0f * 50;
             while (!d.isWorldSleep()) {
                 d.worldUpdate(delta);
             }
@@ -295,6 +469,7 @@ namespace dungeon {
         void make_mini_span_tree(Context& c) {
             auto& d = mge::to<Data>(&c.data());
             d.edgePathGraph = mini_span_tree_kruskal(d.edgeGraph, d.mainRoom.size());
+            d.edgeMiniPathGraph = d.edgePathGraph;
             d.edges.clear();
             for (int i = 0; i < d.edgePathGraph.size(); ++i) {
                 auto& edge = *d.edgePathGraph[i];
@@ -318,6 +493,14 @@ namespace dungeon {
             for (int i = 0; i < d.edgeGraph.size(); ++i) {
                 auto& e = d.edgeGraph[i];
                 if (tag[e.id]) {
+                    continue;
+                }
+                if (e.start == d.start_room or e.end == d.start_room) {
+                    // 开始房间不添加环路
+                    continue;
+                }
+                if (e.start == d.end_room or e.end == d.end_room) {
+                    // 最终房间不添加环路
                     continue;
                 }
                 if (Random::get(0, 100) < 60) {
@@ -701,6 +884,114 @@ namespace dungeon {
             }
             d.window->setSize(max.x-min.x, max.y-min.y);
             d.window->performLayout();
+        }
+
+        void save_map(Context& c) {
+            auto& d = mge::to<Data>(&c.data());
+
+            // 写入钢铁砖块
+            auto grid_size = d.window->size().to<int>() / d.tile_size;
+            d.grid.resize(grid_size, TILE_STEEL);
+
+            // 写入走廊
+            for (auto& c : d.linkRoom) {
+                for (auto& room : c.rooms) {
+                    RectI rect{
+                        room->r.x / d.tile_size,
+                        room->r.y / d.tile_size,
+                        room->r.w / d.tile_size,
+                        room->r.h / d.tile_size,
+                    };
+                    for (int y = rect.y; y < rect.y + rect.h; ++y) {
+                        for (int x = rect.x; x < rect.x + rect.w; ++x) {
+                            d.grid.set(x, y, TILE_NONE);
+                        }
+                    }
+                }
+            }
+
+            // 写入小房间
+            for (auto& kv : d.passRoom) {
+                auto room = kv.second;
+                RectI rect{
+                    room->r.x / d.tile_size,
+                    room->r.y / d.tile_size,
+                    room->r.w / d.tile_size,
+                    room->r.h / d.tile_size,
+                };
+                for (int y = rect.y; y < rect.y + rect.h; ++y) {
+                    for (int x = rect.x; x < rect.x + rect.w; ++x) {
+                        d.grid.set(x, y, TILE_NONE);
+                    }
+                }
+            }
+
+            // 写入主房间
+            for (auto room : d.mainRoom) {
+                RectI rect{
+                    room->r.x / d.tile_size,
+                    room->r.y / d.tile_size,
+                    room->r.w / d.tile_size,
+                    room->r.h / d.tile_size,
+                };
+                for (int y = rect.y; y < rect.y + rect.h; ++y) {
+                    for (int x = rect.x; x < rect.x + rect.w; ++x) {
+                        d.grid.set(x, y, TILE_NONE);
+                    }
+                }
+            }
+        }
+
+        void save_start_end_room(Context& c) {
+            auto& d = mge::to<Data>(&c.data());
+
+            // 获取所有叶子节点
+            std::map<int, int> count;
+            for (auto& edge : d.edgeMiniPathGraph) {
+                count[edge->start]++;
+                count[edge->end]++;
+            }
+            std::vector<int> leaf;
+            for (auto& kv : count) {
+                if (kv.second == 1) {
+                    leaf.push_back(kv.first);
+                }
+            }
+
+            // 判断y值最大的叶子节点选为开始节点
+            int y = 0;
+            int remove_index = 0;
+            for (int i = 0; i < leaf.size(); ++i) {
+                auto index = leaf[i];
+                auto& room = d.roomVertex[index];
+                if (int(room.y) > y) {
+                    y = room.y;
+                    d.start_room = index;
+                    remove_index = i;
+                }
+            }
+
+            // 从列表移除开始房间
+            leaf.erase(leaf.begin() + remove_index);
+
+            // 对开始房间颜色标注
+            d.roomVertex[d.start_room].room->color({255, 255, 0, 255});
+
+            // 判断剩余节点和开始节点的距离，取最远的节点作为最终房间
+            auto& distance = *d.path_finding;
+            float length = 0.0f;
+            distance.init();
+            for (int i = 0; i < leaf.size(); ++i) {
+                auto next = leaf[i];
+                auto value = distance.get(d.start_room, next);
+                if (value > length) {
+                    length = value;
+                    d.end_room = next;
+                }
+            }
+
+            // 对结束房间颜色标注
+            d.roomVertex[d.end_room].room->color({255, 255, 0, 255});
         }
     }
 }

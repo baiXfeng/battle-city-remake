@@ -22,6 +22,7 @@ class WorldTileMap;
 class BattleWorldView : public mge::GamePadWidget {
 public:
     BattleWorldView();
+    WorldTileMap* worldMap();
 private:
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
@@ -56,17 +57,37 @@ private:
 class RandomRoomView : public mge::GamePadWidget {
 public:
     RandomRoomView();
+    RandomRoomView(dungeon::lasr::Data* data);
     ~RandomRoomView();
 private:
+    void init();
     void onUpdate(float delta) override;
     void draw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
+    void onButtonUp(int key) override;
     void updateRoomLayout();
+    void drawGrid(SDL_Renderer* renderer);
 private:
+    bool _owner;
     int _step;
+    float _seconds;
     mge::Widget* _window;
+    mge::TTFLabel* _fps;
     dungeon::Builder* _builder;
     dungeon::lasr::Data* _data;
+    mge::Vector2f _move;
+};
+
+class MapAndWorldView : public mge::GamePadWidget {
+public:
+    MapAndWorldView();
+    ~MapAndWorldView();
+private:
+    void onButtonDown(int key) override;
+private:
+    dungeon::lasr::Data* _data;
+    mge::Vector2f _cameraPosition;
+    Ptr _mapView;
 };
 
 #endif //SDL2_UI_MENU_H

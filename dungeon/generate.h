@@ -15,8 +15,9 @@ namespace dungeon {
     public:
         Context(Builder* builder);
     public:
+        uint32_t current() const;
         void seek(uint32_t index);
-        void prev();
+        void back();
         void next();
         void abort();
         bool is_abort() const;

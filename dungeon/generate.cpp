@@ -11,19 +11,21 @@ namespace dungeon {
 
     }
 
+    uint32_t Context::current() const {
+        return _builder->_index;
+    }
+
     void Context::seek(uint32_t index) {
         _builder->_index = index;
         _builder->execute();
     }
 
-    void Context::prev() {
-        _builder->_index --;
-        _builder->execute();
+    void Context::back() {
+        seek(_builder->_index - 1);
     }
 
     void Context::next() {
-        _builder->_index ++;
-        _builder->execute();
+        seek(_builder->_index + 1);
     }
 
     void Context::abort() {

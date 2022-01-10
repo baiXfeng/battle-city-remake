@@ -15,6 +15,10 @@ namespace dungeon {
 
     namespace lasr {
 
+        enum TileType {
+            TILE_NONE = 0,
+            TILE_STEEL,
+        };
         enum RoomType {
             NONE_TYPE = 0,
             MAIN_ROOM,
@@ -45,6 +49,7 @@ namespace dungeon {
             std::vector<Room*> rooms;
         };
 
+        class RoomPathFinding;
         class Data : public mge::Data {
         public:
             Data();
@@ -66,12 +71,18 @@ namespace dungeon {
 
             RoomVertex* roomVertex;                    // 主房间顶点集
             dungeon::EdgeGraph edgeGraph;              // 三角剖分图
-            dungeon::EdgeGraphNoCopy edgePathGraph;    // 最小生成树路径图
+            dungeon::EdgeGraphNoCopy edgePathGraph;    // 最小生成树路径图(含回环路径)
+            dungeon::EdgeGraphNoCopy edgeMiniPathGraph;// 最小生成树(不含环路)
             std::map<int, bool> invalidEdge;           // 无效路径
 
             b2World* world;
             std::map<b2Body*, int> roomIdx;
             std::vector<std::vector<mge::Vector2f>> edges;
+
+            int start_room;  // 开始房间
+            int end_room;    // 最终房间
+
+            std::shared_ptr<RoomPathFinding> path_finding;
         };
 
         void build_rooms(Context& c);
@@ -79,10 +90,12 @@ namespace dungeon {
         void align_rooms(Context& c);
         void make_graph(Context& c);
         void make_mini_span_tree(Context& c);
+        void save_start_end_room(Context& c);
         void add_edge(Context& c);
         void make_corridor(Context& c);
         void check_corridor(Context& c);
         void make_center(Context& c);
+        void save_map(Context& c);
     }
 }
 

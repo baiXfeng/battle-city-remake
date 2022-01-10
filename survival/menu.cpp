@@ -10,6 +10,7 @@
 #include "common/collision.h"
 #include "common/render.h"
 #include "common/physics.h"
+#include "common/fps.h"
 #include "dungeon/generate.h"
 #include "effolkronium/random.hpp"
 #include <math.h>
@@ -120,19 +121,9 @@ void WeaponSelectView::onButtonUp(int key) {
 class WorldTileCell : public TileWidget {
 public:
     WorldTileCell() {
-
         auto mask = Ptr(new mge::MaskWidget({}));
         addChild(mask);
         _mask = mask->to<MaskWidget>();
-
-        auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 10);
-        auto label = TTFLabel::New("", font, {0.5f, 0.5f});
-        //label->setVisible(false);
-        //addChild(label);
-        //_label = label->to<TTFLabel>();
-    }
-    void setPos(Vector2i const& p) {
-        //_label->setString(std::to_string(p.x) + "," + std::to_string(p.y), {180, 180, 180, 255});
     }
     void setTile(int id) {
         SDL_Color color[] = {
@@ -141,121 +132,35 @@ public:
                 {175, 238, 238, 255},
                 {0, 250, 154, 255},
         };
-        _mask->setColor(color[(id-1) % 4]);
+        _mask->setColor(color[id % 4]);
     }
 private:
     void onModifySize(Vector2f const& size) override {
         _mask->setSize(size);
-        //_label->setPosition(size.x*0.5f, size.y*0.5f);
     }
 private:
     MaskWidget* _mask;
-    TTFLabel* _label;
-};
-
-class Cell {
-public:
-    enum Type {
-        NONE = 0,
-        ROOM,
-        AISLE,
-    };
-public:
-    Cell():_type(NONE) {}
-    virtual ~Cell() {}
-public:
-    void setType(Type t) {
-        _type = t;
-    }
-    Type getType() const {
-        return _type;
-    }
-protected:
-    Type _type;
-};
-
-class Room : public Cell {
-public:
-    Room() {
-        setType(ROOM);
-    }
-    Room(uint32_t id, RectI const& r):id(id), rect(r) {}
-public:
-    uint32_t id;
-    RectI rect;
-};
-
-class Aisle : public Cell {
-    typedef std::vector<Vector2i> Points;
-public:
-    Aisle() {
-        setType(AISLE);
-    }
-public:
-    uint32_t id;
-    Points points;
 };
 
 using Random = effolkronium::random_static;
 
 class WorldTileMap : public GridMapWidget, public GridMapDataSource {
 public:
-    enum {
-        NONE = 0,
-        SEA,
-        RIVER,
-        LAND,
-        TREE,
-    };
     WorldTileMap() {
-        buildMap();
         setDataSource(this);
     }
-    void buildMap() {
-        _map.resize(80, 80, 1);
-
-        for (int i = 0; i < 50; ++i) {
-            auto r = dungeon::getRandomPointInCircle(40);
-            printf("x = %f, y = %f\n", r.x, r.y);
-        }
-
-        std::map<uint32_t, Room> room_pool;
-        uint32_t room_id = 0;
-        for (int i = 0; i < 100; ++i) {
-            int width = rand() % 12 + 4;
-            int height = rand() % 12 + 4;
-            width += width % 2;
-            height += height % 2;
-            int x = rand() % _map.size().x + 4;
-            int y = rand() % _map.size().y + 4;
-            if (x + width >= _map.size().x - 4) {
-                x = _map.size().x - 4 - width - rand() % 30;
-            }
-            if (y + height >= _map.size().y - 4) {
-                y = _map.size().y - 4 - height - rand() % 30;
-            }
-            auto rect = RectI{x, y, width, height};
-            room_id++;
-            room_pool.insert(std::make_pair(room_id, Room{room_id, rect}));
-        }
-
-        for (auto& r : room_pool) {
-            for (int y = 0; y < r.second.rect.h; ++y) {
-                for (int x = 0; x < r.second.rect.w; ++x) {
-                    _map.set(r.second.rect.x + x, r.second.rect.y + y, 2);
-                }
-            }
-        }
+    void setData(Grid<char>* data) {
+        _map = data;
     }
 private:
     size_t numberOfLayersInWidget(GridMapWidget* sender) override {
         return 1;
     }
     Vector2i sizeOfGridMap(GridMapWidget* sender) override {
-        return _map.size();
+        return _map->size();
     }
     Vector2i sizeOfGridTile(GridMapWidget* sender) override {
-        return {16, 16};
+        return {48, 48};
     }
     Widget::Ptr tileWidgetAtPosition(GridMapWidget* sender, int layerIndex, Vector2i const& position) override {
         auto cell = sender->dequeueTile(layerIndex);
@@ -264,11 +169,11 @@ private:
         }
         auto tile = cell->to<WorldTileCell>();
         //tile->setPos(position);
-        tile->setTile(_map.get(position));
+        tile->setTile(_map->get(position));
         return cell;
     }
 private:
-    Grid<char> _map;
+    Grid<char>* _map;
 };
 
 BattleWorldView::BattleWorldView() {
@@ -279,14 +184,17 @@ BattleWorldView::BattleWorldView() {
         _worldMap->setSize(520, 460);
         _worldMap->setPosition(480, 272);
         _worldMap->enableClip(true);
-
         //auto mask = Ptr(new mge::MaskWidget({0, 0, 0, 140}));
         //mask->setSize(_worldMap->size());
         //_worldMap->addChild(mask);
     }
 
     //_worldMap->getCamera()->setCameraPosition({100, 100});
-    _worldMap->reload_data();
+    //_worldMap->reload_data();
+}
+
+WorldTileMap* BattleWorldView::worldMap() {
+    return _worldMap;
 }
 
 void BattleWorldView::onButtonDown(int key) {
@@ -298,9 +206,8 @@ void BattleWorldView::onButtonDown(int key) {
         _worldMap->getCamera()->move({-600.0f, 0.0f});
     } else if (key == KeyCode::RIGHT) {
         _worldMap->getCamera()->move({600.0f, 0.0f});
-    }else if (key == KeyCode::X) {
-        _worldMap->buildMap();
-        _worldMap->reload_data();
+    }else if (key == KeyCode::B) {
+        removeFromParent();
     }
 }
 
@@ -412,29 +319,48 @@ void PhysicsView::onDraw(SDL_Renderer* renderer) {
 
 //=====================================================================================
 
-RandomRoomView::RandomRoomView():_builder(new dungeon::Builder), _data(new dungeon::lasr::Data) {
+RandomRoomView::RandomRoomView():_builder(new dungeon::Builder), _data(new dungeon::lasr::Data), _seconds(0), _owner(true) {
+    this->init();
+}
+
+RandomRoomView::RandomRoomView(dungeon::lasr::Data* data):_builder(new dungeon::Builder), _data(data), _seconds(0), _owner(false) {
+    this->init();
+}
+
+RandomRoomView::~RandomRoomView() {
+    delete _builder;
+    if (_owner) {
+        delete _data;
+    }
+}
+
+void RandomRoomView::init() {
     addChild(Ptr(new MaskBoxWidget({255, 255, 255, 255})));
     _window = _children.front().get();
     _window->setAnchor(0.5f, 0.5f);
     _window->setPosition(size().x*0.5f, size().y*0.5f);
     _data->window = _window;
-    _data->tile_size = 6;
 
+    auto font = res::load_ttf_font("assets/fonts/prstart.ttf", 14);
+    font->setColor({255, 255, 255, 255});
+    auto fps = TTFLabel::New("", font);
+    fps->setPosition(15, 15);
+    this->addChild(fps);
+    _fps = fps->to<TTFLabel>();
+
+    _data->tile_size = 6;
     _builder->addStep(dungeon::lasr::build_rooms);
     _builder->addStep(dungeon::lasr::align_rooms);
     _builder->addStep(dungeon::lasr::make_graph);
     _builder->addStep(dungeon::lasr::make_mini_span_tree);
+    _builder->addStep(dungeon::lasr::save_start_end_room);
     _builder->addStep(dungeon::lasr::add_edge);
     _builder->addStep(dungeon::lasr::make_corridor);
     _builder->addStep(dungeon::lasr::check_corridor);
     _builder->addStep(dungeon::lasr::make_center);
+    _builder->addStep(dungeon::lasr::save_map);
     _builder->setData(*_data);
     _builder->step((_step = 0)++);
-}
-
-RandomRoomView::~RandomRoomView() {
-    delete _builder;
-    delete _data;
 }
 
 void RandomRoomView::updateRoomLayout() {
@@ -452,6 +378,10 @@ void RandomRoomView::updateRoomLayout() {
 }
 
 void RandomRoomView::onUpdate(float delta) {
+    char fpstext[80] = {0};
+    sprintf(fpstext, "%.2f FPS - %.3fs", 1.0f / _game.fps().delta(), _seconds);
+    _fps->setString(fpstext);
+    _window->setPosition(_window->position()+_move*delta);
     if (_step != 1) {
         return;
     }
@@ -460,42 +390,14 @@ void RandomRoomView::onUpdate(float delta) {
 }
 
 void RandomRoomView::draw(SDL_Renderer* renderer) {
+
     DrawColor dc(renderer);
-
     if (true) {
-        int const tile_size = _data->tile_size;
-        int max_y = _window->size().y / tile_size;
-        int max_x = _window->size().x / tile_size;
         dc.setColor({255, 255, 255, 255});
-        for (int y = 0; y < max_y; ++y) {
-            auto& pos = _window->global_position();
-            auto& size = _window->global_size();
-            Vector2f pt1{
-                    pos.x, pos.y + y * tile_size
-            };
-            Vector2f pt2{
-                    pos.x + size.x, pos.y + y * tile_size
-            };
-            SDL_RenderDrawLine(renderer, (int)pt1.x, (int)pt1.y, (int)pt2.x, (int)pt2.y);
-        }
-        for (int x = 0; x < max_x; ++x) {
-            auto& pos = _window->global_position();
-            auto& size = _window->global_size();
-            Vector2f pt1{
-                    pos.x + x * tile_size, pos.y
-            };
-            Vector2f pt2{
-                    pos.x + x * tile_size, pos.y + size.y
-            };
-            SDL_RenderDrawLine(renderer, (int)pt1.x, (int)pt1.y, (int)pt2.x, (int)pt2.y);
-        }
+        this->drawGrid(renderer);
     }
-
     this->onChildrenDraw(renderer);
 
-    if (_step >= 5) {
-        //return;
-    }
     auto& position = _window->global_position();
     for (int i = 0; i < _data->edges.size(); ++i) {
         if (_data->invalidEdge[i]) {
@@ -509,10 +411,40 @@ void RandomRoomView::draw(SDL_Renderer* renderer) {
     }
 }
 
+void RandomRoomView::drawGrid(SDL_Renderer* renderer) {
+    int const tile_size = _data->tile_size;
+    int max_y = _window->size().y / tile_size;
+    int max_x = _window->size().x / tile_size;
+    for (int y = 0; y < max_y; ++y) {
+        auto& pos = _window->global_position();
+        auto& size = _window->global_size();
+        Vector2f pt1{
+                pos.x, pos.y + y * tile_size
+        };
+        Vector2f pt2{
+                pos.x + size.x, pos.y + y * tile_size
+        };
+        SDL_RenderDrawLine(renderer, (int)pt1.x, (int)pt1.y, (int)pt2.x, (int)pt2.y);
+    }
+    for (int x = 0; x < max_x; ++x) {
+        auto& pos = _window->global_position();
+        auto& size = _window->global_size();
+        Vector2f pt1{
+                pos.x + x * tile_size, pos.y
+        };
+        Vector2f pt2{
+                pos.x + x * tile_size, pos.y + size.y
+        };
+        SDL_RenderDrawLine(renderer, (int)pt1.x, (int)pt1.y, (int)pt2.x, (int)pt2.y);
+    }
+}
+
 void RandomRoomView::onButtonDown(int key) {
     if (key == KeyCode::X) {
+        int start = _game.fps().ticks();
         _data->buildRetryCount = 0;
         _builder->step((_step = 0)++);
+        _seconds = (_game.fps().ticks() - start) / 1000.0f;
     } else if (key == KeyCode::A) {
         switch (_step) {
             case 1:
@@ -522,12 +454,17 @@ void RandomRoomView::onButtonDown(int key) {
                 _builder->step(_step++);
                 break;
             default:
+            {
                 if (_step < _builder->stepSize()) {
+                    int start = _game.fps().ticks();
                     _builder->step(_step++);
+                    _seconds = (_game.fps().ticks() - start) / 1000.0f;
                 }
+            }
                 break;
         }
     } else if (key == KeyCode::Y) {
+        int start = _game.fps().ticks();
         _builder->step((_step = 0)++);
         dungeon::Context c(_builder);
         dungeon::lasr::step_world(c);
@@ -535,5 +472,53 @@ void RandomRoomView::onButtonDown(int key) {
         while (_step < _builder->stepSize()) {
             _builder->step(_step++);
         }
+        _seconds = (_game.fps().ticks() - start) / 1000.0f;
+    } else if (key == KeyCode::UP) {
+        _move = {0, 300};
+    } else if (key == KeyCode::RIGHT) {
+        _move = {-300, 0};
+    } else if (key == KeyCode::DOWN) {
+        _move = {0, -300};
+    } else if (key == KeyCode::LEFT) {
+        _move = {300, 0};
+    } else if (key == KeyCode::B) {
+        //removeFromParent();
+    }
+}
+
+void RandomRoomView::onButtonUp(int key) {
+    if (key >= KeyCode::UP and key <= KeyCode::RIGHT) {
+        _move = {0, 0};
+    }
+}
+
+//=====================================================================================
+
+MapAndWorldView::MapAndWorldView():_mapView(nullptr), _data(new dungeon::lasr::Data) {
+
+}
+
+MapAndWorldView::~MapAndWorldView() {
+    delete _data;
+}
+
+void MapAndWorldView::onButtonDown(int key) {
+    if (key == KeyCode::START) {
+        if (_mapView != nullptr) {
+            addChild(_mapView);
+            return;
+        }
+        _mapView = New<RandomRoomView>(_data);
+        addChild(_mapView);
+    } else if (key == KeyCode::A) {
+        auto view = new BattleWorldView;
+        view->worldMap()->getCamera()->setCameraPosition(_cameraPosition);
+        view->worldMap()->setData(&_data->grid);
+        view->worldMap()->reload_data();
+        view->connect(ON_EXIT, [this](Widget* w){
+            auto view = w->to<BattleWorldView>();
+            _cameraPosition = view->worldMap()->getCamera()->getCameraPosition();
+        });
+        addChild(Ptr(view));
     }
 }

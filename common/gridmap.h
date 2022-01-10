@@ -78,10 +78,13 @@ public:
     typedef std::vector<MoveDirection> MoveDirs;
     GridMapCamera(Widget* container);
 public:
+    void follow(Vector2f const& position);
     void move(Vector2f const& speed);
     MoveDirs const& move_dirs() const;
     bool inCamera(RectI const& r) const;
     void setCameraPosition(Vector2f const& position);
+    Vector2f getCameraPosition() const;
+    void limitCamera();
 protected:
     void onUpdate(float delta) override;
     void limitTop();
