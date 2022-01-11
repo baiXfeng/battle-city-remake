@@ -29,6 +29,7 @@ file( GLOB
 		survival/*.c*
 		dungeon/*.c*
 		common/*.c*
+		uilayout/*.c*
 		third/lua/*.c*
 		third/lutok3/src/lutok3/*.c*
 		third/box2d/src/collision/*.c*
@@ -37,6 +38,7 @@ file( GLOB
 		third/box2d/src/rope/*.c*
 		third/delabella/delabella.cpp
 		third/a-star/source/*.c*
+		third/pugixml/src/*.c*
 )
 
 list(REMOVE_ITEM BASIC_SOURCE
@@ -55,6 +57,7 @@ include_directories(
 		third/random/include
 		third/delabella
 		third/a-star/source
+		third/pugixml/src
 )
 
 if (PSV)
