@@ -7,6 +7,7 @@
 
 #include "fix.hpp"
 #include <functional>
+#include <memory>
 #include <vector>
 #include <math.h>
 #include <assert.h>

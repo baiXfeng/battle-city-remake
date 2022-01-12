@@ -107,11 +107,11 @@ namespace ui {
     }
 
     SDL_Color getHexColor(const char* hex_text) {
-        std::string text(hex_text);
-        std::transform(text.begin(), text.end(), text.begin(), std::toupper);
-        if (text.length() < 10 or (text[0] != '0' and text[1] != 'X')) {
+        if (strlen(hex_text) < 10 or (hex_text[0] != '0' and hex_text[1] != 'X')) {
             return {0, 0, 0, 255};
         }
+        std::string text(hex_text);
+        std::transform(text.begin(), text.end(), text.begin(), ::toupper);
         auto char2hex = [](char c) {
             if (c >= '0' and c <= '9') {
                 return c - '0';
