@@ -307,6 +307,8 @@ public:
     void update(float delta);
     void render(SDL_Renderer* renderer);
 public:
+    Vector2f const& screen_size() const;
+public:
     int scene_size() const;
     WidgetPtr& scene_at(int index) const;
     WidgetPtr& scene_back() const;

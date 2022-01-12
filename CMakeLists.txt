@@ -39,6 +39,7 @@ file( GLOB
 		third/delabella/delabella.cpp
 		third/a-star/source/*.c*
 		third/pugixml/src/*.c*
+		third/pystring/pystring.cpp
 )
 
 list(REMOVE_ITEM BASIC_SOURCE
@@ -58,6 +59,7 @@ include_directories(
 		third/delabella
 		third/a-star/source
 		third/pugixml/src
+		third/pystring
 )
 
 if (PSV)

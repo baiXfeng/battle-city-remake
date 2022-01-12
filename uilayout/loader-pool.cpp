@@ -3,11 +3,13 @@
 //
 
 #include "loader-pool.h"
+#include "node-loader.h"
 
 namespace ui {
 
     void LoaderPool::registerDefaultLoader() {
-
+        addLoader("WindowWidget", Loader(new WindowWidgetLoader));
+        addLoader("ImageWidget", Loader(new ImageWidgetLoader));
     }
 
     void LoaderPool::addLoader(std::string const& className, Loader const& loader) {

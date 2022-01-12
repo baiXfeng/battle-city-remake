@@ -16,6 +16,7 @@ namespace ui {
         typedef std::shared_ptr<NodeLoader> Loader;
         typedef std::map<std::string, Loader> LoaderCache;
     public:
+        virtual ~LoaderPool() {}
         void registerDefaultLoader();
         void addLoader(std::string const& className, Loader const& loader);
         void removeLoader(std::string const& className);

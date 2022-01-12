@@ -17,6 +17,7 @@ namespace res {
     std::string const& getAssetsPath();
 
     Texture::Ptr load_texture(SDL_Renderer* renderer, std::string const& fileName);
+    Texture::Ptr load_texture(std::string const& fileName);
     void free_texture(std::string const& name);
     void free_texture(Texture::Ptr const& texture);
     void free_all_texture();

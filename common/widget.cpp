@@ -876,6 +876,10 @@ void ScreenWidget::stopAction(std::string const& name) {
     WindowWidget::stopAction(name);
 }
 
+Vector2f const& ScreenWidget::screen_size() const {
+    return size();
+}
+
 //=====================================================================================
 
 TTFLabel::TTFLabel():ImageWidget(nullptr) {}

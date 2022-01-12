@@ -3,6 +3,7 @@
 //
 
 #include "loadres.h"
+#include "game.h"
 #include <map>
 #include <list>
 #include <algorithm>
@@ -27,7 +28,7 @@ namespace res {
         return assets_path;
     }
 
-    Texture::Ptr load_texture(SDL_Renderer *renderer, std::string const &fileName) {
+    Texture::Ptr load_texture(SDL_Renderer *renderer, std::string const& fileName) {
         Texture::Ptr result = _textureCache[fileName];
         if (result != nullptr) {
             return result;
@@ -37,6 +38,10 @@ namespace res {
         result->setPath(fileName);
         _textureCache[fileName] = result;
         return result;
+    }
+
+    Texture::Ptr load_texture(std::string const& fileName) {
+        return load_texture(_game.renderer(), fileName);
     }
 
     void free_texture(std::string const &name) {
