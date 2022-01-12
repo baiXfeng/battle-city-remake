@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Layout RootImagePath='assets/images/'>
-    <WindowWidget>
-        <ImageWidget Source='base.png' Position='50%, 50%' Anchor='0.5, 0.5'/>
-        <XmlLayout File='assets/layouts/test2.xml' Position='50%, 50%'/>
-    </WindowWidget>
+<Layout RootImagePath='assets/images/' RootWidgetName='MyWidget'>
+    <MyWidget>
+        <TTFLabel Font='assets/fonts/prstart.ttf:18' Color='0xff0000ff' Text='Hello World!'/>
+        <TTFLabel Font='assets/fonts/prstart.ttf:24' Color='0xffff00ff' Text='Hello World!' Anchor='0.5, 0.5' Position='50%, 50%' Rotation='90'/>
+        <ImageWidget Source='base.png' Position='50%, 50%' Anchor='0.5, 0.5' Assign='imgIcon'/>
+        <XmlLayout File='assets/layouts/test2.xml' Position='50%, 50%' Assign='test2'/>
+    </MyWidget>
 </Layout>

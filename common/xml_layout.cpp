@@ -16,12 +16,16 @@ XmlLayout::WidgetPtr XmlLayout::readNode(std::string const& fileName) {
     return _layoutReader->readNode(fileName);
 }
 
-ui::LoaderPool& XmlLayout::loader() {
-    return *_loaderPool.get();
-}
-
 void XmlLayout::setFileReader(FileReader const& file_reader) {
     _layoutReader->setFileReader((_fileReader = file_reader).get());
+}
+
+XmlLayout::LoaderPool& XmlLayout::getLoaderPool() {
+    return _loaderPool;
+}
+
+XmlLayout::FileReader& XmlLayout::getFileReader() {
+    return _fileReader;
 }
 
 mge_end

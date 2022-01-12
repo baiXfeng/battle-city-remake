@@ -21,6 +21,10 @@ namespace ui {
         void addLoader(std::string const& className, Loader const& loader);
         void removeLoader(std::string const& className);
         NodeLoader* getLoader(std::string const& className);
+        template<class T>
+        void addLoader(std::string const& className) {
+            addLoader(className, Loader(new T));
+        }
     private:
         LoaderCache _cache;
     };

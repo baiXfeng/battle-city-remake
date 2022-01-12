@@ -7,6 +7,10 @@
 
 #include <string>
 
+namespace mge {
+    class Widget;
+}
+
 namespace ui {
 
     class Document;
@@ -14,7 +18,10 @@ namespace ui {
     public:
         LayoutConfig(Document* d);
     public:
+        mge::Widget* RootWidget;
         std::string RootImagePath;
+        std::string RootFontPath;
+        std::string RootWidgetName;
     };
 }
 

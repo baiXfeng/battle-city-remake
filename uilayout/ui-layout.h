@@ -9,5 +9,6 @@
 #include "layout-reader.h"
 #include "node-loader.h"
 #include "loader-pool.h"
+#include "layout-variable-assigner.h"
 
 #endif //SDL2_UI_UI_LAYOUT_H

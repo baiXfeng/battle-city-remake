@@ -11,6 +11,11 @@ namespace mge {
     class Widget;
 }
 
+#define UI_NODE_LOADER_CREATE(T) \
+    Node createNode(mge::Widget *parent, ui::LayoutReader *reader) override { \
+        return Node(new T);                             \
+    }
+
 namespace ui {
 
     class LayoutReader;
@@ -37,6 +42,11 @@ namespace ui {
 
     class WindowWidgetLoader : public NodeLoader {
         Node createNode(mge::Widget *parent, LayoutReader *reader) override;
+    };
+
+    class TTFLabelLoader : public NodeLoader {
+        Node createNode(mge::Widget* parent, LayoutReader* reader) override;
+        void onParseProperty(mge::Widget* node, mge::Widget* parent, LayoutReader* reader, const char* name, const char* value) override;
     };
 }
 

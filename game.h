@@ -16,7 +16,32 @@
 #include "survival/menu.h"
 #include "dungeon/mini_span_tree.h"
 #include "lutok3.h"
+#include "uilayout/ui-layout.h"
+#include "common/xml_layout.h"
 #include <algorithm>
+
+class MyWidget : public mge::WindowWidget, public ui::LayoutVariableAssigner, public ui::LayoutNodeListener {
+public:
+    MyWidget() {
+
+    }
+private:
+    bool onAssignMember(mge::Widget* target, const char* name, mge::Widget* node) override {
+        UI_LAYOUT_MEMBER_ASSIGN(this, "imgIcon", mge::ImageWidget*, _icon);
+        UI_LAYOUT_MEMBER_ASSIGN(this, "test2", mge::Widget*, _second);
+        return false;
+    }
+    void onLayoutLoaded() override {
+
+    }
+private:
+    mge::ImageWidget* _icon;
+    mge::Widget* _second;
+};
+
+class MyWidgetLoader : public ui::NodeLoader {
+    UI_NODE_LOADER_CREATE(MyWidget);
+};
 
 class MyGame : public mge::Game::App {
 private:
@@ -24,7 +49,7 @@ private:
 public:
     MyGame():_state(&_game.force_get<lutok3::State>("lua")) {}
     void test_some() {
-        int POINTS = 6;
+        int POINTS = 16;
         struct MyPoint {
             float x;
             float y;
@@ -83,7 +108,12 @@ public:
 #ifdef WIN32
         _game.screen().push<StartView>();
 #else
-        _game.screen().push<RandomRoomView>();
+        //_game.screen().push<RandomRoomView>();
+
+        _game.uilayout().getLoaderPool()->addLoader<MyWidgetLoader>("MyWidget");
+        auto node = _game.uilayout().readNode("assets/layouts/test.xml");
+        _game.screen().push(node);
+
 #endif
 
 #if defined(__PSP__)
@@ -102,7 +132,8 @@ public:
         LOG_FINI();
     }
     mge::Vector2i screenSize() override {
-        return {1280, 960};
+        //return {1280, 960};
+        return App::screenSize();
     }
 };
 

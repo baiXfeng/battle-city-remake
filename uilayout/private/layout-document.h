@@ -11,12 +11,17 @@ namespace ui {
 
     class Document {
     public:
+        Document() {}
         Document(pugi::xml_node const& n):node(n) {}
         pugi::xml_node& operator()() {
             return node;
         }
         void reset(pugi::xml_node const& n) {
             node = n;
+        }
+        Document& operator()(pugi::xml_node const& n) {
+            node = n;
+            return *this;
         }
     private:
         pugi::xml_node node;

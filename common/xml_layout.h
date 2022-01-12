@@ -25,8 +25,10 @@ public:
     XmlLayout();
 public:
     WidgetPtr readNode(std::string const& fileName);
-    ui::LoaderPool& loader();
+    void setLoader(LoaderPool const& loader);
     void setFileReader(FileReader const& file_reader);
+    LoaderPool& getLoaderPool();
+    FileReader& getFileReader();
 private:
     FileReader _fileReader;
     LoaderPool _loaderPool;

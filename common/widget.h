@@ -51,6 +51,9 @@ public:
     template<class T> T* to() {
         return dynamic_cast<T*>(this);
     }
+    template<class T> T* fast_to() {
+        return static_cast<T*>(this);
+    }
     void defer(std::function<void()> const& func, float delay);
     void defer(Widget* sender, std::function<void(Widget*)> const& func, float delay);
 public:

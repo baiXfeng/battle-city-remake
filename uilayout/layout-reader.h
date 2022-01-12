@@ -30,10 +30,11 @@ namespace ui {
         void setFileReader(FileReader* reader);
         void setLoaderPool(LoaderPool* loader);
     public:
-        LayoutConfig& config();
+        LayoutConfig const& config() const;
     private:
         Node readNode(mge::Widget* parent, Document* d);
         void parseProperties(NodeLoader* loader, mge::Widget* node, mge::Widget* parent, Document* d);
+        void assignMember(mge::Widget* target, const char* name, mge::Widget* node);
     private:
         LoaderPool* _loader;
         FileReader* _fileReader;
