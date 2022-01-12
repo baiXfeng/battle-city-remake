@@ -2,8 +2,8 @@
 // Created by baifeng on 2022/1/12.
 //
 
-#ifndef SDL2_UI_XMLLAYOUT_H
-#define SDL2_UI_XMLLAYOUT_H
+#ifndef SDL2_UI_XML_LAYOUT_H
+#define SDL2_UI_XML_LAYOUT_H
 
 #include "types.h"
 
@@ -25,7 +25,7 @@ public:
     XmlLayout();
 public:
     WidgetPtr readNode(std::string const& fileName);
-    LoaderPool& loader_pool();
+    ui::LoaderPool& loader();
     void setFileReader(FileReader const& file_reader);
 private:
     FileReader _fileReader;
@@ -35,4 +35,4 @@ private:
 
 mge_end
 
-#endif //SDL2_UI_XMLLAYOUT_H
+#endif //SDL2_UI_XML_LAYOUT_H

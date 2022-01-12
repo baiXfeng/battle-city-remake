@@ -26,6 +26,10 @@ namespace ui {
         virtual Node createNode(mge::Widget* parent, LayoutReader* reader) = 0;
     };
 
+    class WidgetLoader : public NodeLoader {
+        Node createNode(mge::Widget *parent, LayoutReader *reader) override;
+    };
+
     class ImageWidgetLoader : public NodeLoader {
         Node createNode(mge::Widget* parent, LayoutReader* reader) override;
         void onParseProperty(mge::Widget* node, mge::Widget* parent, LayoutReader* reader, const char* name, const char* value) override;

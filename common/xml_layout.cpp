@@ -2,7 +2,7 @@
 // Created by baifeng on 2022/1/12.
 //
 
-#include "XmlLayout.h"
+#include "xml_layout.h"
 #include "uilayout/ui-layout.h"
 
 mge_begin
@@ -16,13 +16,12 @@ XmlLayout::WidgetPtr XmlLayout::readNode(std::string const& fileName) {
     return _layoutReader->readNode(fileName);
 }
 
-XmlLayout::LoaderPool& XmlLayout::loader_pool() {
-    return _loaderPool;
+ui::LoaderPool& XmlLayout::loader() {
+    return *_loaderPool.get();
 }
 
 void XmlLayout::setFileReader(FileReader const& file_reader) {
-    _fileReader = file_reader;
-    _layoutReader->setFileReader(_fileReader.get());
+    _layoutReader->setFileReader((_fileReader = file_reader).get());
 }
 
 mge_end

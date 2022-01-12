@@ -10,6 +10,7 @@
 #include "mouse.h"
 #include "command.h"
 #include "idmaker.h"
+#include "xml_layout.h"
 
 mge_begin
 
@@ -22,9 +23,11 @@ void GameVariable::initVariable() {
     _mouse = std::make_shared<Mouse>();
     _gamepad = std::make_shared<GamePad>();
     _screen = std::make_shared<ScreenWidget>();
+    _xmlLayout = std::make_shared<XmlLayout>();
 }
 
 void GameVariable::finiVariable() {
+    _xmlLayout = nullptr;
     _screen = nullptr;
     _gamepad = nullptr;
     _mouse = nullptr;
@@ -65,6 +68,10 @@ CommandCenter& GameVariable::command() {
 
 IdMaker& GameVariable::id() {
     return *_id.get();
+}
+
+XmlLayout& GameVariable::uilayout() {
+    return *_xmlLayout.get();
 }
 
 mge_end

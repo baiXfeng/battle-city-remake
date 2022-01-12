@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Layout RootImagePath='assets/images/'>
+    <WindowWidget>
+        <ImageWidget Source='base.png' Position='25%, 25%' Anchor='0.5, 0.5'/>
+    </WindowWidget>
+</Layout>

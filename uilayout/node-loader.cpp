@@ -86,4 +86,8 @@ namespace ui {
     Node WindowWidgetLoader::createNode(mge::Widget* parent, LayoutReader* reader) {
         return Node(new mge::WindowWidget);
     }
+
+    Node WidgetLoader::createNode(mge::Widget* parent, LayoutReader* reader) {
+        return Node(new mge::Widget);
+    }
 }

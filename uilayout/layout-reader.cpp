@@ -51,7 +51,7 @@ namespace ui {
         _config.push_back(Config(new LayoutConfig(&doc)));
         assert(strcmp(doc().name(), "Layout") == 0 && "Reader::readNode fail<2>.");
         doc.reset(doc().first_child());
-        assert(strcmp(doc().name(), "XMLWidget") != 0 && "Reader::readNode fail<3>.");
+        assert(strcmp(doc().name(), "XmlWidget") != 0 && "Reader::readNode fail<3>.");
         auto node = readNode(parent, &doc);
         _config.pop_back();
         return node;
@@ -63,7 +63,7 @@ namespace ui {
         if (loader == nullptr) {
             return nullptr;
         }
-        if (strcmp(doc().name(), "XMLWidget") == 0) {
+        if (strcmp(doc().name(), "XmlWidget") == 0) {
             // xml视图布局文件
             auto attr = doc().attribute("File");
             if (!attr.empty()) {

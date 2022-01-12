@@ -19,6 +19,7 @@ class AudioSystem;
 class EventCenter;
 class CommandCenter;
 class IdMaker;
+class XmlLayout;
 class GameVariable : public Proxy<std::string> {
 public:
     Fps& fps();
@@ -29,6 +30,7 @@ public:
     EventCenter& event();
     CommandCenter& command();
     IdMaker& id();
+    XmlLayout& uilayout();
 protected:
     void initVariable();
     void finiVariable();
@@ -41,6 +43,7 @@ protected:
     std::shared_ptr<EventCenter> _event;
     std::shared_ptr<CommandCenter> _command;
     std::shared_ptr<IdMaker> _id;
+    std::shared_ptr<XmlLayout> _xmlLayout;
 };
 
 mge_end
