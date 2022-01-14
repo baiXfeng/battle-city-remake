@@ -10,8 +10,10 @@ namespace ui {
     void LoaderPool::registerDefaultLoader() {
         addLoader<WindowWidgetLoader>("WindowWidget");
         addLoader<ImageWidgetLoader>("ImageWidget");
+        addLoader<ButtonWidgetLoader>("ButtonWidget");
         addLoader<TTFLabelLoader>("TTFLabel");
         addLoader<WidgetLoader>("XmlLayout");
+        addLoader<WidgetLoader>("Widget");
     }
 
     void LoaderPool::addLoader(std::string const& className, Loader const& loader) {

@@ -6,7 +6,7 @@
 #include "file-reader.h"
 #include "loader-pool.h"
 #include "node-loader.h"
-#include "layout-config.h"
+#include "layout-info.h"
 #include "layout-variable-assigner.h"
 #include "private/layout-document.h"
 #include "pugixml.hpp"
@@ -38,30 +38,32 @@ namespace ui {
         xml.load_buffer(d->data(), d->size());
 
         Document doc(xml.first_child());
-        _config.push_back(Config(new LayoutConfig(&doc)));
+        _info.push_back(Info(new LayoutInfo(&doc)));
         assert(strcmp(doc().name(), "Layout") == 0 && "Reader::readNode fail<2>.");
 
-        if (config().RootWidgetName.empty()) {
+        if (info().RootWidgetName.empty()) {
             // 未指派根视图名字
             doc.reset(doc().first_child());
             assert(!doc().empty() && strcmp(doc().name(), "XmlLayout") != 0 && "Reader::readNode fail<3>.");
         } else {
             // 使用指派的视图名字
             doc.reset(doc().find_node([this](pugi::xml_node const& n) {
-                return strcmp(n.name(), config().RootWidgetName.c_str()) == 0;
+                return strcmp(n.name(), info().RootWidgetName.c_str()) == 0;
             }));
             assert(!doc().empty() && strcmp(doc().name(), "XmlLayout") != 0 && "Reader::readNode fail<4>.");
         }
 
-        auto node = readNode(parent, &doc);
-        _config.pop_back();
+        auto node = readNode(parent, &doc, true);
+        _info.pop_back();
+        _owner.pop_back();
         return node;
     }
 
-    LayoutReader::Node LayoutReader::readNode(mge::Widget* parent, Document* d) {
+    LayoutReader::Node LayoutReader::readNode(mge::Widget* parent, Document* d, bool owner) {
         auto& doc = *d;
         auto loader = _loader->getLoader(doc().name());
         if (loader == nullptr) {
+            printf("LayoutReader::readNode fail: <%s> is not exist.\n", doc().name());
             return nullptr;
         }
         if (strcmp(doc().name(), "XmlLayout") == 0) {
@@ -78,8 +80,8 @@ namespace ui {
         auto node = loader->loadNode(parent, this);
 
         // 保留根视图
-        if (parent == nullptr) {
-            _config.back()->RootWidget = node.get();
+        if (owner) {
+            _owner.push_back(node.get());
         }
 
         this->parseProperties(loader, node.get(), parent, d);
@@ -100,14 +102,12 @@ namespace ui {
 
     void LayoutReader::parseProperties(NodeLoader* loader, mge::Widget* node, mge::Widget* parent, Document* d) {
         auto& doc = *d;
-        auto& config = this->config();
+        auto owner = this->owner();
         for (auto attr = doc().first_attribute(); not attr.empty(); attr = attr.next_attribute()) {
-            if (strcmp(attr.name(), "Assign") == 0) {
-                if (config.RootWidget and config.RootWidget != node) {
-                    auto target = config.RootWidget->to<LayoutVariableAssigner>();
-                    if (target) {
-                        target->onAssignMember(config.RootWidget, attr.value(), node);
-                    }
+            if (strcmp(attr.name(), "Assign") == 0 and owner != node) {
+                auto target = owner->to<LayoutVariableAssigner>();
+                if (target) {
+                    target->onAssignMember(owner, attr.value(), node);
                 }
                 continue;
             }
@@ -119,7 +119,11 @@ namespace ui {
 
     }
 
-    LayoutConfig const& LayoutReader::config() const {
-        return *_config.back().get();
+    LayoutInfo const& LayoutReader::info() const {
+        return *_info.back().get();
+    }
+
+    mge::Widget* const LayoutReader::owner() const {
+        return _owner.back();
     }
 }

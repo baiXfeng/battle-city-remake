@@ -17,11 +17,12 @@ namespace ui {
     class FileReader;
     class LoaderPool;
     class NodeLoader;
-    class LayoutConfig;
+    class LayoutInfo;
     class LayoutReader {
         typedef std::shared_ptr<mge::Widget> Node;
-        typedef std::shared_ptr<LayoutConfig> Config;
-        typedef std::vector<Config> ConfigStack;
+        typedef std::shared_ptr<LayoutInfo> Info;
+        typedef std::vector<Info> InfoStack;
+        typedef std::vector<mge::Widget*> OwnerStack;
     public:
         LayoutReader(LoaderPool* loader_library, FileReader* r);
         virtual ~LayoutReader();
@@ -30,15 +31,17 @@ namespace ui {
         void setFileReader(FileReader* reader);
         void setLoaderPool(LoaderPool* loader);
     public:
-        LayoutConfig const& config() const;
+        LayoutInfo const& info() const;
+        mge::Widget* const owner() const;
     private:
-        Node readNode(mge::Widget* parent, Document* d);
+        Node readNode(mge::Widget* parent, Document* d, bool owner = false);
         void parseProperties(NodeLoader* loader, mge::Widget* node, mge::Widget* parent, Document* d);
         void assignMember(mge::Widget* target, const char* name, mge::Widget* node);
     private:
         LoaderPool* _loader;
         FileReader* _fileReader;
-        ConfigStack _config;
+        InfoStack _info;
+        OwnerStack _owner;
     };
 }
 

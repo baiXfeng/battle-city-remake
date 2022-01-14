@@ -202,11 +202,13 @@ public:
     typedef std::shared_ptr<Render> RenderPtr;
     typedef std::shared_ptr<Texture> TexturePtr;
 public:
+    ImageWidget();
     ImageWidget(TexturePtr const& texture);
     ImageWidget(TexturePtr const& texture, SDL_Rect const& srcrect);
 public:
     void setTexture(TexturePtr const& texture);
     void setTexture(TexturePtr const& texture, SDL_Rect const& srcrect);
+    TexturePtr getTexture() const;
 protected:
     void onDraw(SDL_Renderer* renderer) override;
     void onModifyOpacity(unsigned char opacity) override;
@@ -226,8 +228,10 @@ public:
         NORMAL = 0,
         PRESSED,
         DISABLED,
+        UNKNOWN,
     };
 public:
+    ButtonWidget();
     ButtonWidget(TexturePtr const& normal, TexturePtr const& pressed, TexturePtr const& disabled = nullptr);
 public:
     void setNormalTexture(TexturePtr const& normal);
@@ -240,8 +244,6 @@ public:
     bool pressed() const;
     void setClick(CallBack const& cb);
     void click();
-private:
-    void addChild(WidgetPtr const& widget) override {}
     void setState(State state);
 private:
     bool _enable;

@@ -2,7 +2,7 @@
 // Created by baifeng on 2022/1/12.
 //
 
-#include "layout-config.h"
+#include "layout-info.h"
 #include "private/layout-document.h"
 
 namespace ui {
@@ -14,9 +14,7 @@ namespace ui {
     }                                       \
 }
 
-    LayoutConfig::LayoutConfig(Document* d):RootWidget(nullptr) {
-        ASSIGN_STRING("RootFontPath", RootFontPath);
-        ASSIGN_STRING("RootImagePath", RootImagePath);
+    LayoutInfo::LayoutInfo(Document* d) {
         ASSIGN_STRING("RootWidgetName", RootWidgetName);
     }
 }

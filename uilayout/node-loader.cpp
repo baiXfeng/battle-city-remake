@@ -3,7 +3,7 @@
 //
 
 #include "node-loader.h"
-#include "layout-config.h"
+#include "layout-info.h"
 #include "layout-reader.h"
 #include "pystring.h"
 #include <string.h>
@@ -77,18 +77,20 @@ namespace ui {
             node->setRotation(atof(value));
         } else if (strcmp(name, "Name") == 0) {
             node->setName(value);
+        } else if (strcmp(name, "Visible") == 0) {
+            node->setVisible(strcmp(value, "true") == 0);
+        } else if (strcmp(name, "Clip") == 0) {
+            node->enableClip(strcmp(value, "true") == 0);
         }
     }
 
     Node ImageWidgetLoader::createNode(mge::Widget* parent, LayoutReader* reader) {
-        return Node(new mge::ImageWidget(nullptr));
+        return Node(new mge::ImageWidget);
     }
 
     void ImageWidgetLoader::onParseProperty(mge::Widget* node, mge::Widget* parent, LayoutReader* reader, const char* name, const char* value) {
         if (strcmp(name, "Source") == 0) {
-            auto& config = reader->config();
-            auto file_name = config.RootImagePath + value;
-            node->fast_to<mge::ImageWidget>()->setTexture(res::load_texture(file_name.c_str()));
+            node->fast_to<mge::ImageWidget>()->setTexture(res::load_texture(value));
         } else {
             NodeLoader::onParseProperty(node, parent, reader, name, value);
         }
@@ -136,15 +138,33 @@ namespace ui {
             std::vector<std::string> ret;
             pystring::split(value, ret, ":");
             if (ret.size() == 2) {
-                auto& config = reader->config();
-                auto file_name = config.RootFontPath + ret[0];
-                auto font = res::load_ttf_font(file_name, atoi(ret[1].c_str()));
+                auto font = res::load_ttf_font(ret[0], atoi(ret[1].c_str()));
                 node->fast_to<TTFLabel>()->setFont(font);
             }
         } else if (strcmp(name, "Text") == 0) {
             node->fast_to<TTFLabel>()->setString(value);
         } else if (strcmp(name, "Color") == 0) {
             node->fast_to<TTFLabel>()->font()->setColor(getHexColor(value));
+        } else {
+            NodeLoader::onParseProperty(node, parent, reader, name, value);
+        }
+    }
+
+    Node ButtonWidgetLoader::createNode(mge::Widget* parent, LayoutReader* reader) {
+        return Node(new mge::ButtonWidget);
+    }
+
+    void ButtonWidgetLoader::onParseProperty(mge::Widget* node, mge::Widget* parent, LayoutReader* reader, const char* name, const char* value) {
+        if (strcmp(name, "Normal") == 0) {
+            node->fast_to<ButtonWidget>()->setNormalTexture(res::load_texture(value));
+        } else if (strcmp(name, "Pressed") == 0) {
+            node->fast_to<ButtonWidget>()->setPressedTexture(res::load_texture(value));
+        } else if (strcmp(name, "Disabled") == 0) {
+            node->fast_to<ButtonWidget>()->setDisabledTexture(res::load_texture(value));
+        } else if (strcmp(name, "Enable") == 0) {
+            node->fast_to<ButtonWidget>()->setEnable(strcmp(value, "true") == 0);
+        } else if (strcmp(name, "State") == 0) {
+            node->fast_to<ButtonWidget>()->setState(ButtonWidget::State(atoi(value)));
         } else {
             NodeLoader::onParseProperty(node, parent, reader, name, value);
         }

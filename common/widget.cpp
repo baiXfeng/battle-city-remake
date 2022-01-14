@@ -576,6 +576,10 @@ void GamePadWidget::sleep_gamepad(float seconds) {
 
 //=====================================================================================
 
+ImageWidget::ImageWidget():_target(std::make_shared<Render>()) {
+
+}
+
 ImageWidget::ImageWidget(TexturePtr const& texture):_target(std::make_shared<Render>()) {
     this->setTexture(texture);
 }
@@ -599,6 +603,10 @@ void ImageWidget::setTexture(TexturePtr const& texture, SDL_Rect const& srcrect)
     }
     _target->setTexture(texture, srcrect);
     this->setSize(_target->size().to<float>());
+}
+
+Texture::Ptr ImageWidget::getTexture() const {
+    return _target->texture();
 }
 
 void ImageWidget::onModifyOpacity(unsigned char opacity) {
@@ -628,6 +636,13 @@ void ImageWidget::onDraw(SDL_Renderer* renderer) {
 
 //=====================================================================================
 
+ButtonWidget::ButtonWidget():
+ImageWidget(nullptr),
+_state(UNKNOWN),
+_enable(true) {
+
+}
+
 ButtonWidget::ButtonWidget(TexturePtr const& normal, TexturePtr const& pressed, TexturePtr const& disabled):
 ImageWidget(normal),
 _state(NORMAL),
@@ -639,6 +654,9 @@ _enable(true) {
 
 void ButtonWidget::setNormalTexture(TexturePtr const& normal) {
     _texture[NORMAL] = normal;
+    if (getTexture() == nullptr) {
+        setTexture(normal);
+    }
 }
 
 void ButtonWidget::setPressedTexture(TexturePtr const& pressed) {
