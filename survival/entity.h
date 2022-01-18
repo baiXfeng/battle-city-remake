@@ -14,7 +14,7 @@ namespace mge {
 namespace entity {
     typedef entt::entity id;
     typedef entt::registry world;
-    typedef mge::Widget* View;
+    typedef mge::Widget* view;
 }
 
 #endif //SDL2_UI_ENTITY_H

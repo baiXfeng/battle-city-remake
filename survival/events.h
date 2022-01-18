@@ -12,6 +12,10 @@ namespace event {
     struct GamepadUp {
         int key;
     };
+    struct GamepadAxisMotion {
+        int joy_id;
+        int x, y;
+    };
 }
 
 #endif //SDL2_UI_EVENTS_H

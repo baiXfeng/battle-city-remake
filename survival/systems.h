@@ -33,22 +33,31 @@ namespace entity {
         Array _systems;
     };
 
-    class InputSystem : public System {
-    public:
-        InputSystem(Context& c);
-        ~InputSystem();
-    private:
+    class ObjectMoveSystem : public System {
         void update(Context& c) override;
-        void onButtonDown(event::GamepadDown const& e);
-        void onButtonUp(event::GamepadUp const& e);
-    private:
-        entt::dispatcher* _dispatcher;
-        entity::world* _world;
     };
 
     class TankFireSystem : public System {
         void update(Context& c) override;
     };
+
+    class ObjectCheckOutSystem : public System {
+        void update(Context& c) override;
+    };
+
+    class ObjectCleanSystem : public System {
+        void update(Context& c) override;
+    };
+
+    namespace tank {
+        enum Type {
+            PLAYER = 0,
+            ENEMY,
+        };
+        void create(Context& c, Type t, mge::Vector2f const& pos);
+        void destroy(Context& c, entity::id e);
+    }
+
 }
 
 #endif //SDL2_UI_SYSTEMS_H

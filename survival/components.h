@@ -7,26 +7,29 @@
 
 #include "common/types.h"
 #include "entity.h"
-#include <memory>
 
 namespace component {
 
     struct player {};
     struct enemy {};
-    struct transform {
-        float rotation;
-        mge::Vector2f position;
-    };
-    struct moveable {
-        mge::Vector2f speed;
-    };
-    struct weapon {
-        float rotation;
-    };
+    struct bullet {};
+    struct killed {};
+
     struct skin {
-        entity::View container;
-        entity::View body;
-        entity::View weapon;
+        entity::view view;
+    };
+    struct move_speed {
+        mge::Vector2f value;
+    };
+    struct fire_state {
+        bool fire;
+        float cooldown;
+    };
+    struct tank_brake {
+        bool value;
+    };
+    struct lifetime {
+        float value;
     };
 
 }

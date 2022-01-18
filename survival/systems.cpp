@@ -3,9 +3,11 @@
 //
 
 #include "systems.h"
-#include "common/gamepad.h"
-#include "common/widget.h"
 #include "components.h"
+#include "factory.h"
+#include "common/widget.h"
+#include "common/loadres.h"
+#include "angles/angles.hpp"
 
 namespace entity {
 
@@ -20,7 +22,7 @@ namespace entity {
     }
 
     void SequenceSystem::update(Context &c) {
-        for (auto &sys: _systems) {
+        for (auto& sys: _systems) {
             sys->update(c);
         }
     }
@@ -31,60 +33,113 @@ namespace entity {
 
     //=====================================================================================
 
-    float _angle = 0.0f;
-    float _bodyangle = 0.0f;
+    void ObjectMoveSystem::update(Context& c) {
+        auto view = c.reg.view<component::move_speed, component::skin>();
+        for (auto e : view) {
+            auto& move = view.get<component::move_speed>(e);
+            auto& skin = view.get<component::skin>(e);
 
-    InputSystem::InputSystem(Context& c):_dispatcher(&c.dispatcher), _world(&c.world) {
-        _dispatcher->sink<event::GamepadDown>().connect<&InputSystem::onButtonDown>(this);
-        _dispatcher->sink<event::GamepadUp>().connect<&InputSystem::onButtonUp>(this);
-    }
+            if (c.reg.any_of<component::tank_brake>(e)) {
+                auto& brake = c.reg.get<component::tank_brake>(e);
+                if (brake.value) {
+                    continue;
+                }
+            }
 
-    InputSystem::~InputSystem() {
-        _dispatcher->sink<event::GamepadDown>().disconnect(this);
-        _dispatcher->sink<event::GamepadUp>().disconnect(this);
-    }
-
-    void InputSystem::update(Context& c) {
-        auto& reg = *_world;
-        auto view = reg.view<component::player, component::transform, component::weapon, component::skin>();
-        for (auto&& [player, trans, weapon, skin] : view.each()) {
-            weapon.rotation += _angle * c.delta;
-            skin.weapon->setRotation(weapon.rotation);
-            trans.rotation += _bodyangle * c.delta;
-            skin.body->setRotation(trans.rotation);
-        }
-    }
-
-    void InputSystem::onButtonDown(event::GamepadDown const &e) {
-        //printf("key down = %d\n", e.key);
-        if (e.key == GamePad::KeyCode::LEFT) {
-            _angle = -100.0f;
-        } else if (e.key == GamePad::KeyCode::RIGHT) {
-            _angle = 100.0f;
-        } else if (e.key == GamePad::KeyCode::UP) {
-            _bodyangle = -100.0f;
-        } else if (e.key == GamePad::KeyCode::DOWN) {
-            _bodyangle = 100.0f;
-        }
-    }
-
-    void InputSystem::onButtonUp(event::GamepadUp const &e) {
-        //printf("key up = %d\n", e.key);
-        if (e.key == GamePad::KeyCode::LEFT) {
-            _angle = 0.0f;
-        } else if (e.key == GamePad::KeyCode::RIGHT) {
-            _angle = 0.0f;
-        } else if (e.key == GamePad::KeyCode::UP) {
-            _bodyangle = 0.0f;
-        } else if (e.key == GamePad::KeyCode::DOWN) {
-            _bodyangle = 0.0f;
+            skin.view->setPosition(move.value * c.delta() + skin.view->position() );
         }
     }
 
     //=====================================================================================
 
     void TankFireSystem::update(Context& c) {
+        auto view = c.reg.view<component::fire_state, component::move_speed, component::skin>();
+        for (auto e : view) {
+            auto& tank_skin = view.get<component::skin>(e);
+            auto& tank_move_speed = view.get<component::move_speed>(e);
+            auto& fire_state = view.get<component::fire_state>(e);
+            if ((fire_state.cooldown += c.delta()) >= 0.3f) {
+                fire_state.cooldown = 0.3f;
+                if (!fire_state.fire) {
+                    continue;
+                }
+                fire_state.cooldown = 0.0f;
 
+                // tank fire
+                auto bullet = factory::create_bullet(c.reg);
+                auto& bullet_skin = c.reg.get<component::skin>(bullet);
+                auto& bullet_move_speed = c.reg.get<component::move_speed>(bullet);
+
+                auto view = Widget::New<mge::Widget>();
+                view->setPosition( tank_skin.view->position() );
+                c.rootView->addChild(view);
+                bullet_skin.view = view.get();
+
+                auto image = Widget::New<mge::ImageWidget>(res::load_texture("assets/images/bullet_up.png"));
+                image->setAnchor(0.5f, 0.5f);
+                image->setRotation( tank_skin.view->children()[0]->rotation() );
+                view->addChild(image);
+
+                float angle = image->rotation() - 90.0f;
+                Degrees<float> d(angle);
+                auto rad = d.toRadians();
+                auto x = rad.cos();
+                auto y = rad.sin();
+                bullet_move_speed.value.reset(x, y);
+                bullet_move_speed.value *= 600.0f;
+            }
+        }
     }
 
+    //=====================================================================================
+
+    void ObjectCheckOutSystem::update(Context& c) {
+        auto view = c.reg.view<component::lifetime>();
+        for (auto e : view) {
+            auto& lifetime = view.get<component::lifetime>(e);
+            lifetime.value += c.delta();
+            if (lifetime.value >= 0.25f) {
+                c.reg.emplace_or_replace<component::killed>(e);
+            }
+        }
+    }
+
+    //=====================================================================================
+
+    void ObjectCleanSystem::update(Context& c) {
+        // 释放子弹
+        auto view = c.reg.view<component::killed, component::bullet, component::skin>();
+        for (auto e : view) {
+            tank::destroy(c, e);
+        }
+    }
+
+    //=====================================================================================
+    namespace tank {
+
+        using namespace mge;
+
+        void create(Context& c, Type t, mge::Vector2f const& pos) {
+            auto tankView = Widget::New<mge::Widget>();
+            tankView->setPosition(pos);
+            c.rootView->addChild(tankView);
+
+            auto image = Widget::New<mge::ImageWidget>(mge::res::load_texture("assets/images/tank_player1_up_c0_t1_s1.png"));
+            image->setAnchor(0.5f, 0.5f);
+            image->setSize(48, 48);
+            tankView->addChild(image);
+
+            auto tank = factory::create_tank(c.reg, true);
+            auto& skin = c.reg.get<component::skin>(tank);
+            skin.view = tankView.get();
+        }
+
+        void destroy(Context& c, entity::id e) {
+            auto& skin = c.reg.get<component::skin>(e);
+            if (skin.view) {
+                skin.view->removeFromParent();
+            }
+            c.reg.destroy(e);
+        }
+    }
 }

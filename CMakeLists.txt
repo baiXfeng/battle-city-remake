@@ -48,6 +48,7 @@ list(REMOVE_ITEM BASIC_SOURCE
 
 include_directories(
 		.
+		third
 		third/entt/src
 		third/cereal/include
 		third/eluna/eluna

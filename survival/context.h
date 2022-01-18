@@ -10,10 +10,18 @@
 namespace entity {
     class Context {
     public:
-        float delta;
+        Context():_delta(0.0f) {}
+        inline float delta() const {
+            return _delta;
+        }
+        void delta(float const& v) {
+            _delta = v;
+        }
         entt::dispatcher dispatcher;
-        entity::world world;
-        entity::View rootView;
+        entity::world reg;
+        entity::view rootView;
+    private:
+        float _delta;
     };
 }
 

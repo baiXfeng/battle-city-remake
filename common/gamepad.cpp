@@ -34,9 +34,37 @@ void initKeyMapVita(GamePad::KeyMap& km) {
     }
 }
 
+void initKeyMapPS4(GamePad::KeyMap& km) {
+    km.resize(17, KeyCode::UNKNOWN);
+    KeyCode list[] = {
+            KeyCode::B,
+            KeyCode::A,
+            KeyCode::Y,
+            KeyCode::X,
+            KeyCode::SELECT,
+            KeyCode::UNKNOWN,
+            KeyCode::START,
+            KeyCode::UNKNOWN,
+            KeyCode::UNKNOWN,
+            KeyCode::L1,
+            KeyCode::R1,
+            KeyCode::UP,
+            KeyCode::DOWN,
+            KeyCode::LEFT,
+            KeyCode::RIGHT,
+            KeyCode::UNKNOWN,
+            KeyCode::UNKNOWN,
+    };
+    for (int i = 0; i < km.size(); ++i) {
+        km[i] = list[i];
+    }
+}
+
 GamePad::GamePad():_keyboard_event(false), _sleep(false) {
 #if defined(__vita__) or defined(__PSP__)
     initKeyMapVita(_keyValue);
+#else
+    initKeyMapPS4(_keyValue);
 #endif
     _keyState.resize(KeyCode::MAX, false);
 }

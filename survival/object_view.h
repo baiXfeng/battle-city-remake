@@ -9,17 +9,6 @@
 
 namespace survival {
 
-    class TankView : public mge::Widget {
-    public:
-        TankView();
-    public:
-        mge::Widget* body() const;
-        mge::Widget* weapon() const;
-
-    private:
-        mge::Widget* _img[2];
-    };
-
 }
 
 
