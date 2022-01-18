@@ -7,7 +7,7 @@
 
 #include <memory>
 #include <vector>
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

@@ -7,7 +7,8 @@
 
 #include <unordered_map>
 #include <memory>
-#include "types.h"
+#include "macro.h"
+#include "data.h"
 
 mge_begin
 

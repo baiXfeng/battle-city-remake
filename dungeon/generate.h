@@ -5,8 +5,11 @@
 #ifndef SDL2_UI_GENERATE_H
 #define SDL2_UI_GENERATE_H
 
-#include "common/types.h"
+#include "common/data.h"
+#include "common/vector2.h"
 #include <memory>
+#include <functional>
+#include <vector>
 
 namespace dungeon {
 

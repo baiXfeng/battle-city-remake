@@ -9,7 +9,7 @@
 #include <SDL_ttf.h>
 #include <memory>
 #include <string>
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

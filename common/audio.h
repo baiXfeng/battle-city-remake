@@ -11,7 +11,7 @@
 #include <memory>
 #include <unordered_map>
 #include "observer.h"
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

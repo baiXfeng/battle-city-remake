@@ -9,7 +9,7 @@
 #include <SDL_image.h>
 #include "texture.h"
 #include "font.h"
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

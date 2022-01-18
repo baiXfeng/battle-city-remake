@@ -7,8 +7,9 @@
 
 #include <string>
 #include <SDL.h>
-#include "types.h"
+#include "macro.h"
 #include "variable.h"
+#include "vector2.h"
 
 #define GAME_SCREEN_WIDTH 960
 #define GAME_SCREEN_HEIGHT 544

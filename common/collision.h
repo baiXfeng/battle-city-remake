@@ -5,7 +5,8 @@
 #ifndef SDL2_UI_COLLISION_H
 #define SDL2_UI_COLLISION_H
 
-#include "types.h"
+#include "macro.h"
+#include "rect.h"
 
 mge_begin
 

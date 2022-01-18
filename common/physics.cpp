@@ -5,6 +5,7 @@
 #include "physics.h"
 #include "game.h"
 #include <SDL2_gfxPrimitives.h>
+#include <vector>
 
 mge_begin
 

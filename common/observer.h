@@ -8,7 +8,7 @@
 #include <list>
 #include <algorithm>
 #include <functional>
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

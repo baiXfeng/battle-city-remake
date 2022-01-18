@@ -8,7 +8,8 @@
 #include <list>
 #include <unordered_map>
 #include "observer.h"
-#include "types.h"
+#include "macro.h"
+#include "data.h"
 
 mge_begin
 

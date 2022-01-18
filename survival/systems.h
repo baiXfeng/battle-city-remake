@@ -7,6 +7,7 @@
 
 #include "context.h"
 #include "events.h"
+#include "common/vector2.h"
 #include <memory>
 #include <vector>
 

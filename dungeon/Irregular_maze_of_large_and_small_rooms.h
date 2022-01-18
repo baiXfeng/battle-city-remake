@@ -5,8 +5,9 @@
 #ifndef SDL2_UI_IRREGULAR_MAZE_OF_LARGE_AND_SMALL_ROOMS_H
 #define SDL2_UI_IRREGULAR_MAZE_OF_LARGE_AND_SMALL_ROOMS_H
 
-#include "common/types.h"
+#include "common/rect.h"
 #include "common/widget.h"
+#include "common/grid.h"
 #include "box2d/box2d.h"
 #include "mini_span_tree.h"
 #include "generate.h"

@@ -5,7 +5,9 @@
 #ifndef SDL2_UI_XML_LAYOUT_H
 #define SDL2_UI_XML_LAYOUT_H
 
-#include "types.h"
+#include "macro.h"
+#include <memory>
+#include <string>
 
 namespace ui {
     class FileReader;

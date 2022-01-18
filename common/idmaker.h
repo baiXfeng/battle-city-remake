@@ -7,7 +7,7 @@
 
 #include <unordered_map>
 #include <string>
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

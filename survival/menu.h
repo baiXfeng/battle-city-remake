@@ -6,6 +6,7 @@
 #define SDL2_UI_MENU_H
 
 #include "common/widget.h"
+#include "common/rect.h"
 
 class WeaponListView;
 class WeaponSelectView : public mge::GamePadWidget {

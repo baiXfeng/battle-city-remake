@@ -13,8 +13,8 @@
 #include <unordered_map>
 #include <algorithm>
 #include <assert.h>
-#include "types.h"
 #include "render.h"
+#include "rect.h"
 
 mge_begin
 

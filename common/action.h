@@ -10,7 +10,8 @@
 #include <string>
 #include <list>
 #include <functional>
-#include "types.h"
+#include "macro.h"
+#include "vector2.h"
 
 mge_begin
 

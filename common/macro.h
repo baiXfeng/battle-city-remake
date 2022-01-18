@@ -5,6 +5,8 @@
 #ifndef SDL2_UI_MACRO_H
 #define SDL2_UI_MACRO_H
 
+#include <stdio.h>
+
 #define mge_begin namespace mge {
 #define mge_end }
 

@@ -11,7 +11,8 @@
 #include <map>
 #include <unordered_map>
 #include <SDL.h>
-#include "types.h"
+#include "macro.h"
+#include "vector2.h"
 
 mge_begin
 

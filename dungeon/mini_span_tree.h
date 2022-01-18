@@ -5,8 +5,9 @@
 #ifndef SDL2_UI_MINI_SPAN_TREE_H
 #define SDL2_UI_MINI_SPAN_TREE_H
 
-#include "common/types.h"
+#include "common/vector2.h"
 #include "delabella.h"
+#include <vector>
 
 namespace dungeon {
     typedef struct Edge {

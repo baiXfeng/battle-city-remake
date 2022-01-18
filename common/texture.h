@@ -8,7 +8,8 @@
 #include <SDL.h>
 #include <string>
 #include <memory>
-#include "types.h"
+#include "macro.h"
+#include "vector2.h"
 
 mge_begin
 

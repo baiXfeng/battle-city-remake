@@ -6,6 +6,8 @@
 #define SDL2_UI_GRIDMAP_H
 
 #include "widget.h"
+#include "grid.h"
+#include "rect.h"
 
 mge_begin
 

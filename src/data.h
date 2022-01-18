@@ -5,7 +5,6 @@
 #ifndef BATTLE_CITY_DATA_H
 #define BATTLE_CITY_DATA_H
 
-#include "common/types.h"
 #include "common/quadtree.h"
 #include "common/observer.h"
 #include "lutok3.h"

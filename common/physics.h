@@ -5,7 +5,8 @@
 #ifndef SDL2_UI_PHYSICS_H
 #define SDL2_UI_PHYSICS_H
 
-#include "types.h"
+#include "macro.h"
+#include "vector2.h"
 #include <box2d/box2d.h>
 #include <SDL.h>
 

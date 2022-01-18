@@ -6,7 +6,7 @@
 #define SDL2_UI_MUTEX_H
 
 #include <SDL.h>
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

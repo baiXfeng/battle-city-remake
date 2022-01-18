@@ -6,6 +6,7 @@
 #define SDL2_UI_WIDGET_EX_H
 
 #include "widget.h"
+#include "rect.h"
 
 mge_begin
 

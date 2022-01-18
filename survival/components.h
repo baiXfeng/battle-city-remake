@@ -5,7 +5,7 @@
 #ifndef SDL2_UI_COMPONENTS_H
 #define SDL2_UI_COMPONENTS_H
 
-#include "common/types.h"
+#include "common/vector2.h"
 #include "entity.h"
 
 namespace component {

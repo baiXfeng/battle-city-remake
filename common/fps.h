@@ -6,7 +6,7 @@
 #define MGS_FPS_H
 
 #include <SDL.h>
-#include "types.h"
+#include "macro.h"
 
 mge_begin
 

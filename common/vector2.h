@@ -6,6 +6,7 @@
 #define SDL2_UI_VECTOR2_H
 
 #include "macro.h"
+#include "math.h"
 
 mge_begin
 
