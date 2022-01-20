@@ -228,7 +228,6 @@ void BattleWorldView::onButtonUp(int key) {
 PhysicsView::PhysicsView():_world(nullptr), _box(nullptr), _platform({0,0,0,0}) {
     _world = new b2World({0.0f, 9.8f});
     auto gB2Draw = new PhysicDrawner();
-    gB2Draw->SetFlags(b2Draw::e_shapeBit);
     _world->SetDebugDraw(gB2Draw);
     _box = res::load_texture(_game.renderer(), "assets/survival/box.png")->data();
     this->addPlatform();

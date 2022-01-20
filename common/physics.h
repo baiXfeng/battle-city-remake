@@ -12,7 +12,11 @@
 
 mge_begin
 
+#ifdef M_PI
+    static long double const PI = M_PI;
+#else
     static long double const PI = 3.14159265358979323846264338327950288;
+#endif
     static float const MET2PIX = 32.0f;
     static float const PIX2MET = 1.0f / MET2PIX;
     static float const RAD2DEG = 180.0f / PI;
@@ -43,6 +47,9 @@ mge_begin
         void addEdgeShape(Vector2f const& start_pos, Vector2f const& end_pos);
         void setRestitution(float restitution);
         void setTransform(Vector2f const& screen_pos, float angle = 0.0f);
+        void setLinearVelocity(Vector2f const& screen_velocity);
+        void enableRotation(bool e = true);
+    public:
         Vector2f getPixelPosition() const;
         float getPixelAngle() const;
         b2Body* body() const;
@@ -58,6 +65,9 @@ mge_begin
 
     class PhysicDrawner : public b2Draw {
     public:
+        PhysicDrawner() {
+            SetFlags(b2Draw::e_shapeBit);
+        }
         void DrawPolygon(const b2Vec2 *iVertices, int32 iVertexCount,
                          const b2Color &iColor) override;
         void DrawSolidPolygon(const b2Vec2 *iVertices, int32 iVertexCount,

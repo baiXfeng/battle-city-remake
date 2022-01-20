@@ -5,6 +5,10 @@
 #ifndef SDL2_UI_EVENTS_H
 #define SDL2_UI_EVENTS_H
 
+namespace component {
+    struct entity_info;
+}
+
 namespace event {
     struct GamepadDown {
         int key;
@@ -15,6 +19,14 @@ namespace event {
     struct GamepadAxisMotion {
         int joy_id;
         int x, y;
+    };
+    struct EntityBeginTouch {
+        component::entity_info* infoA;
+        component::entity_info* infoB;
+    };
+    struct EntityEndTouch {
+        component::entity_info* infoA;
+        component::entity_info* infoB;
     };
 }
 

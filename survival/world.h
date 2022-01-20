@@ -11,7 +11,10 @@
 namespace entity {
     class System;
     class Worker;
+    class ContactFilter;
+    class ContactListener;
 }
+
 class SurvivalView : public mge::GamePadWidget {
 public:
     typedef std::shared_ptr<entity::System> SystemPtr;
@@ -21,6 +24,7 @@ public:
     SurvivalView();
 private:
     void onUpdate(float delta) override;
+    void onDraw(SDL_Renderer* renderer) override;
     void onButtonDown(int key) override;
     void onButtonUp(int key) override;
     void onJoyAxisMotion(JOYIDX joy_id, int x, int y) override;
@@ -28,6 +32,8 @@ private:
     entity::Context _c;
     SystemPtr _sys;
     WorkerPool _worker;
+    std::shared_ptr<entity::ContactFilter> _filter;
+    std::shared_ptr<entity::ContactListener> _listener;
 };
 
 #endif //SDL2_UI_WORLD_H

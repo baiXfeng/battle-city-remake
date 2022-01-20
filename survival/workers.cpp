@@ -8,6 +8,7 @@
 #include "common/log.h"
 #include "components.h"
 #include "angles/angles.hpp"
+#include "src/view.h"
 
 namespace entity {
 
@@ -78,16 +79,16 @@ namespace entity {
             return;
         }
         auto angle = Degrees<float>::atan(e.x, -e.y);
-        auto view = _reg->view<component::player, component::skin, component::move_speed>();
+        auto view = _reg->view<component::player, component::skin, component::move_state>();
         for (auto entity : view) {
             auto& skin = view.get<component::skin>(entity);
-            auto& move = view.get<component::move_speed>(entity);
+            auto& state = view.get<component::move_state>(entity);
             if (abs(e.x) <= 80 and abs(e.y) <= 80) {
-                move.value.reset(0, 0);
+                state.speed.reset(0, 0);
                 continue;
             }
-            move.value = Vector2f{e.x, e.y}.normalized() * 300;
-            skin.view->children()[0]->setRotation(angle.getScalarValue());
+            state.speed = Vector2f{e.x, e.y}.normalized() * 300;
+            state.rotation = angle.getScalarValue();
         }
     }
 
@@ -126,5 +127,61 @@ namespace entity {
                 break;
         }
         onJoyMotion(e);
+    }
+
+    //=====================================================================================
+
+    CollisionWorker::CollisionWorker(Context& c):_c(&c) {
+        _c->dispatcher.sink<event::EntityBeginTouch>().connect<&CollisionWorker::onEntityBeginTouch>(this);
+        _c->dispatcher.sink<event::EntityEndTouch>().connect<&CollisionWorker::onEntityEndTouch>(this);
+    }
+
+    CollisionWorker::~CollisionWorker() {
+        _c->dispatcher.sink<event::EntityBeginTouch>().disconnect(this);
+        _c->dispatcher.sink<event::EntityEndTouch>().disconnect(this);
+    }
+
+    void CollisionWorker::onEntityBeginTouch(event::EntityBeginTouch const& e) {
+        auto infoA = e.infoA;
+        auto infoB = e.infoB;
+        if (infoA->type == component::entity_type::BULLET or infoB->type == component::entity_type::BULLET) {
+            if (infoA->type == component::entity_type::TANK or infoB->type == component::entity_type::TANK) {
+                onBulletHitTank(
+                        infoA->type == component::entity_type::BULLET ? infoA : infoB,
+                        infoA->type == component::entity_type::TANK ? infoA : infoB
+                );
+                return;
+            }
+        }
+    }
+
+    void CollisionWorker::onEntityEndTouch(event::EntityEndTouch const& e) {
+
+    }
+
+    void CollisionWorker::onBulletHitTank(component::entity_info* bullet, component::entity_info* tank) {
+
+        // bullet explosion
+        {
+            auto& skin = _c->reg.get<component::skin>(bullet->owner);
+            auto view = Widget::New<BulletExplosionView>();
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition( skin.view->position() );
+            view->fast_to<BulletExplosionView>()->play();
+            _c->rootView->addChild(view);
+        }
+
+        // tank explosion
+        {
+            auto& skin = _c->reg.get<component::skin>(tank->owner);
+            auto view = Widget::New<BigExplosionView>();
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition( skin.view->position() );
+            view->fast_to<BigExplosionView>()->play();
+            _c->rootView->addChild(view);
+        }
+
+        _c->reg.emplace_or_replace<component::killed>(bullet->owner);
+        _c->reg.emplace_or_replace<component::killed>(tank->owner);
     }
 }

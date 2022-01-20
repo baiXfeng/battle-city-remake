@@ -42,6 +42,19 @@ namespace entity {
         entt::dispatcher* _dispatcher;
         entity::world* _reg;
     };
+
+    class CollisionWorker : public Worker {
+    public:
+        CollisionWorker(Context& c);
+        ~CollisionWorker();
+    private:
+        void onEntityBeginTouch(event::EntityBeginTouch const& e);
+        void onEntityEndTouch(event::EntityEndTouch const& e);
+    private:
+        void onBulletHitTank(component::entity_info* bullet, component::entity_info* tank);
+    private:
+        Context* _c;
+    };
 }
 
 #endif //SDL2_UI_WORKERS_H

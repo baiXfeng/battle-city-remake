@@ -110,6 +110,14 @@ mge_begin
         _body->SetTransform(getMetricPositionFromPixel(screen_pos), angle  * DEG2RAD);
     }
 
+    void b2BodySugar::setLinearVelocity(Vector2f const& screen_velocity) {
+        _body->SetLinearVelocity(getMetricPositionFromPixel(screen_velocity));
+    }
+
+    void b2BodySugar::enableRotation(bool e) {
+        _body->SetFixedRotation(!e);
+    }
+
     Vector2f b2BodySugar::getPixelPosition() const {
         return getPixelPositionFromMetric(_body->GetPosition());
     }
