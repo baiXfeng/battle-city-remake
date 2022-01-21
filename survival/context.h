@@ -11,12 +11,10 @@
 
 namespace entity {
     class Context {
-        typedef std::map<entity::id, component::entity_info> InfoPool;
     public:
         entt::dispatcher dispatcher;
         entity::world reg;
         entity::view rootView;
-        InfoPool entity_info_pool;  // for box2d physics system
     public:
         Context();
         ~Context();

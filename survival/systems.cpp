@@ -8,6 +8,7 @@
 #include "common/widget.h"
 #include "common/loadres.h"
 #include "angles/angles.hpp"
+#include "src/view.h"
 
 namespace entity {
 
@@ -33,23 +34,28 @@ namespace entity {
 
     //=====================================================================================
 
+    void ObjectAI_System::update(Context& c) {
+        auto view = c.reg.view<component::enemy, component::move_state>();
+        for (auto e : view) {
+
+        }
+    }
+
+    //=====================================================================================
+
     void ObjectMoveSystem::update(Context& c) {
         auto view = c.reg.view<component::move_state, component::skin, component::physics>();
         for (auto e : view) {
             auto& state = view.get<component::move_state>(e);
-            auto& skin = view.get<component::skin>(e);
             auto speed = state.speed;
 
-            if (c.reg.any_of<component::tank_brake>(e)) {
-                auto& brake = c.reg.get<component::tank_brake>(e);
-                if (brake.value) {
-                    //continue;
-                    speed = {0.0f, 0.0f};
-                }
+            if (auto brake = c.reg.try_get<component::tank_brake>(e); brake and brake->value) {
+                speed = {0.0f, 0.0f};
             }
 
             if (auto& phys = view.get<component::physics>(e); phys.body) {
                 b2BodySugar s(phys.body);
+                auto& skin = view.get<component::skin>(e);
                 s.setTransform(skin.view->position(), state.rotation);
                 s.setLinearVelocity(speed);
             }
@@ -83,7 +89,7 @@ namespace entity {
         for (auto e : view) {
             auto& lifetime = view.get<component::lifetime>(e);
             lifetime.value += c.delta();
-            if (lifetime.value >= 0.25f) {
+            if (lifetime.value >= 1.0f) {
                 c.reg.emplace_or_replace<component::killed>(e);
             }
         }
@@ -93,18 +99,23 @@ namespace entity {
 
     void ObjectCleanSystem::update(Context& c) {
         // 释放子弹
-        {
-            auto view = c.reg.view<component::killed, component::bullet, component::skin>();
+        if (auto view = c.reg.view<component::killed, component::bullet>(); true) {
             for (auto e: view) {
                 bullet::destroy(c, e);
             }
         }
 
         // 释放坦克
-        {
-            auto view = c.reg.view<component::killed, component::tank, component::skin>();
+        if (auto view = c.reg.view<component::killed, component::tank>(); true) {
             for (auto e : view) {
                 tank::destroy(c, e);
+            }
+        }
+
+        // 通常释放
+        if (auto view = c.reg.view<component::killed>(); true) {
+            for (auto e: view) {
+                c.reg.destroy(e);
             }
         }
     }
@@ -115,53 +126,174 @@ namespace entity {
         b2WorldSugar::update(c.physics(), c.delta());
         auto view = c.reg.view<component::skin, component::physics>();
         for (auto e : view) {
-            auto& skin = view.get<component::skin>(e);
             if (auto& phys = view.get<component::physics>(e); phys.body) {
                 b2BodySugar s(phys.body);
+                auto& skin = view.get<component::skin>(e);
                 skin.view->setPosition(s.getPixelPosition());
                 skin.view->children()[0]->setRotation(s.getPixelAngle());
             }
         }
     }
 
+    //=====================================================================================
+
+    void onBulletHit(event::EntityPhysicsContact const& e) {
+        auto target = (entity::id)e.target->GetBody()->GetUserData().pointer;
+        if (e.c->reg.any_of<component::tank>(target)) {
+            onBulletHitTank(e);
+        } else if (e.c->reg.any_of<component::bullet>(target)) {
+            onBulletHitBullet(e);
+        } else if (e.c->reg.any_of<component::wall>(target)) {
+            onBulletHitWall(e);
+        }
+    }
+
+    //=====================================================================================
+
+    void onBulletHitTank(event::EntityPhysicsContact const& e) {
+
+        auto sender = (entity::id)e.sender->GetBody()->GetUserData().pointer;
+        auto target = (entity::id)e.target->GetBody()->GetUserData().pointer;
+
+        // bullet explosion
+        if (auto skin = e.c->reg.try_get<component::skin>(sender); skin) {
+            auto view = Widget::New<BulletExplosionView>();
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition( skin->view->position() );
+            view->fast_to<BulletExplosionView>()->play();
+            e.c->rootView->addChild(view);
+        }
+
+        // tank explosion
+        if (auto skin = e.c->reg.try_get<component::skin>(target); skin) {
+            auto view = Widget::New<BigExplosionView>();
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition( skin->view->position() );
+            view->fast_to<BigExplosionView>()->play();
+            e.c->rootView->addChild(view);
+        }
+
+        // kill entity
+        e.c->reg.emplace_or_replace<component::killed>(sender);
+        e.c->reg.emplace_or_replace<component::killed>(target);
+
+        for (auto fixture = e.sender->GetBody()->GetFixtureList(); fixture; fixture = fixture->GetNext()) {
+            auto entity = (entity::id)fixture->GetUserData().pointer;
+            e.c->reg.emplace_or_replace<component::killed>(entity);
+        }
+        for (auto fixture = e.target->GetBody()->GetFixtureList(); fixture; fixture = fixture->GetNext()) {
+            auto entity = (entity::id)fixture->GetUserData().pointer;
+            e.c->reg.emplace_or_replace<component::killed>(entity);
+        }
+    }
+
+    void onBulletHitBullet(event::EntityPhysicsContact const& e) {
+
+    }
+
+    void onBulletHitWall(event::EntityPhysicsContact const& e) {
+
+        auto sender = (entity::id)e.sender->GetBody()->GetUserData().pointer;
+
+        // bullet explosion
+        if (auto skin = e.c->reg.try_get<component::skin>(sender); skin) {
+            auto view = Widget::New<BulletExplosionView>();
+            view->setAnchor(0.5f, 0.5f);
+            view->setPosition( skin->view->position() );
+            view->fast_to<BulletExplosionView>()->play();
+            e.c->rootView->addChild(view);
+        }
+
+        // kill entity
+        e.c->reg.emplace_or_replace<component::killed>(sender);
+
+        for (auto fixture = e.sender->GetBody()->GetFixtureList(); fixture; fixture = fixture->GetNext()) {
+            auto entity = (entity::id)fixture->GetUserData().pointer;
+            e.c->reg.emplace_or_replace<component::killed>(entity);
+        }
+    }
+
+    //=====================================================================================
+
     ContactFilter::ContactFilter(Context& c):_c(&c) {}
 
     bool ContactFilter::ShouldCollide(b2Fixture* fixtureA, b2Fixture* fixtureB) {
-        auto bodyA = fixtureA->GetBody();
-        auto bodyB = fixtureB->GetBody();
-        if (bodyA->GetUserData().pointer and bodyB->GetUserData().pointer) {
-            auto infoA = (component::entity_info*)bodyA->GetUserData().pointer;
-            auto infoB = (component::entity_info*)bodyB->GetUserData().pointer;
-            if (infoA->owner == infoB->sender or infoA->sender == infoB->owner) {
-                // 子弹不与发射者碰撞
-                return false;
-            } else if (infoA->type == infoB->type and infoA->type == component::entity_type::BULLET) {
-                // 子弹不与子弹碰撞
-                return false;
+
+        auto& filterA = fixtureA->GetFilterData();
+        auto& filterB = fixtureB->GetFilterData();
+
+        if ((filterA.maskBits & filterB.categoryBits) != 0 or (filterA.categoryBits & filterB.maskBits) != 0) {
+
+            auto bodyEntityA = (entity::id)fixtureA->GetBody()->GetUserData().pointer;
+            auto bodyEntityB = (entity::id)fixtureB->GetBody()->GetUserData().pointer;
+
+            if (auto owner = _c->reg.try_get<component::owner_info>(bodyEntityA); owner) {
+                if (owner->entity == bodyEntityB) {
+                    return false;
+                }
             }
+
+            if (auto owner = _c->reg.try_get<component::owner_info>(bodyEntityB); owner) {
+                if (owner->entity == bodyEntityA) {
+                    return false;
+                }
+            }
+
+            auto fixtureEntityA = (entity::id)fixtureA->GetUserData().pointer;
+            if (auto visible = _c->reg.try_get<component::physics_layer_visible>(fixtureEntityA); visible) {
+                if (!visible->value) {
+                    return false;
+                }
+            }
+
+            auto fixtureEntityB = (entity::id)fixtureB->GetUserData().pointer;
+            if (auto visible = _c->reg.try_get<component::physics_layer_visible>(fixtureEntityB); visible) {
+                if (!visible->value) {
+                    return false;
+                }
+            }
+
+            return true;
         }
-        return b2ContactFilter::ShouldCollide(fixtureA, fixtureB);
+
+        return false;
     }
+
+    //=====================================================================================
 
     ContactListener::ContactListener(Context& c):_c(&c) {}
 
     void ContactListener::BeginContact(b2Contact* contact) {
-        auto bodyA = contact->GetFixtureA()->GetBody();
-        auto bodyB = contact->GetFixtureB()->GetBody();
-        if (bodyA->GetUserData().pointer and bodyB->GetUserData().pointer) {
-            auto infoA = (component::entity_info *) bodyA->GetUserData().pointer;
-            auto infoB = (component::entity_info *) bodyB->GetUserData().pointer;
-            _c->dispatcher.trigger(event::EntityBeginTouch{infoA, infoB});
+        auto fixtureA = contact->GetFixtureA();
+        auto fixtureB = contact->GetFixtureB();
+
+        if (fixtureB->GetFilterData().maskBits & fixtureA->GetFilterData().categoryBits) {
+            auto temp = fixtureA;
+            fixtureA = fixtureB;
+            fixtureB = temp;
+        }
+        if (fixtureA->GetFilterData().maskBits & fixtureB->GetFilterData().categoryBits) {
+            auto entity = (entity::id)fixtureA->GetUserData().pointer;
+            if (auto handler = _c->reg.try_get<component::physics_collision_handler>(entity); handler and handler->begin) {
+                handler->begin({_c, contact, fixtureA, fixtureB});
+            }
         }
     }
 
     void ContactListener::EndContact(b2Contact* contact) {
-        auto bodyA = contact->GetFixtureA()->GetBody();
-        auto bodyB = contact->GetFixtureB()->GetBody();
-        if (bodyA->GetUserData().pointer and bodyB->GetUserData().pointer) {
-            auto infoA = (component::entity_info *) bodyA->GetUserData().pointer;
-            auto infoB = (component::entity_info *) bodyB->GetUserData().pointer;
-            _c->dispatcher.trigger(event::EntityEndTouch{infoA, infoB});
+        auto fixtureA = contact->GetFixtureA();
+        auto fixtureB = contact->GetFixtureB();
+
+        if (fixtureB->GetFilterData().maskBits & fixtureA->GetFilterData().categoryBits) {
+            auto temp = fixtureA;
+            fixtureA = fixtureB;
+            fixtureB = temp;
+        }
+        if (fixtureA->GetFilterData().maskBits & fixtureB->GetFilterData().categoryBits) {
+            auto entity = (entity::id)fixtureA->GetUserData().pointer;
+            if (auto handler = _c->reg.try_get<component::physics_collision_handler>(entity); handler and handler->end) {
+                handler->end({_c, contact, fixtureA, fixtureB});
+            }
         }
     }
 
@@ -189,17 +321,43 @@ namespace entity {
             image->setSize(48, 48);
             tankView->addChild(image);
 
-            auto tank = factory::create_tank(c.reg, t == PLAYER);
-            auto& skin = c.reg.get<component::skin>(tank);
+            auto const entity = factory::create_tank(c.reg, t == Party::PLAYER);
+            auto& skin = c.reg.get<component::skin>(entity);
             skin.view = tankView.get();
 
-            auto& entity_info = c.entity_info_pool[tank] = {tank, entt::null, component::entity_type::TANK};
-            auto& phys = c.reg.get<component::physics>(tank);
+            auto& phys = c.reg.get<component::physics>(entity);
             phys.body = b2BodySugar::CreateBody(c.physics(), b2_dynamicBody);
-            phys.body->GetUserData().pointer = (uintptr_t)&entity_info;
+            phys.body->GetUserData().pointer = (uintptr_t)entity;
 
             b2BodySugar s(phys.body);
-            s.addCircleShape(image->size().x * 0.45f);
+            if (auto shape = s.addCircleShape(image->size().x * 0.45f); shape) {
+                b2Filter filter;
+                filter.categoryBits = int(CollisionBit::DAMAGE_BOX);
+                filter.maskBits = 0;
+                shape->SetFilterData(filter);
+
+                auto layer = factory::create_physics_layer(c.reg);
+                shape->GetUserData().pointer = (uintptr_t)layer;
+            }
+            if (auto shape = s.addBoxShape((image->size() * 0.8f).to<int>()); shape) {
+                b2Filter filter;
+                filter.categoryBits = int(CollisionBit::TANK_BODY);
+                filter.maskBits = int(CollisionBit::TANK_BODY);
+                shape->SetFilterData(filter);
+
+                auto layer = factory::create_physics_layer(c.reg);
+                shape->GetUserData().pointer = (uintptr_t)layer;
+            }
+            if (auto shape = s.addCircleShape(image->size().x * 3.0f); shape) {
+                b2Filter filter;
+                filter.categoryBits = 0;
+                filter.maskBits = int(CollisionBit::TANK_BODY);
+                shape->SetFilterData(filter);
+                shape->SetSensor(true);
+
+                auto layer = factory::create_physics_layer(c.reg);
+                shape->GetUserData().pointer = (uintptr_t)layer;
+            }
             s.setTransform(skin.view->position());
             s.enableRotation(false);
         }
@@ -211,7 +369,6 @@ namespace entity {
             if (auto& phys = c.reg.get<component::physics>(e); phys.body) {
                 c.physics()->DestroyBody(phys.body);
             }
-            c.entity_info_pool.erase(e);
             c.reg.destroy(e);
         }
     }
@@ -221,10 +378,8 @@ namespace entity {
     namespace bullet {
 
         void create(Context& c, entity::id sender, mge::Vector2f const& pos, float rotation) {
-            auto bullet = factory::create_bullet(c.reg);
-            auto& skin = c.reg.get<component::skin>(bullet);
-            auto& move_state = c.reg.get<component::move_state>(bullet);
-            auto& entity_info = c.entity_info_pool[bullet] = {bullet, sender, component::entity_type::BULLET};
+            auto const entity = factory::create_bullet(c.reg);
+            auto& skin = c.reg.get<component::skin>(entity);
 
             auto view = Widget::New<mge::Widget>();
             view->setPosition( pos );
@@ -241,16 +396,31 @@ namespace entity {
             auto rad = d.toRadians();
             auto x = rad.cos();
             auto y = rad.sin();
+
+            auto& move_state = c.reg.get<component::move_state>(entity);
             move_state.speed.reset(x, y);
             move_state.speed *= 600.0f;
             move_state.rotation = rotation;
 
-            auto& phys = c.reg.get<component::physics>(bullet);
+            auto& owner_info = c.reg.get<component::owner_info>(entity);
+            owner_info.entity = sender;
+
+            auto& phys = c.reg.get<component::physics>(entity);
             phys.body = b2BodySugar::CreateBody(c.physics(), b2_dynamicBody);
-            phys.body->GetUserData().pointer = (uintptr_t)&entity_info;
+            phys.body->GetUserData().pointer = (uintptr_t)entity;
 
             b2BodySugar s(phys.body);
-            s.addCircleShape(image->size().x * 0.5f);
+            if (auto shape = s.addCircleShape(image->size().x * 0.5f); shape) {
+                b2Filter filter;
+                filter.categoryBits = 0;
+                filter.maskBits = int(CollisionBit::DAMAGE_BOX);
+                shape->SetFilterData(filter);
+
+                auto layer = factory::create_physics_layer(c.reg);
+                shape->GetUserData().pointer = (uintptr_t)layer;
+                auto& handler = c.reg.get<component::physics_collision_handler>(layer);
+                handler.begin = &onBulletHit;
+            }
             s.setTransform(skin.view->position());
             s.enableRotation(false);
         }
@@ -262,7 +432,6 @@ namespace entity {
             if (auto& phys = c.reg.get<component::physics>(e); phys.body) {
                 c.physics()->DestroyBody(phys.body);
             }
-            c.entity_info_pool.erase(e);
             c.reg.destroy(e);
         }
     }

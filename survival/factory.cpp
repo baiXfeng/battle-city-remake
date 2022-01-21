@@ -15,11 +15,7 @@ namespace factory {
         w.emplace<component::move_state>(e, 0.0f);
         w.emplace<component::fire_state>(e, false, 1.0f);
         w.emplace<component::physics>(e, nullptr);
-        if (player) {
-            w.emplace<component::player>(e);
-        } else {
-            w.emplace<component::enemy>(e);
-        }
+        player ? w.emplace<component::player>(e) : w.emplace<component::enemy>(e);
         return e;
     }
 
@@ -30,6 +26,15 @@ namespace factory {
         w.emplace<component::move_state>(e, 0.0f);
         w.emplace<component::lifetime>(e);
         w.emplace<component::physics>(e, nullptr);
+        w.emplace<component::owner_info>(e, entt::null);
+        return e;
+    }
+
+    entity::id create_physics_layer(entity::world& w) {
+        auto const e = w.create();
+        w.emplace<component::physics_layer>(e);
+        w.emplace<component::physics_layer_visible>(e, true);
+        w.emplace<component::physics_collision_handler>(e, nullptr, nullptr);
         return e;
     }
 }

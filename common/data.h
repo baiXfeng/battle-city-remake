@@ -6,6 +6,7 @@
 #define SDL2_UI_DATA_H
 
 #include "macro.h"
+#include "assert.h"
 
 mge_begin
 

@@ -9,12 +9,17 @@
 #include "box2d/box2d.h"
 #include "entity.h"
 
+namespace event {
+    struct EntityPhysicsContact;
+}
+
 namespace component {
 
     struct player {};
     struct enemy {};
     struct tank {};
     struct bullet {};
+    struct wall {};
     struct killed {};
 
     struct skin {
@@ -37,14 +42,18 @@ namespace component {
     struct physics {
         b2Body* body;
     };
-    enum class entity_type {
-        TANK = 1,
-        BULLET = 2,
+    struct owner_info {
+        entity::id entity;
     };
-    struct entity_info {
-        entity::id owner;
-        entity::id sender;
-        entity_type type;
+
+    struct physics_layer {};
+    struct physics_layer_visible {
+        bool value;
+    };
+    typedef void (*CollisionHandler)(event::EntityPhysicsContact const& e);
+    struct physics_collision_handler {
+        CollisionHandler begin;
+        CollisionHandler end;
     };
 
 }

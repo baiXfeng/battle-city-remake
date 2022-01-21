@@ -49,16 +49,16 @@ mge_begin
         _body = body;
     }
 
-    void b2BodySugar::addBoxShape(Vector2i const& screen_size) {
+    b2Fixture* b2BodySugar::addBoxShape(Vector2i const& screen_size) {
         b2PolygonShape aRectShape;
         aRectShape.SetAsBox(getMetricFromPixel(screen_size.x) / 2.0f, getMetricFromPixel(screen_size.y) / 2.0f);
         b2FixtureDef def;
         def.shape = &aRectShape;
         def.density = 1.0f;
-        _body->CreateFixture(&def);
+        return _body->CreateFixture(&def);
     }
 
-    void b2BodySugar::addBoxShape(Vector2f const& screen_pos, Vector2i const& screen_size) {
+    b2Fixture* b2BodySugar::addBoxShape(Vector2f const& screen_pos, Vector2i const& screen_size) {
         b2PolygonShape aRectShape;
         aRectShape.SetAsBox(
                 getMetricFromPixel(screen_size.x) / 2.0f,
@@ -69,26 +69,26 @@ mge_begin
         b2FixtureDef def;
         def.shape = &aRectShape;
         def.density = 1.0f;
-        _body->CreateFixture(&def);
+        return _body->CreateFixture(&def);
     }
 
-    void b2BodySugar::addCircleShape(float screen_radius) {
+    b2Fixture* b2BodySugar::addCircleShape(float screen_radius) {
         b2CircleShape aCircleShape;
         aCircleShape.m_radius = getMetricFromPixel(screen_radius);
         b2FixtureDef def;
         def.shape = &aCircleShape;
         def.density = 1.0f;
-        _body->CreateFixture(&def);
+        return _body->CreateFixture(&def);
     }
 
-    void b2BodySugar::addCircleShape(Vector2f const& screen_pos, float screen_radius) {
+    b2Fixture* b2BodySugar::addCircleShape(Vector2f const& screen_pos, float screen_radius) {
         b2CircleShape aCircleShape;
         aCircleShape.m_radius = getMetricFromPixel(screen_radius);
         aCircleShape.m_p = getMetricPositionFromPixel(screen_pos);
         b2FixtureDef def;
         def.shape = &aCircleShape;
         def.density = 1.0f;
-        _body->CreateFixture(&def);
+        return _body->CreateFixture(&def);
     }
 
     void b2BodySugar::addEdgeShape(Vector2f const& start_pos, Vector2f const& end_pos) {
@@ -159,7 +159,7 @@ mge_begin
     SDL_Color convertColor(const b2Color& iColor) {
         return SDL_Color{
                 static_cast<Uint8>(iColor.r * 255), static_cast<Uint8>(iColor.g * 255),
-                static_cast<Uint8>(iColor.g * 255), static_cast<Uint8>(iColor.a * 255)};
+                static_cast<Uint8>(iColor.g * 255), static_cast<Uint8>(iColor.a * 255 * 0.5f)};
     }
 
     std::pair<std::vector<Sint16>, std::vector<Sint16>> buildGraphicVertices(const b2Vec2* iMetricVertices, const int32 iVertexCount) {

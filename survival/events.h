@@ -5,8 +5,11 @@
 #ifndef SDL2_UI_EVENTS_H
 #define SDL2_UI_EVENTS_H
 
-namespace component {
-    struct entity_info;
+#include "box2d/box2d.h"
+#include "entity.h"
+
+namespace entity {
+    class Context;
 }
 
 namespace event {
@@ -20,13 +23,11 @@ namespace event {
         int joy_id;
         int x, y;
     };
-    struct EntityBeginTouch {
-        component::entity_info* infoA;
-        component::entity_info* infoB;
-    };
-    struct EntityEndTouch {
-        component::entity_info* infoA;
-        component::entity_info* infoB;
+    struct EntityPhysicsContact {
+        entity::Context* c;
+        b2Contact* contact;
+        b2Fixture* sender;
+        b2Fixture* target;
     };
 }
 

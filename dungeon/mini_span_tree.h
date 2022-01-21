@@ -8,6 +8,7 @@
 #include "common/vector2.h"
 #include "delabella.h"
 #include <vector>
+#include <functional>
 
 namespace dungeon {
     typedef struct Edge {

@@ -3,6 +3,8 @@
 //
 
 #include "mini_span_tree.h"
+#include "assert.h"
+#include <algorithm>
 #include <map>
 
 namespace dungeon {

@@ -40,10 +40,10 @@ mge_begin
         static b2Body* CreateBody(b2World* world, b2BodyType type);
         void destroy();
         void reset(b2Body* body);
-        void addBoxShape(Vector2i const& screen_size);
-        void addBoxShape(Vector2f const& screen_pos, Vector2i const& screen_size);
-        void addCircleShape(float screen_radius);
-        void addCircleShape(Vector2f const& screen_pos, float screen_radius);
+        b2Fixture* addBoxShape(Vector2i const& screen_size);
+        b2Fixture* addBoxShape(Vector2f const& screen_pos, Vector2i const& screen_size);
+        b2Fixture* addCircleShape(float screen_radius);
+        b2Fixture* addCircleShape(Vector2f const& screen_pos, float screen_radius);
         void addEdgeShape(Vector2f const& start_pos, Vector2f const& end_pos);
         void setRestitution(float restitution);
         void setTransform(Vector2f const& screen_pos, float angle = 0.0f);

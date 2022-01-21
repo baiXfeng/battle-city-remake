@@ -34,6 +34,10 @@ namespace entity {
         Array _systems;
     };
 
+    class ObjectAI_System : public System {
+        void update(Context& c) override;
+    };
+
     class ObjectMoveSystem : public System {
         void update(Context& c) override;
     };
@@ -54,6 +58,11 @@ namespace entity {
         void update(Context& c) override;
     };
 
+    void onBulletHit(event::EntityPhysicsContact const& e);
+    void onBulletHitTank(event::EntityPhysicsContact const& e);
+    void onBulletHitBullet(event::EntityPhysicsContact const& e);
+    void onBulletHitWall(event::EntityPhysicsContact const& e);
+
     class ContactFilter : public b2ContactFilter {
     public:
         ContactFilter(Context& c);
@@ -73,9 +82,14 @@ namespace entity {
         Context* _c;
     };
 
-    enum Party {
+    enum class Party {
         PLAYER = 0,
         ENEMY,
+    };
+
+    enum class CollisionBit {
+        TANK_BODY = 1 << 0,
+        DAMAGE_BOX = 1 << 1,
     };
 
     namespace tank {
